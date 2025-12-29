@@ -13,7 +13,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4 py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4 py-12">
+      {/* Logo */}
+      <div className="mb-8 sm:mb-12">
+        <img 
+          src="/ca_logo.jpg" 
+          alt="Coaching Amplifier" 
+          className="h-16 sm:h-20 md:h-24 w-auto mx-auto"
+        />
+      </div>
+
       <div className="w-full max-w-md space-y-4">
         <LoginForm onSuccess={handleSuccess} />
         <div className="text-center text-sm text-optavia-gray">

@@ -65,16 +65,20 @@ export function UserSettings({ onClose }: UserSettingsProps) {
     try {
       const fileExt = file.name.split(".").pop()
       const fileName = `${user.id}-${Math.random()}.${fileExt}`
-      const filePath = `avatars/${fileName}`
+      const filePath = `${fileName}`
 
       // Delete old avatar if exists
       if (profile?.avatar_url) {
-        const oldPath = profile.avatar_url.split("/").slice(-2).join("/")
-        await supabase.storage.from("avatars").remove([oldPath])
+        // Extract filename from URL
+        const urlParts = profile.avatar_url.split("/")
+        const oldFileName = urlParts[urlParts.length - 1]
+        if (oldFileName) {
+          await supabase.storage.from("user_avatars").remove([oldFileName])
+        }
       }
 
       // Upload new avatar
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
+      const { error: uploadError } = await supabase.storage.from("user_avatars").upload(filePath, file, {
         cacheControl: "3600",
         upsert: false,
       })
@@ -84,7 +88,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
       // Get public URL
       const {
         data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(filePath)
+      } = supabase.storage.from("user_avatars").getPublicUrl(filePath)
 
       // Update profile
       const { error: updateError } = await updateProfile({ avatar_url: publicUrl })
@@ -113,8 +117,12 @@ export function UserSettings({ onClose }: UserSettingsProps) {
     if (!profile?.avatar_url || !user) return
 
     try {
-      const oldPath = profile.avatar_url.split("/").slice(-2).join("/")
-      await supabase.storage.from("avatars").remove([oldPath])
+      // Extract filename from URL
+      const urlParts = profile.avatar_url.split("/")
+      const oldFileName = urlParts[urlParts.length - 1]
+      if (oldFileName) {
+        await supabase.storage.from("user_avatars").remove([oldFileName])
+      }
 
       const { error } = await updateProfile({ avatar_url: null })
 

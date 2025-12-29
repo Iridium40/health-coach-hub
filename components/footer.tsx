@@ -8,9 +8,9 @@ export function Footer() {
     <footer className="bg-[hsl(var(--optavia-footer))] text-white py-8 sm:py-12 mt-12 sm:mt-16">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center gap-4 sm:gap-6">
-          <div className="text-xl sm:text-2xl font-heading">
-            <span className="font-extrabold">Coaching</span>
-            <span className="font-semibold"> Amplifier</span>
+          <div className="text-xl sm:text-2xl font-heading tracking-wider">
+            <span className="font-light text-gray-300 uppercase">Coaching</span>
+            <span className="font-bold text-white uppercase"> Amplifier</span>
           </div>
 
           <p className="text-center text-xs sm:text-sm text-gray-300 max-w-md px-4">

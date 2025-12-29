@@ -16,10 +16,10 @@ export function Header({ onSettingsClick }: HeaderProps) {
     <header className="border-b border-optavia-border bg-white sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-shrink">
-          <div className="text-xl sm:text-2xl font-heading">
-            <span className="font-extrabold text-optavia-green">Coaching</span>
-            <span className="font-semibold text-optavia-green hidden sm:inline"> Amplifier</span>
-            <span className="font-semibold text-optavia-green sm:hidden"> Amp</span>
+          <div className="text-xl sm:text-2xl font-heading tracking-wider">
+            <span className="font-light text-[hsl(var(--coaching-text))] uppercase">Coaching</span>
+            <span className="font-bold text-[hsl(var(--amplifier-text))] uppercase hidden sm:inline"> Amplifier</span>
+            <span className="font-bold text-[hsl(var(--amplifier-text))] uppercase sm:hidden"> Amp</span>
           </div>
         </div>
 

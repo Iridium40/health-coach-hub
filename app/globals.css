@@ -16,6 +16,10 @@
   --optavia-bg: 0 0% 100%;               /* #FFFFFF - White background */
   --optavia-bg-alt: 210 17% 98%;         /* #F8F9FA - Off-white sections */
   --optavia-footer: 0 0% 18%;            /* #2D2D2D - Dark footer background */
+  
+  /* Coaching Amplifier Logo Colors */
+  --coaching-text: 30 8% 55%;            /* Light taupe/gray for "COACHING" */
+  --amplifier-text: 30 12% 35%;          /* Darker taupe/gray for "AMPLIFIER" */
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -102,6 +106,8 @@
   --color-optavia-bg: hsl(var(--optavia-bg));
   --color-optavia-bg-alt: hsl(var(--optavia-bg-alt));
   --color-optavia-footer: hsl(var(--optavia-footer));
+  --color-coaching-text: hsl(var(--coaching-text));
+  --color-amplifier-text: hsl(var(--amplifier-text));
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));

@@ -55,13 +55,13 @@ This will create:
 
 1. In your Supabase project dashboard, go to **Storage**
 2. Click **New bucket**
-3. Name it: `avatars`
+3. Name it: `user_avatars`
 4. Make it **Public** (so avatars can be accessed)
 5. Click **Create bucket**
 
 ## 6. Configure Storage Policies
 
-1. Go to **Storage** → **Policies** → **avatars**
+1. Go to **Storage** → **Policies** → **user_avatars**
 2. Add the following policies:
 
 **Policy 1: Allow authenticated users to upload**
@@ -69,7 +69,7 @@ This will create:
 - Allowed operation: `INSERT`
 - Policy definition:
 ```sql
-(bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])
+bucket_id = 'user_avatars'::text
 ```
 
 **Policy 2: Allow authenticated users to update**
@@ -77,7 +77,7 @@ This will create:
 - Allowed operation: `UPDATE`
 - Policy definition:
 ```sql
-(bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])
+bucket_id = 'user_avatars'::text
 ```
 
 **Policy 3: Allow authenticated users to delete**
@@ -85,7 +85,7 @@ This will create:
 - Allowed operation: `DELETE`
 - Policy definition:
 ```sql
-(bucket_id = 'avatars'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])
+bucket_id = 'user_avatars'::text
 ```
 
 **Policy 4: Allow public read access**
@@ -93,7 +93,7 @@ This will create:
 - Allowed operation: `SELECT`
 - Policy definition:
 ```sql
-bucket_id = 'avatars'::text
+bucket_id = 'user_avatars'::text
 ```
 
 ## 7. Configure Authentication
@@ -124,7 +124,7 @@ bucket_id = 'avatars'::text
 - Check that RLS policies were created in the **Authentication** → **Policies** section
 
 ### Avatar upload fails
-- Make sure the `avatars` bucket exists and is public
+- Make sure the `user_avatars` bucket exists and is public
 - Check that storage policies are set up correctly
 - Verify the file size is under 5MB
 
