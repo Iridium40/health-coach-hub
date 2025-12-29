@@ -14,10 +14,9 @@ export function Header({ onReset, showReset }: HeaderProps) {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="text-2xl font-heading">
-            <span className="font-extrabold text-optavia-green">OPTA</span>
-            <span className="font-semibold text-optavia-green">VIA</span>
+            <span className="font-extrabold text-optavia-green">Coaching</span>
+            <span className="font-semibold text-optavia-green"> Amplifier</span>
           </div>
-          <span className="text-optavia-gray font-sans ml-2">Health Coach Hub</span>
         </div>
 
         <div className="flex items-center gap-2">

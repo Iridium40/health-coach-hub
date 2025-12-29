@@ -6,12 +6,12 @@ export function Footer() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center gap-6">
           <div className="text-2xl font-heading">
-            <span className="font-extrabold">OPTA</span>
-            <span className="font-semibold">VIA</span>
+            <span className="font-extrabold">Coaching</span>
+            <span className="font-semibold"> Amplifier</span>
           </div>
 
           <p className="text-center text-sm text-gray-300 max-w-md">
-            Lifelong Transformation, One Healthy Habit at a Time®
+            Amplify your coaching business with powerful resources and tools
           </p>
 
           <div className="flex gap-4">
@@ -41,7 +41,7 @@ export function Footer() {
             </a>
           </div>
 
-          <p className="text-xs text-gray-400">© {new Date().getFullYear()} OPTAVIA. All rights reserved.</p>
+          <p className="text-xs text-gray-400">© {new Date().getFullYear()} Coaching Amplifier. All rights reserved.</p>
         </div>
       </div>
     </footer>

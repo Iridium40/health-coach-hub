@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import type { UserData } from "@/lib/types"
 
-const STORAGE_KEY = "optavia-coaching-user"
+const STORAGE_KEY = "coaching-amplifier-user"
 
 export function useStorage(): [UserData | null, (data: UserData | null) => void] {
   const [userData, setUserDataState] = useState<UserData | null>(null)

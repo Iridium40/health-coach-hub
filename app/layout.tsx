@@ -17,9 +17,19 @@ const openSans = Open_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "OPTAVIA Health Coach Hub",
-  description: "Support for OPTAVIA coaches with resources, training modules, and Lean & Green recipes",
+  title: "Coaching Amplifier",
+  description: "Support for coaches with resources, training modules, and Lean & Green recipes",
   generator: "v0.app",
+  metadataBase: new URL("http://www.coachingamplifier.com"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Coaching Amplifier",
+    description: "Support for coaches with resources, training modules, and Lean & Green recipes",
+    url: "http://www.coachingamplifier.com",
+    siteName: "Coaching Amplifier",
+  },
   icons: {
     icon: [
       {
