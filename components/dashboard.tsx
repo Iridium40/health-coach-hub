@@ -29,7 +29,7 @@ export function Dashboard({ userData, setUserData, onSelectModule, onSelectRecip
             className={`pb-3 sm:pb-4 px-2 sm:px-3 font-heading font-semibold text-sm sm:text-lg transition-colors relative whitespace-nowrap flex-shrink-0 ${
               activeTab === "resources"
                 ? "text-[hsl(var(--optavia-green))]"
-                : "text-optavia-gray hover:text-[hsl(var(--optavia-green))]"
+                : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
             }`}
           >
             Resources
@@ -42,7 +42,7 @@ export function Dashboard({ userData, setUserData, onSelectModule, onSelectRecip
             className={`pb-3 sm:pb-4 px-2 sm:px-3 font-heading font-semibold text-sm sm:text-lg transition-colors relative whitespace-nowrap flex-shrink-0 ${
               activeTab === "blog"
                 ? "text-[hsl(var(--optavia-green))]"
-                : "text-optavia-gray hover:text-[hsl(var(--optavia-green))]"
+                : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
             }`}
           >
             <span className="hidden sm:inline">OPTAVIA Blog</span>
@@ -56,7 +56,7 @@ export function Dashboard({ userData, setUserData, onSelectModule, onSelectRecip
             className={`pb-3 sm:pb-4 px-2 sm:px-3 font-heading font-semibold text-sm sm:text-lg transition-colors relative whitespace-nowrap flex-shrink-0 ${
               activeTab === "recipes"
                 ? "text-[hsl(var(--optavia-green))]"
-                : "text-optavia-gray hover:text-[hsl(var(--optavia-green))]"
+                : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
             }`}
           >
             <span className="hidden sm:inline">Lean & Green Recipes</span>

@@ -203,10 +203,10 @@ export function UserSettings({ onClose }: UserSettingsProps) {
 
       <div className="space-y-6">
         {/* Profile Section */}
-        <Card>
+        <Card className="bg-white border border-gray-200 shadow-lg">
           <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Update your profile information</CardDescription>
+            <CardTitle className="text-optavia-dark">Profile</CardTitle>
+            <CardDescription className="text-optavia-gray">Update your profile information</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
@@ -224,6 +224,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
+                    className="border-gray-300 text-optavia-dark hover:bg-gray-50"
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     {uploading ? "Uploading..." : "Upload Avatar"}
@@ -235,6 +236,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                       size="sm"
                       onClick={handleRemoveAvatar}
                       disabled={uploading}
+                      className="border-gray-300 text-optavia-dark hover:bg-gray-50"
                     >
                       Remove
                     </Button>
@@ -252,12 +254,13 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName" className="text-optavia-dark">Full Name</Label>
               <Input
                 id="fullName"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Your full name"
+                className="bg-white border-gray-300 text-optavia-dark"
               />
             </div>
 
@@ -267,26 +270,31 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 checked={isNewCoach}
                 onCheckedChange={setIsNewCoach}
               />
-              <Label htmlFor="isNewCoach" className="cursor-pointer">
+              <Label htmlFor="isNewCoach" className="cursor-pointer text-optavia-dark">
                 I'm a new coach
               </Label>
             </div>
 
-            <Button onClick={handleSaveProfile}>Save Changes</Button>
+            <Button 
+              onClick={handleSaveProfile}
+              className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+            >
+              Save Changes
+            </Button>
           </CardContent>
         </Card>
 
         {/* Notification Settings */}
         {notificationSettings && (
-          <Card>
+          <Card className="bg-white border border-gray-200 shadow-lg">
             <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
-              <CardDescription>Manage your notification preferences</CardDescription>
+              <CardTitle className="text-optavia-dark">Notification Settings</CardTitle>
+              <CardDescription className="text-optavia-gray">Manage your notification preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Push Notifications</Label>
+                  <Label className="text-optavia-dark">Push Notifications</Label>
                   <p className="text-sm text-optavia-gray">Receive push notifications on your device</p>
                 </div>
                 <Switch
@@ -299,7 +307,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Announcements</Label>
+                  <Label className="text-optavia-dark">Announcements</Label>
                   <p className="text-sm text-optavia-gray">Get notified about new announcements</p>
                 </div>
                 <Switch
@@ -312,20 +320,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Progress Updates</Label>
-                  <p className="text-sm text-optavia-gray">Notifications about your learning progress</p>
-                </div>
-                <Switch
-                  checked={notificationSettings.progress_updates_enabled}
-                  onCheckedChange={(checked) =>
-                    handleNotificationSettingChange("progress_updates_enabled", checked)
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Email Notifications</Label>
+                  <Label className="text-optavia-dark">Email Notifications</Label>
                   <p className="text-sm text-optavia-gray">Receive notifications via email</p>
                 </div>
                 <Switch
@@ -340,28 +335,28 @@ export function UserSettings({ onClose }: UserSettingsProps) {
         )}
 
         {/* Progress Summary */}
-        <Card>
+        <Card className="bg-white border border-gray-200 shadow-lg">
           <CardHeader>
-            <CardTitle>Your Progress</CardTitle>
-            <CardDescription>Overview of your activity</CardDescription>
+            <CardTitle className="text-optavia-dark">Your Progress</CardTitle>
+            <CardDescription className="text-optavia-gray">Overview of your activity</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Completed Resources</span>
-                <span className="text-sm text-optavia-gray">{completedResources.length}</span>
+                <span className="text-sm font-medium text-optavia-dark">Completed Resources</span>
+                <span className="text-sm text-optavia-gray font-semibold">{completedResources.length}</span>
               </div>
             </div>
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Bookmarks</span>
-                <span className="text-sm text-optavia-gray">{bookmarks.length}</span>
+                <span className="text-sm font-medium text-optavia-dark">Bookmarks</span>
+                <span className="text-sm text-optavia-gray font-semibold">{bookmarks.length}</span>
               </div>
             </div>
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Favorite Recipes</span>
-                <span className="text-sm text-optavia-gray">{favoriteRecipes.length}</span>
+                <span className="text-sm font-medium text-optavia-dark">Favorite Recipes</span>
+                <span className="text-sm text-optavia-gray font-semibold">{favoriteRecipes.length}</span>
               </div>
             </div>
           </CardContent>

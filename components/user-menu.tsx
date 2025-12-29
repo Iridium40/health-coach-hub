@@ -59,23 +59,30 @@ export function UserMenu({ onSettingsClick }: UserMenuProps) {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
+      <DropdownMenuContent className="w-56 bg-white border border-gray-200 shadow-lg" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal px-3 py-2">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
+            <p className="text-sm font-medium leading-none text-optavia-dark">
               {profile?.full_name || "User"}
             </p>
-            <p className="text-xs leading-none text-muted-foreground">
+            <p className="text-xs leading-none text-optavia-gray">
               {user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onSettingsClick}>
+        <DropdownMenuSeparator className="bg-gray-200" />
+        <DropdownMenuItem 
+          onClick={onSettingsClick}
+          className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+        >
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleSignOut} disabled={loading}>
+        <DropdownMenuItem 
+          onClick={handleSignOut} 
+          disabled={loading}
+          className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+        >
           <LogOut className="mr-2 h-4 w-4" />
           <span>{loading ? "Signing out..." : "Sign Out"}</span>
         </DropdownMenuItem>

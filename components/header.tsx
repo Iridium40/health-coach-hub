@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ExternalLink } from "lucide-react"
 import { UserMenu } from "@/components/user-menu"
@@ -16,11 +18,16 @@ export function Header({ onSettingsClick }: HeaderProps) {
     <header className="border-b border-optavia-border bg-white sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-shrink">
-          <div className="text-xl sm:text-2xl font-heading tracking-wider">
-            <span className="font-light text-[hsl(var(--coaching-text))] uppercase">Coaching</span>
-            <span className="font-bold text-[hsl(var(--amplifier-text))] uppercase hidden sm:inline"> Amplifier</span>
-            <span className="font-bold text-[hsl(var(--amplifier-text))] uppercase sm:hidden"> Amp</span>
-          </div>
+          <Link href="/" className="hover:opacity-80 transition-opacity">
+            <Image
+              src="/branding/ca_logo.jpg"
+              alt="Coaching Amplifier"
+              width={200}
+              height={80}
+              className="h-8 sm:h-10 md:h-12 w-auto"
+              priority
+            />
+          </Link>
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">

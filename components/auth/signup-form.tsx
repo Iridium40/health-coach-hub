@@ -20,9 +20,6 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const [password, setPassword] = useState("")
   const [fullName, setFullName] = useState("")
   const [isNewCoach, setIsNewCoach] = useState(true)
-  const [acceptedTerms, setAcceptedTerms] = useState(false)
-  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
-  const [acceptedCookies, setAcceptedCookies] = useState(false)
   const [acceptedDataDeletion, setAcceptedDataDeletion] = useState(false)
   const [loading, setLoading] = useState(false)
   const { signUp } = useAuth()
@@ -31,10 +28,10 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!acceptedTerms || !acceptedPrivacy || !acceptedCookies || !acceptedDataDeletion) {
+    if (!acceptedDataDeletion) {
       toast({
         title: "Required",
-        description: "Please accept all terms and policies to continue.",
+        description: "Please acknowledge the data deletion policy to continue.",
         variant: "destructive",
       })
       return
@@ -63,15 +60,15 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 shadow-lg">
       <CardHeader>
-        <CardTitle className="text-2xl font-heading">Create Account</CardTitle>
-        <CardDescription>Sign up for Coaching Amplifier</CardDescription>
+        <CardTitle className="text-2xl font-heading text-optavia-dark">Create Account</CardTitle>
+        <CardDescription className="text-optavia-gray">Sign up for Coaching Amplifier</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
+            <Label htmlFor="fullName" className="text-optavia-dark">Full Name</Label>
             <Input
               id="fullName"
               type="text"
@@ -80,10 +77,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
               onChange={(e) => setFullName(e.target.value)}
               required
               disabled={loading}
+              className="bg-white border-gray-300 text-optavia-dark"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-optavia-dark">Email</Label>
             <Input
               id="email"
               type="email"
@@ -92,10 +90,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
+              className="bg-white border-gray-300 text-optavia-dark"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-optavia-dark">Password</Label>
             <Input
               id="password"
               type="password"
@@ -105,6 +104,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
               required
               minLength={6}
               disabled={loading}
+              className="bg-white border-gray-300 text-optavia-dark"
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -120,53 +120,21 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
           </div>
 
           <div className="space-y-3 pt-2 border-t">
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="terms"
-                checked={acceptedTerms}
-                onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                disabled={loading}
-                required
-              />
-              <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-tight">
-                I have read and agree to the{" "}
-                <Link href="/terms" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline">
-                  Terms and Conditions
-                </Link>
-              </Label>
-            </div>
-
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="privacy"
-                checked={acceptedPrivacy}
-                onCheckedChange={(checked) => setAcceptedPrivacy(checked === true)}
-                disabled={loading}
-                required
-              />
-              <Label htmlFor="privacy" className="text-sm font-normal cursor-pointer leading-tight">
-                I have read and agree to the{" "}
-                <Link href="/privacy" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline">
-                  Privacy Policy
-                </Link>
-              </Label>
-            </div>
-
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="cookies"
-                checked={acceptedCookies}
-                onCheckedChange={(checked) => setAcceptedCookies(checked === true)}
-                disabled={loading}
-                required
-              />
-              <Label htmlFor="cookies" className="text-sm font-normal cursor-pointer leading-tight">
-                I have read and agree to the{" "}
-                <Link href="/cookies" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline">
-                  Cookie Usage Policy
-                </Link>
-              </Label>
-            </div>
+            <p className="text-sm text-optavia-gray text-center">
+              By clicking "Sign Up", you agree that you have read and agree to the{" "}
+              <Link href="/terms" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline">
+                Terms and Conditions
+              </Link>
+              {", "}
+              <Link href="/privacy" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline">
+                Privacy Policy
+              </Link>
+              {", and "}
+              <Link href="/cookies" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline">
+                Cookie Usage Policy
+              </Link>
+              .
+            </p>
 
             <div className="flex items-start space-x-2">
               <Checkbox
@@ -184,7 +152,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading || !acceptedTerms || !acceptedPrivacy || !acceptedCookies || !acceptedDataDeletion}>
+          <Button type="submit" className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" disabled={loading || !acceptedDataDeletion}>
             {loading ? "Creating account..." : "Sign Up"}
           </Button>
           {onSwitchToLogin && (

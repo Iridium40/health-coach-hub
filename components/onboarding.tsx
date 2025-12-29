@@ -15,9 +15,12 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       <div className="relative h-[300px] sm:h-[350px] md:h-[400px] overflow-hidden">
         {/* Background Image */}
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0"
           style={{
             backgroundImage: "url('/media/two-women-walking-exercising-with-water-bottles.jpg')",
+            backgroundSize: "90%",
+            backgroundPosition: "center top",
+            backgroundRepeat: "no-repeat",
           }}
         />
         {/* Green Gradient Overlay (85-90% opacity) */}

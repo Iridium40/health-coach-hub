@@ -45,15 +45,15 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 shadow-lg">
       <CardHeader>
-        <CardTitle className="text-2xl font-heading">Welcome Back</CardTitle>
-        <CardDescription>Sign in to your Coaching Amplifier account</CardDescription>
+        <CardTitle className="text-2xl font-heading text-optavia-dark">Welcome Back</CardTitle>
+        <CardDescription className="text-optavia-gray">Sign in to your Coaching Amplifier account</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-optavia-dark">Email</Label>
             <Input
               id="email"
               type="email"
@@ -62,10 +62,11 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
+              className="bg-white border-gray-300 text-optavia-dark"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-optavia-dark">Password</Label>
             <Input
               id="password"
               type="password"
@@ -74,9 +75,10 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
+              className="bg-white border-gray-300 text-optavia-dark"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </Button>
           {onSwitchToSignup && (

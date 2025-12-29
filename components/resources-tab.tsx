@@ -26,7 +26,7 @@ export function ResourcesTab({ userData, setUserData, onSelectModule }: Resource
   return (
     <div>
       {/* Category Filter */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto scrollbar-hide -mx-4 px-4">
         {categories.map((category) => (
           <Button
             key={category}
@@ -35,8 +35,8 @@ export function ResourcesTab({ userData, setUserData, onSelectModule }: Resource
             onClick={() => setSelectedCategory(category)}
             className={
               selectedCategory === category
-                ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]"
-                : ""
+                ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+                : "border-gray-300 text-optavia-dark hover:bg-gray-100 hover:border-[hsl(var(--optavia-green))] hover:text-[hsl(var(--optavia-green))] bg-white"
             }
           >
             {category}
