@@ -61,40 +61,33 @@ This will create:
 
 ## 6. Configure Storage Policies
 
-1. Go to **Storage** → **Policies** → **user_avatars**
-2. Add the following policies:
+You have two options for storage policies:
 
-**Policy 1: Allow authenticated users to upload**
-- Policy name: `Users can upload their own avatars`
-- Allowed operation: `INSERT`
-- Policy definition:
+### Option A: Use Storage Policies (Recommended)
+
+1. In your Supabase project dashboard, go to **SQL Editor**
+2. Open the file `lib/supabase/storage-policies.sql` from this project
+3. Copy the entire contents
+4. Paste it into the SQL Editor in Supabase
+5. Click **Run** to execute the policies
+
+This will create policies that allow:
+- Authenticated users to upload avatars
+- Public read access to avatars
+- Authenticated users to delete avatars
+- Authenticated users to update avatars
+
+### Option B: Disable RLS on Storage (Alternative)
+
+If you prefer to disable RLS on storage entirely (not recommended for production):
+
+1. In your Supabase project dashboard, go to **SQL Editor**
+2. Run this command:
 ```sql
-bucket_id = 'user_avatars'::text
+ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;
 ```
 
-**Policy 2: Allow authenticated users to update**
-- Policy name: `Users can update their own avatars`
-- Allowed operation: `UPDATE`
-- Policy definition:
-```sql
-bucket_id = 'user_avatars'::text
-```
-
-**Policy 3: Allow authenticated users to delete**
-- Policy name: `Users can delete their own avatars`
-- Allowed operation: `DELETE`
-- Policy definition:
-```sql
-bucket_id = 'user_avatars'::text
-```
-
-**Policy 4: Allow public read access**
-- Policy name: `Public can read avatars`
-- Allowed operation: `SELECT`
-- Policy definition:
-```sql
-bucket_id = 'user_avatars'::text
-```
+**Note:** Disabling RLS on storage is less secure and not recommended for production environments.
 
 ## 7. Configure Authentication
 

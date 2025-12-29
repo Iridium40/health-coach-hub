@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ExternalLink } from "lucide-react"
 import { UserMenu } from "@/components/user-menu"
@@ -9,16 +10,28 @@ import { useAuth } from "@/hooks/use-auth"
 
 interface HeaderProps {
   onSettingsClick?: () => void
+  onHomeClick?: () => void
 }
 
-export function Header({ onSettingsClick }: HeaderProps) {
+export function Header({ onSettingsClick, onHomeClick }: HeaderProps) {
   const { user, loading } = useAuth()
+  const pathname = usePathname()
 
   return (
     <header className="border-b border-optavia-border bg-white sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-shrink">
-          <Link href="/" className="hover:opacity-80 transition-opacity">
+          <Link 
+            href="/" 
+            className="hover:opacity-80 transition-opacity"
+            onClick={(e) => {
+              // If we're already on the home page, prevent default navigation and call handler
+              if (pathname === "/" && onHomeClick) {
+                e.preventDefault()
+                onHomeClick()
+              }
+            }}
+          >
             <Image
               src="/branding/ca_logo.jpg"
               alt="Coaching Amplifier"

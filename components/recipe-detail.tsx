@@ -10,21 +10,28 @@ interface RecipeDetailProps {
   recipe: Recipe
   userData: UserData
   setUserData: (data: UserData) => void
+  toggleFavoriteRecipe?: (recipeId: string) => Promise<void>
   onBack: () => void
 }
 
-export function RecipeDetail({ recipe, userData, setUserData, onBack }: RecipeDetailProps) {
+export function RecipeDetail({ recipe, userData, setUserData, toggleFavoriteRecipe, onBack }: RecipeDetailProps) {
   const isFavorite = userData.favoriteRecipes.includes(recipe.id)
 
-  const toggleFavorite = () => {
-    const newFavorites = isFavorite
-      ? userData.favoriteRecipes.filter((id) => id !== recipe.id)
-      : [...userData.favoriteRecipes, recipe.id]
+  const toggleFavorite = async () => {
+    if (toggleFavoriteRecipe) {
+      // Use Supabase hook if available
+      await toggleFavoriteRecipe(recipe.id)
+    } else {
+      // Fallback to local state (for backwards compatibility)
+      const newFavorites = isFavorite
+        ? userData.favoriteRecipes.filter((id) => id !== recipe.id)
+        : [...userData.favoriteRecipes, recipe.id]
 
-    setUserData({
-      ...userData,
-      favoriteRecipes: newFavorites,
-    })
+      setUserData({
+        ...userData,
+        favoriteRecipes: newFavorites,
+      })
+    }
   }
 
   return (

@@ -11,23 +11,37 @@ import type { UserData, Recipe } from "@/lib/types"
 interface RecipesTabProps {
   userData: UserData
   setUserData: (data: UserData) => void
+  toggleFavoriteRecipe?: (recipeId: string) => Promise<void>
   onSelectRecipe: (recipe: Recipe) => void
 }
 
-export function RecipesTab({ userData, setUserData, onSelectRecipe }: RecipesTabProps) {
+export function RecipesTab({ userData, setUserData, toggleFavoriteRecipe, onSelectRecipe }: RecipesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")
 
   const filteredRecipes = recipes.filter((recipe) => {
-    const matchesCategory = selectedCategory === "All" || recipe.category === selectedCategory
+    // Check if favorites filter is selected
+    if (selectedCategory === "Favorites") {
+      if (!userData.favoriteRecipes.includes(recipe.id)) {
+        return false
+      }
+    } else {
+      // Apply category filter for non-favorites
+      const matchesCategory = selectedCategory === "All" || recipe.category === selectedCategory
+      if (!matchesCategory) {
+        return false
+      }
+    }
+    
+    // Apply search filter
     const matchesSearch =
       searchQuery === "" ||
       recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       recipe.ingredients.some((ing) => ing.toLowerCase().includes(searchQuery.toLowerCase()))
-    return matchesCategory && matchesSearch
+    return matchesSearch
   })
 
-  const categories = ["All", "Chicken", "Seafood", "Beef", "Turkey", "Pork", "Vegetarian", "Breakfast"]
+  const categories = ["All", "Favorites", "Chicken", "Seafood", "Beef", "Turkey", "Pork", "Vegetarian", "Breakfast"]
 
   return (
     <div>
@@ -44,7 +58,7 @@ export function RecipesTab({ userData, setUserData, onSelectRecipe }: RecipesTab
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
           {categories.map((category) => (
             <Button
               key={category}
@@ -53,8 +67,8 @@ export function RecipesTab({ userData, setUserData, onSelectRecipe }: RecipesTab
               onClick={() => setSelectedCategory(category)}
               className={
                 selectedCategory === category
-                  ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]"
-                  : ""
+                  ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+                  : "border-gray-300 text-optavia-dark hover:bg-gray-100 hover:border-[hsl(var(--optavia-green))] hover:text-[hsl(var(--optavia-green))] bg-white"
               }
             >
               {category}
@@ -71,6 +85,7 @@ export function RecipesTab({ userData, setUserData, onSelectRecipe }: RecipesTab
             recipe={recipe}
             userData={userData}
             setUserData={setUserData}
+            toggleFavoriteRecipe={toggleFavoriteRecipe}
             onClick={() => onSelectRecipe(recipe)}
           />
         ))}

@@ -15,13 +15,24 @@ interface ResourcesTabProps {
 export function ResourcesTab({ userData, setUserData, onSelectModule }: ResourcesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
 
-  const filteredModules = modules.filter((module) => {
+  // Get all available modules for this user
+  const availableModules = modules.filter((module) => {
     if (userData.isNewCoach && !module.forNewCoach) return false
+    return true
+  })
+
+  // Get unique categories from available modules
+  const availableCategories = Array.from(
+    new Set(availableModules.map((module) => module.category))
+  )
+
+  // Build categories list: always include "All", then add available categories
+  const categories = ["All", ...availableCategories.sort()]
+
+  const filteredModules = availableModules.filter((module) => {
     if (selectedCategory === "All") return true
     return module.category === selectedCategory
   })
-
-  const categories = ["All", "Getting Started", "Client Support", "Business Building", "Training"]
 
   return (
     <div>

@@ -33,6 +33,7 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<"onboarding" | "dashboard" | "settings">("onboarding")
   const [selectedModule, setSelectedModule] = useState<Module | null>(null)
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
+  const [dashboardKey, setDashboardKey] = useState(0) // Key to force Dashboard remount
 
   useEffect(() => {
     if (authLoading || dataLoading) return
@@ -74,6 +75,14 @@ export default function Home() {
   const handleBack = () => {
     setSelectedModule(null)
     setSelectedRecipe(null)
+  }
+
+  const handleHomeNavigation = () => {
+    // Reset to dashboard view with resources tab
+    setCurrentView("dashboard")
+    setSelectedModule(null)
+    setSelectedRecipe(null)
+    setDashboardKey((prev) => prev + 1) // Force Dashboard remount to reset tab state
   }
 
   const handleSettingsClose = () => {
@@ -119,7 +128,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header onSettingsClick={() => setCurrentView("settings")} />
+      <Header 
+        onSettingsClick={() => setCurrentView("settings")}
+        onHomeClick={handleHomeNavigation}
+      />
 
       <main className="flex-1 bg-white">
         {currentView === "onboarding" && (
@@ -135,8 +147,10 @@ export default function Home() {
             <Announcements />
             {!selectedModule && !selectedRecipe && (
               <Dashboard
+                key={dashboardKey}
                 userData={userData}
                 setUserData={() => {}} // No longer needed, using hooks directly
+                toggleFavoriteRecipe={toggleFavoriteRecipe}
                 onSelectModule={setSelectedModule}
                 onSelectRecipe={setSelectedRecipe}
               />
@@ -156,6 +170,7 @@ export default function Home() {
                 recipe={selectedRecipe}
                 userData={userData}
                 setUserData={() => {}} // No longer needed
+                toggleFavoriteRecipe={toggleFavoriteRecipe}
                 onBack={handleBack}
               />
             )}

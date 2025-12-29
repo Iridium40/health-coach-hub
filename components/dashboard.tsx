@@ -10,11 +10,12 @@ import type { UserData, Module, Recipe } from "@/lib/types"
 interface DashboardProps {
   userData: UserData
   setUserData: (data: UserData) => void
+  toggleFavoriteRecipe?: (recipeId: string) => Promise<void>
   onSelectModule: (module: Module) => void
   onSelectRecipe: (recipe: Recipe) => void
 }
 
-export function Dashboard({ userData, setUserData, onSelectModule, onSelectRecipe }: DashboardProps) {
+export function Dashboard({ userData, setUserData, toggleFavoriteRecipe, onSelectModule, onSelectRecipe }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<"resources" | "blog" | "recipes">("resources")
 
   return (
@@ -75,7 +76,12 @@ export function Dashboard({ userData, setUserData, onSelectModule, onSelectRecip
         {activeTab === "blog" && <BlogTab />}
 
         {activeTab === "recipes" && (
-          <RecipesTab userData={userData} setUserData={setUserData} onSelectRecipe={onSelectRecipe} />
+          <RecipesTab 
+            userData={userData} 
+            setUserData={setUserData} 
+            toggleFavoriteRecipe={toggleFavoriteRecipe}
+            onSelectRecipe={onSelectRecipe} 
+          />
         )}
       </div>
     </>

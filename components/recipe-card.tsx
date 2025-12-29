@@ -12,22 +12,30 @@ interface RecipeCardProps {
   recipe: Recipe
   userData: UserData
   setUserData: (data: UserData) => void
+  toggleFavoriteRecipe?: (recipeId: string) => Promise<void>
   onClick: () => void
 }
 
-export function RecipeCard({ recipe, userData, setUserData, onClick }: RecipeCardProps) {
+export function RecipeCard({ recipe, userData, setUserData, toggleFavoriteRecipe, onClick }: RecipeCardProps) {
   const isFavorite = userData.favoriteRecipes.includes(recipe.id)
 
-  const toggleFavorite = (e: React.MouseEvent) => {
+  const toggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    const newFavorites = isFavorite
-      ? userData.favoriteRecipes.filter((id) => id !== recipe.id)
-      : [...userData.favoriteRecipes, recipe.id]
+    
+    if (toggleFavoriteRecipe) {
+      // Use Supabase hook if available
+      await toggleFavoriteRecipe(recipe.id)
+    } else {
+      // Fallback to local state (for backwards compatibility)
+      const newFavorites = isFavorite
+        ? userData.favoriteRecipes.filter((id) => id !== recipe.id)
+        : [...userData.favoriteRecipes, recipe.id]
 
-    setUserData({
-      ...userData,
-      favoriteRecipes: newFavorites,
-    })
+      setUserData({
+        ...userData,
+        favoriteRecipes: newFavorites,
+      })
+    }
   }
 
   return (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -28,6 +28,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
     favoriteRecipes,
     updateProfile,
     updateNotificationSettings,
+    refreshData,
   } = useSupabaseData(user)
   const { toast } = useToast()
   const supabase = createClient()
@@ -35,6 +36,18 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const [uploading, setUploading] = useState(false)
   const [fullName, setFullName] = useState(profile?.full_name || "")
   const [isNewCoach, setIsNewCoach] = useState(profile?.is_new_coach ?? true)
+
+  // Update local state when profile changes
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || "")
+      setIsNewCoach(profile.is_new_coach ?? true)
+    } else {
+      // Reset to defaults if profile is null
+      setFullName("")
+      setIsNewCoach(true)
+    }
+  }, [profile])
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -156,11 +169,13 @@ export function UserSettings({ onClose }: UserSettingsProps) {
         variant: "destructive",
       })
     } else {
+      // Refresh data to ensure state is updated
+      await refreshData()
       toast({
         title: "Success",
         description: "Profile updated successfully",
       })
-      onClose?.()
+      // Don't close, let user see the updated values
     }
   }
 
