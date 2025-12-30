@@ -44,7 +44,7 @@ export default function Home() {
     if (authLoading || dataLoading) return
 
     if (!user) {
-      router.push("/login")
+      router.replace("/login")
       return
     }
 
@@ -54,9 +54,9 @@ export default function Home() {
       return
     }
 
-    // If profile exists, redirect to training page
-    if (profile) {
-      router.push("/training")
+    // If profile exists, redirect to training page (only if we're on the home page)
+    if (profile && typeof window !== 'undefined' && window.location.pathname === '/') {
+      router.replace("/training")
     }
   }, [user, profile, authLoading, dataLoading, router])
 

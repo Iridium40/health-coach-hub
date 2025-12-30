@@ -73,20 +73,26 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
 
   // Load invite history
   useEffect(() => {
-    if (!user || !isAdmin) {
+    if (!user) {
       setLoadingHistory(false)
       return
     }
     loadInviteHistory()
-  }, [user, isAdmin])
+  }, [user])
 
   const loadInviteHistory = async () => {
     setLoadingHistory(true)
     try {
-      // Fetch all invites
+      if (!user) {
+        setLoadingHistory(false)
+        return
+      }
+
+      // Fetch only invites sent by the current user
       const { data: invitesData, error: invitesError } = await supabase
         .from("invites")
         .select("*")
+        .eq("invited_by", user.id)
         .order("created_at", { ascending: false })
 
       if (invitesError) throw invitesError
