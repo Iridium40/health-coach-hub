@@ -45,16 +45,19 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const [uploading, setUploading] = useState(false)
   const [fullName, setFullName] = useState(profile?.full_name || "")
   const [coachRank, setCoachRank] = useState<string>(profile?.coach_rank || "")
+  const [optaviaId, setOptaviaId] = useState(profile?.optavia_id || "")
 
   // Update local state when profile changes
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || "")
       setCoachRank(profile.coach_rank || "")
+      setOptaviaId(profile.optavia_id || "")
     } else {
       // Reset to defaults if profile is null
       setFullName("")
       setCoachRank("")
+      setOptaviaId("")
     }
   }, [profile])
 
@@ -173,6 +176,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
       full_name: fullName,
       is_new_coach: isNewCoach,
       coach_rank: coachRank || null,
+      optavia_id: optaviaId || null,
     })
 
     if (error) {
@@ -326,6 +330,17 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                   <SelectItem value="IPD" className="text-optavia-dark hover:bg-gray-100">Integrated Presidential Director (IPD)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="optaviaId" className="text-optavia-dark">Optavia ID</Label>
+              <Input
+                id="optaviaId"
+                value={optaviaId}
+                onChange={(e) => setOptaviaId(e.target.value)}
+                placeholder="Enter your Optavia ID"
+                className="bg-white border-gray-300 text-optavia-dark"
+              />
             </div>
 
             <Button 

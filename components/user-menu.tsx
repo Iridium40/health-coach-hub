@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Settings, LogOut, User, Bell, BarChart3, UserPlus } from "lucide-react"
+import { Settings, LogOut, User, Bell, BarChart3, UserPlus, ExternalLink } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
 
@@ -126,6 +126,21 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
+        {profile?.optavia_id && (
+          <DropdownMenuItem 
+            asChild
+            className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+          >
+            <a 
+              href={`https://www.optavia.com/us/en/coach/${profile.optavia_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              <span>Optavia Profile</span>
+            </a>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator className="bg-gray-200" />
         <DropdownMenuItem 
           onClick={handleSignOut} 

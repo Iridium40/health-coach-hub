@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   is_new_coach BOOLEAN DEFAULT true,
   user_role TEXT CHECK (user_role IN ('admin', 'coach')),
   coach_rank TEXT CHECK (coach_rank IN ('Coach', 'SC', 'MG', 'AD', 'DR', 'ED', 'IED', 'FIBC', 'IGD', 'FIBL', 'IND', 'IPD')),
+  optavia_id TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

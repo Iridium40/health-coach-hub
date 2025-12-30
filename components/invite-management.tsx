@@ -61,6 +61,7 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [coachRank, setCoachRank] = useState("")
+  const [optaviaId, setOptaviaId] = useState("")
   const [sendEmail, setSendEmail] = useState(true) // Default to sending email
   const [loading, setLoading] = useState(false)
   const [generatedInvites, setGeneratedInvites] = useState<GeneratedInvite[]>([])
@@ -178,6 +179,15 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
       return
     }
 
+    if (!optaviaId) {
+      toast({
+        title: "Error",
+        description: "Optavia ID is required",
+        variant: "destructive",
+      })
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -193,6 +203,7 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
           invited_email: email,
           invited_full_name: fullName,
           coach_rank: coachRank,
+          optavia_id: optaviaId,
           expires_at: expiresAt.toISOString(),
           is_active: true,
         })
@@ -249,6 +260,7 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
       setFullName("")
       setEmail("")
       setCoachRank("")
+      setOptaviaId("")
 
       // Reload history to show the new invite
       await loadInviteHistory()
@@ -375,6 +387,19 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
                   <SelectItem value="IPD">Integrated Presidential Director (IPD)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="optaviaId" className="text-optavia-dark">Optavia ID *</Label>
+              <Input
+                id="optaviaId"
+                type="text"
+                placeholder="Enter Optavia ID"
+                value={optaviaId}
+                onChange={(e) => setOptaviaId(e.target.value)}
+                required
+                className="bg-white border-gray-300 text-optavia-dark focus:border-[hsl(var(--optavia-green))] focus:ring-[hsl(var(--optavia-green-light))]"
+              />
             </div>
 
             <div className="flex items-center space-x-2 pt-2">

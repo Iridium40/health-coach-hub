@@ -24,6 +24,7 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
     email: string
     fullName: string
     coachRank: string
+    optaviaId: string | null
   } | null>(null)
   const { signUp } = useAuth()
   const { toast } = useToast()
@@ -88,9 +89,10 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
           return
         }
 
-        // Get coach rank and full name from invite
+        // Get coach rank, full name, and optavia ID from invite
         const coachRank = data.coach_rank || "Coach"
         const fullName = data.invited_full_name
+        const optaviaId = data.optavia_id || null
 
         if (!fullName) {
           toast({
@@ -106,6 +108,7 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
           email: data.invited_email,
           fullName: fullName,
           coachRank: coachRank,
+          optaviaId: optaviaId,
         })
       } catch (error: any) {
         toast({
@@ -200,12 +203,13 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
         })
         .eq("invite_key", inviteKey)
 
-      // Update profile with coach rank
+      // Update profile with coach rank and optavia ID
       await supabase
         .from("profiles")
         .update({
           coach_rank: inviteData.coachRank,
           is_new_coach: inviteData.coachRank === "Coach",
+          optavia_id: inviteData.optaviaId,
         })
         .eq("id", signUpData.user.id)
 

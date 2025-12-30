@@ -15,6 +15,7 @@ export interface UserProfile {
   is_new_coach: boolean
   user_role: string | null
   coach_rank: string | null
+  optavia_id: string | null
   created_at: string
   updated_at: string
 }
