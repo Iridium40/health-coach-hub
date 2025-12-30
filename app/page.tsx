@@ -1,99 +1,40 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Dashboard } from "@/components/dashboard"
-import { ModuleDetail } from "@/components/module-detail"
-import { RecipeDetail } from "@/components/recipe-detail"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { UserSettings } from "@/components/user-settings"
-import { Announcements } from "@/components/announcements"
-import { AdminAnnouncements } from "@/components/admin-announcements"
-import { AdminReports } from "@/components/admin-reports"
-import { InviteManagement } from "@/components/invite-management"
+import { HomeLanding } from "@/components/home-landing"
+import { Footer } from "@/components/footer"
 import { useAuth } from "@/hooks/use-auth"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
-import { createClient } from "@/lib/supabase/client"
-import type { Module, Recipe } from "@/lib/types"
 
 export default function Home() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-  const {
-    profile,
-    completedResources,
-    bookmarks,
-    favoriteRecipes,
-    badges,
-    loading: dataLoading,
-    toggleCompletedResource,
-    toggleBookmark,
-    toggleFavoriteRecipe,
-    updateProfile,
-  } = useSupabaseData(user)
-
-  const [currentView, setCurrentView] = useState<"dashboard" | "settings" | "admin-announcements" | "admin-reports" | "invite-management">("dashboard")
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null)
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
-  const [dashboardKey, setDashboardKey] = useState(0) // Key to force Dashboard remount
-  const [activeTab, setActiveTab] = useState<"training" | "resources" | "recipes">("training")
+  // Only load profile data if user exists
+  const { profile, loading: dataLoading } = useSupabaseData(user)
+  const [showLanding, setShowLanding] = useState(false)
 
   useEffect(() => {
-    if (authLoading || dataLoading) return
+    // If auth is still loading, wait
+    if (authLoading) return
 
+    // If no user, show landing page immediately (don't wait for dataLoading)
     if (!user) {
-      router.replace("/login")
+      setShowLanding(true)
       return
     }
 
-    // If user exists but no profile, this shouldn't happen with invite flow
-    // But if it does, redirect to training (profile will be created by database trigger)
-    if (user && !profile) {
-      // Wait a moment for profile to be created by trigger, then redirect
-      setTimeout(() => {
-        router.replace("/training")
-      }, 1000)
-      return
-    }
-
-    // If profile exists, redirect to training page (only if we're on the home page)
-    if (profile && typeof window !== 'undefined' && window.location.pathname === '/') {
+    // User exists - redirect to training (don't wait for profile if it's taking too long)
+    // Profile will be created by database trigger, but we don't want to block on it
+    const redirectTimeout = setTimeout(() => {
       router.replace("/training")
-    }
-  }, [user, profile, authLoading, dataLoading, router])
+    }, profile ? 0 : 1500) // If profile exists, redirect immediately, otherwise wait 1.5s
 
+    return () => clearTimeout(redirectTimeout)
+  }, [user, profile, authLoading, router])
 
-  const handleBack = () => {
-    setSelectedModule(null)
-    setSelectedRecipe(null)
-  }
-
-  const handleHomeNavigation = () => {
-    // Reset to dashboard view with training tab
-    setCurrentView("dashboard")
-    setSelectedModule(null)
-    setSelectedRecipe(null)
-    setActiveTab("training")
-    setDashboardKey((prev) => prev + 1) // Force Dashboard remount to reset tab state
-  }
-
-  const handleSettingsClose = () => {
-    setCurrentView("dashboard")
-  }
-
-  // Convert Supabase data to UserData format for compatibility
-  const userData = profile
-    ? {
-        isNewCoach: profile.is_new_coach,
-        completedResources,
-        bookmarks,
-        favoriteRecipes,
-        createdAt: profile.created_at,
-      }
-    : null
-
-  if (authLoading || dataLoading) {
+  // Show loading state only if auth is loading and we haven't determined user state
+  if (authLoading && !showLanding) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
@@ -104,83 +45,22 @@ export default function Home() {
     )
   }
 
-  if (!user) {
-    return null // Will redirect to /login
+  // If user is authenticated, show redirecting message
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
+          <p className="text-optavia-gray">Redirecting...</p>
+        </div>
+      </div>
+    )
   }
 
+  // Show public landing page for unauthenticated users
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header 
-        onSettingsClick={() => setCurrentView("settings")}
-        onHomeClick={handleHomeNavigation}
-        onAnnouncementsClick={() => setCurrentView("admin-announcements")}
-        onReportsClick={() => setCurrentView("admin-reports")}
-        onInviteClick={() => setCurrentView("invite-management")}
-        activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab)
-          setCurrentView("dashboard")
-          setSelectedModule(null)
-          setSelectedRecipe(null)
-        }}
-      />
-
-      <main className="flex-1 bg-white">
-        {currentView === "settings" && user && (
-          <UserSettings onClose={handleSettingsClose} />
-        )}
-
-        {currentView === "admin-announcements" && user && (
-          <AdminAnnouncements onClose={() => setCurrentView("dashboard")} />
-        )}
-
-        {currentView === "admin-reports" && user && (
-          <AdminReports onClose={() => setCurrentView("dashboard")} />
-        )}
-
-        {currentView === "invite-management" && user && (
-          <InviteManagement onClose={() => setCurrentView("dashboard")} />
-        )}
-
-        {currentView === "dashboard" && user && userData && (
-          <>
-            <Announcements />
-            {!selectedModule && !selectedRecipe && (
-              <Dashboard
-                key={dashboardKey}
-                userData={userData}
-                profile={profile}
-                badges={badges}
-                setUserData={() => {}} // No longer needed, using hooks directly
-                toggleFavoriteRecipe={toggleFavoriteRecipe}
-                onSelectModule={setSelectedModule}
-                onSelectRecipe={setSelectedRecipe}
-                activeTab={activeTab}
-              />
-            )}
-
-            {selectedModule && (
-              <ModuleDetail
-                module={selectedModule}
-                userData={userData}
-                setUserData={() => {}} // No longer needed
-                onBack={handleBack}
-              />
-            )}
-
-            {selectedRecipe && (
-              <RecipeDetail
-                recipe={selectedRecipe}
-                userData={userData}
-                setUserData={() => {}} // No longer needed
-                toggleFavoriteRecipe={toggleFavoriteRecipe}
-                onBack={handleBack}
-              />
-            )}
-          </>
-        )}
-      </main>
-
+      <HomeLanding />
       <Footer />
     </div>
   )
