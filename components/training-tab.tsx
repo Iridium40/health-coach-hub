@@ -34,7 +34,7 @@ export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingT
   )
 
   // Define the desired order for categories
-  const categoryOrder: string[] = ["Getting Started", "Business Building", "Client Support", "Training"]
+  const categoryOrder: string[] = ["Getting Started", "Client Support", "Business Building"]
   
   // Sort categories according to the desired order, then add any remaining categories
   const orderedCategories = categoryOrder.filter((cat: string) => availableCategories.includes(cat))
