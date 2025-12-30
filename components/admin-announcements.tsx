@@ -206,20 +206,34 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
               notificationSettings?.map((ns) => ns.user_id) || []
             )
 
-            // Send emails to users with email notifications enabled
-            const emailPromises = usersData
-              .filter((user) => userIdsWithEmailEnabled.has(user.id) && user.email)
-              .map((user) =>
-                sendAnnouncementEmail({
+            // Filter users with email notifications enabled
+            const usersToEmail = usersData.filter(
+              (user) => userIdsWithEmailEnabled.has(user.id) && user.email
+            )
+
+            // Send emails with throttling (1 per second to stay under rate limit)
+            const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+            
+            for (const user of usersToEmail) {
+              try {
+                await sendAnnouncementEmail({
                   to: user.email!,
                   fullName: user.full_name || "Coach",
                   announcementTitle: title,
                   announcementContent: content,
                   priority: priority,
                 })
-              )
+                // Wait 600ms between emails (allows ~1.6 emails/sec, under the 2/sec limit)
+                await delay(600)
+              } catch (emailErr) {
+                console.error(`Failed to send email to ${user.email}:`, emailErr)
+              }
+            }
 
-            await Promise.allSettled(emailPromises)
+            toast({
+              title: "Emails Sent",
+              description: `Sent ${usersToEmail.length} email notification(s)`,
+            })
           }
         } catch (emailError) {
           console.error("Error sending announcement emails:", emailError)
