@@ -19,21 +19,27 @@ interface HeaderProps {
   onTabChange?: (tab: "training" | "resources" | "recipes") => void
 }
 
-export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab = "training", onTabChange }: HeaderProps) {
+export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab, onTabChange }: HeaderProps) {
   const { user, loading } = useAuth()
   const { profile } = useSupabaseData(user)
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const handleTabChange = (tab: "training" | "resources" | "recipes") => {
-    onTabChange?.(tab)
-    setMobileMenuOpen(false) // Close mobile menu when tab is selected
+  // Determine active tab from pathname if not provided
+  const getActiveTab = (): "training" | "resources" | "recipes" => {
+    if (activeTab) return activeTab
+    if (pathname?.startsWith("/training")) return "training"
+    if (pathname?.startsWith("/resources")) return "resources"
+    if (pathname?.startsWith("/recipes")) return "recipes"
+    return "training" // default
   }
 
+  const currentActiveTab = getActiveTab()
+
   const navItems = [
-    { id: "training" as const, label: "Training" },
-    { id: "resources" as const, label: "Resources" },
-    { id: "recipes" as const, label: "Recipes" },
+    { id: "training" as const, label: "Training", href: "/training" },
+    { id: "resources" as const, label: "Resources", href: "/resources" },
+    { id: "recipes" as const, label: "Recipes", href: "/recipes" },
   ]
 
   return (
@@ -43,10 +49,10 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
         <div className="flex items-center justify-between gap-2 py-3 sm:py-4">
           <div className="flex items-center gap-2 min-w-0 flex-shrink">
             <Link 
-              href="/" 
+              href="/training" 
               className="hover:opacity-80 transition-opacity"
               onClick={(e) => {
-                // If we're already on the home page, prevent default navigation and call handler
+                // If we're on the home page, prevent default and call handler
                 if (pathname === "/" && onHomeClick) {
                   e.preventDefault()
                   onHomeClick()
@@ -85,22 +91,29 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
         {/* Desktop Navigation Menu */}
         {user && (
           <nav className="hidden md:flex items-center justify-center gap-6 lg:gap-8 xl:gap-10 border-t border-optavia-border py-2">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleTabChange(item.id)}
-                className={`pb-3 lg:pb-4 px-4 lg:px-6 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 ${
-                  activeTab === item.id
-                    ? "text-[hsl(var(--optavia-green))]"
-                    : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
-                }`}
-              >
-                {item.label}
-                {activeTab === item.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[hsl(var(--optavia-green))]" />
-                )}
-              </button>
-            ))}
+            {navItems.map((item) => {
+              const isActive = currentActiveTab === item.id
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => {
+                    setMobileMenuOpen(false)
+                    onTabChange?.(item.id)
+                  }}
+                  className={`pb-3 lg:pb-4 px-4 lg:px-6 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 ${
+                    isActive
+                      ? "text-[hsl(var(--optavia-green))]"
+                      : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
+                  }`}
+                >
+                  {item.label}
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[hsl(var(--optavia-green))]" />
+                  )}
+                </Link>
+              )
+            })}
           </nav>
         )}
 
@@ -108,19 +121,26 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
         {user && mobileMenuOpen && (
           <nav className="md:hidden border-t border-optavia-border bg-white">
             <div className="flex flex-col">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleTabChange(item.id)}
-                  className={`px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 ${
-                    activeTab === item.id
-                      ? "text-[hsl(var(--optavia-green))] bg-green-50"
-                      : "text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
-                  }`}
-                >
-                  {item.mobileLabel || item.label}
-                </button>
-              ))}
+              {navItems.map((item) => {
+                const isActive = currentActiveTab === item.id
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      onTabChange?.(item.id)
+                    }}
+                    className={`px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 ${
+                      isActive
+                        ? "text-[hsl(var(--optavia-green))] bg-green-50"
+                        : "text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
+                    }`}
+                  >
+                    {item.mobileLabel || item.label}
+                  </Link>
+                )
+              })}
             </div>
           </nav>
         )}

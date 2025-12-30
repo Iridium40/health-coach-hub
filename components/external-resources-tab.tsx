@@ -20,10 +20,10 @@ export function ExternalResourcesTab() {
 
   const resources = [
     {
-      title: "Coaching Amplifier Facebook Group",
+      title: "Optavia Strong Facebook Group",
       description: "Join our community of coaches within OPTAVIA. Connect, share experiences, and support each other in building successful coaching businesses.",
       url: "https://www.facebook.com/groups/810104670912639",
-      buttonText: "Join Facebook Group",
+      buttonText: "Go to Facebook Group",
       category: "Community",
       features: [
         "Connect with fellow coaches",
@@ -83,7 +83,7 @@ export function ExternalResourcesTab() {
       title: "OPTAVIA Facebook",
       description: "Follow OPTAVIA on Facebook for the latest updates, success stories, and community engagement.",
       url: "https://www.facebook.com/optavia",
-      buttonText: "Visit Facebook Page",
+      buttonText: "Go to Facebook Page",
       category: "Social Media",
       features: [
         "Latest OPTAVIA news and updates",
@@ -97,7 +97,7 @@ export function ExternalResourcesTab() {
       title: "OPTAVIA Instagram",
       description: "Get inspired by OPTAVIA's Instagram feed featuring healthy recipes, transformation stories, and lifestyle tips.",
       url: "https://www.instagram.com/optavia",
-      buttonText: "Follow on Instagram",
+      buttonText: "Go to Instagram Page",
       category: "Social Media",
       features: [
         "Visual inspiration and recipes",
@@ -193,7 +193,7 @@ export function ExternalResourcesTab() {
       </div>
 
       {/* Resource Cards */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredResources.map((resource, index) => (
           <ResourceCard
             key={index}

@@ -54,9 +54,9 @@ export default function Home() {
       return
     }
 
-    // If profile exists, show dashboard
+    // If profile exists, redirect to training page
     if (profile) {
-      setCurrentView("dashboard")
+      router.push("/training")
     }
   }, [user, profile, authLoading, dataLoading, router])
 
