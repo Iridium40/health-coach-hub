@@ -17,7 +17,7 @@ export default function LoginPage() {
       {/* Logo */}
       <div className="mb-8 sm:mb-12">
         <img 
-          src="/branding/ca_logo.jpg" 
+          src="/branding/ca_logo.png" 
           alt="Coaching Amplifier" 
           className="h-16 sm:h-20 md:h-24 w-auto mx-auto"
         />

@@ -6,21 +6,26 @@ import { ResourcesTab } from "@/components/resources-tab"
 import { BlogTab } from "@/components/blog-tab"
 import { RecipesTab } from "@/components/recipes-tab"
 import type { UserData, Module, Recipe } from "@/lib/types"
+import type { UserProfile } from "@/hooks/use-supabase-data"
 
 interface DashboardProps {
   userData: UserData
+  profile: UserProfile | null
   setUserData: (data: UserData) => void
   toggleFavoriteRecipe?: (recipeId: string) => Promise<void>
   onSelectModule: (module: Module) => void
   onSelectRecipe: (recipe: Recipe) => void
 }
 
-export function Dashboard({ userData, setUserData, toggleFavoriteRecipe, onSelectModule, onSelectRecipe }: DashboardProps) {
+export function Dashboard({ userData, profile, setUserData, toggleFavoriteRecipe, onSelectModule, onSelectRecipe }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<"resources" | "blog" | "recipes">("resources")
+
+  // Extract first name from full_name
+  const firstName = profile?.full_name?.split(" ")[0] || null
 
   return (
     <>
-      <Hero userData={userData} />
+      <Hero userData={userData} firstName={firstName} />
 
       <div className="container mx-auto px-4 py-4 sm:py-8 bg-white">
         {/* Tab Navigation */}

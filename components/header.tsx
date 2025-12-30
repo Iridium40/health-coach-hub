@@ -33,14 +33,14 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick }: H
               }
             }}
           >
-            <Image
-              src="/branding/ca_logo.jpg"
-              alt="Coaching Amplifier"
-              width={200}
-              height={80}
-              className="h-8 sm:h-10 md:h-12 w-auto"
-              priority
-            />
+              <Image
+                  src="/branding/ca_logo.png"
+                  alt="Coaching Amplifier"
+                  width={200}
+                  height={80}
+                  className="h-8 sm:h-10 md:h-12 w-auto"
+                  priority
+                />
           </Link>
         </div>
 

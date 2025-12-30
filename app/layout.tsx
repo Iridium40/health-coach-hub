@@ -34,19 +34,17 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/branding/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
+        url: "/branding/favicon.ico",
       },
       {
-        url: "/branding/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
+        url: "/branding/ca_icon.png",
       },
       {
-        url: "/branding/icon.svg",
+        url: "/branding/ca_icon.svg",
         type: "image/svg+xml",
       },
     ],
-    apple: "/branding/apple-icon.png",
+    apple: "/branding/ca_icon.png",
   },
 }
 

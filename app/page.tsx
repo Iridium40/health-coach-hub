@@ -155,6 +155,7 @@ export default function Home() {
               <Dashboard
                 key={dashboardKey}
                 userData={userData}
+                profile={profile}
                 setUserData={() => {}} // No longer needed, using hooks directly
                 toggleFavoriteRecipe={toggleFavoriteRecipe}
                 onSelectModule={setSelectedModule}

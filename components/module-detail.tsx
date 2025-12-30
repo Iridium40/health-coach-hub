@@ -22,12 +22,13 @@ interface ModuleDetailProps {
 
 export function ModuleDetail({ module, userData, setUserData, onBack }: ModuleDetailProps) {
   const { user } = useAuth()
-  const { completedResources, bookmarks, toggleCompletedResource, toggleBookmark } = useSupabaseData(user)
+  const { completedResources, bookmarks, toggleCompletedResource, toggleBookmark, loading } = useSupabaseData(user)
   const [openResource, setOpenResource] = useState<{ url: string; title: string } | null>(null)
   
-  // Use Supabase data if available, otherwise fall back to userData prop
-  const effectiveCompletedResources = completedResources.length > 0 ? completedResources : userData.completedResources
-  const effectiveBookmarks = bookmarks.length > 0 ? bookmarks : userData.bookmarks
+  // Always use Supabase data when user is authenticated (it's the source of truth)
+  // Only fall back to userData if not authenticated or data is still loading
+  const effectiveCompletedResources = user && !loading ? completedResources : userData.completedResources
+  const effectiveBookmarks = user && !loading ? bookmarks : userData.bookmarks
   const completedCount = module.resources.filter((resource) => effectiveCompletedResources.includes(resource.id)).length
 
   const progress = module.resources.length > 0 ? Math.round((completedCount / module.resources.length) * 100) : 0
@@ -93,9 +94,9 @@ export function ModuleDetail({ module, userData, setUserData, onBack }: ModuleDe
     return url
   }
 
-  const handleToggleComplete = (resourceId: string) => {
+  const handleToggleComplete = async (resourceId: string) => {
     if (user && toggleCompletedResource) {
-      toggleCompletedResource(resourceId)
+      await toggleCompletedResource(resourceId)
     } else {
       // Fallback to local state if not authenticated
       const newCompleted = userData.completedResources.includes(resourceId)

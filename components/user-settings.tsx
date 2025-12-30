@@ -12,6 +12,7 @@ import { useSupabaseData } from "@/hooks/use-supabase-data"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { Upload, X } from "lucide-react"
+import { InviteShareButton } from "@/components/invite-share-button"
 import { ProgressBar } from "@/components/progress-bar"
 
 interface UserSettingsProps {
@@ -348,6 +349,19 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             </CardContent>
           </Card>
         )}
+
+        {/* Invite Management */}
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-optavia-dark">Invite Users</CardTitle>
+            <CardDescription className="text-optavia-gray">
+              Generate invite links to share with new users
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <InviteShareButton />
+          </CardContent>
+        </Card>
 
         {/* Progress Summary */}
         <Card className="bg-white border border-gray-200 shadow-lg">

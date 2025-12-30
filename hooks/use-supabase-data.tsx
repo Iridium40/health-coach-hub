@@ -129,18 +129,28 @@ export function useSupabaseData(user: User | null) {
           .eq("user_id", user.id)
           .eq("resource_id", resourceId)
 
-        if (!error) {
-          setCompletedResources((prev) => prev.filter((id) => id !== resourceId))
+        if (error) {
+          console.error("Error removing completed resource:", error)
+          return
         }
+        
+        setCompletedResources((prev) => prev.filter((id) => id !== resourceId))
       } else {
         const { error } = await supabase.from("user_progress").insert({
           user_id: user.id,
           resource_id: resourceId,
         })
 
-        if (!error) {
-          setCompletedResources((prev) => [...prev, resourceId])
+        if (error) {
+          console.error("Error adding completed resource:", error)
+          return
         }
+
+        setCompletedResources((prev) => {
+          // Avoid duplicates
+          if (prev.includes(resourceId)) return prev
+          return [...prev, resourceId]
+        })
       }
     },
     [user, completedResources, supabase]

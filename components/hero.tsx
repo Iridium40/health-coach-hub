@@ -5,9 +5,10 @@ import { modules } from "@/lib/data"
 
 interface HeroProps {
   userData: UserData
+  firstName?: string | null
 }
 
-export function Hero({ userData }: HeroProps) {
+export function Hero({ userData, firstName }: HeroProps) {
   const totalResources = modules.reduce((acc, module) => {
     if (userData.isNewCoach && !module.forNewCoach) return acc
     return acc + module.resources.length
@@ -15,6 +16,9 @@ export function Hero({ userData }: HeroProps) {
 
   const completedResources = userData.completedResources.length
   const progressPercentage = totalResources > 0 ? Math.round((completedResources / totalResources) * 100) : 0
+
+  // Extract first name from full name or use fallback
+  const displayName = firstName || "Coach"
 
   return (
     <div className="relative h-[250px] sm:h-[300px] md:h-[350px] overflow-hidden">
@@ -35,7 +39,7 @@ export function Hero({ userData }: HeroProps) {
       />
       <div className="relative container mx-auto px-4 h-full flex flex-col justify-center text-white z-10">
         <div className="max-w-2xl">
-          <h1 className="font-heading font-bold text-2xl sm:text-3xl md:text-4xl mb-2">Welcome Back, Coach!</h1>
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl md:text-4xl mb-2">Welcome Back, {displayName}!</h1>
           <Badge className="mb-3 sm:mb-4 bg-white/20 text-white border-white/30 text-xs sm:text-sm">
             {userData.isNewCoach ? "New Coach Journey" : "Full Access"}
           </Badge>

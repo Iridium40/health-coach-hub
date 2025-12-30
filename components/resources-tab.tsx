@@ -26,8 +26,17 @@ export function ResourcesTab({ userData, setUserData, onSelectModule }: Resource
     new Set(availableModules.map((module) => module.category))
   )
 
-  // Build categories list: always include "All", then add available categories
-  const categories = ["All", ...availableCategories.sort()]
+  // Define the desired order for categories
+  const categoryOrder = ["Getting Started", "Business Building", "Client Support", "Training"]
+  
+  // Sort categories according to the desired order, then add any remaining categories
+  const orderedCategories = categoryOrder.filter(cat => availableCategories.includes(cat))
+  const remainingCategories = availableCategories
+    .filter(cat => !categoryOrder.includes(cat))
+    .sort()
+  
+  // Build categories list: always include "All" first, then ordered categories
+  const categories = ["All", ...orderedCategories, ...remainingCategories]
 
   const filteredModules = availableModules.filter((module) => {
     if (selectedCategory === "All") return true

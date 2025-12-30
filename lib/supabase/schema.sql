@@ -85,6 +85,20 @@ CREATE TABLE IF NOT EXISTS announcement_templates (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create invites table to track user invitations
+CREATE TABLE IF NOT EXISTS invites (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  invite_key TEXT NOT NULL UNIQUE,
+  invited_by UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  invited_email TEXT,
+  used_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  used_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create announcement_reads table (tracks which users have read announcements)
 CREATE TABLE IF NOT EXISTS announcement_reads (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -102,6 +116,10 @@ CREATE INDEX IF NOT EXISTS idx_user_bookmarks_resource_id ON user_bookmarks(reso
 CREATE INDEX IF NOT EXISTS idx_favorite_recipes_user_id ON favorite_recipes(user_id);
 CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active);
 CREATE INDEX IF NOT EXISTS idx_announcement_reads_user_id ON announcement_reads(user_id);
+CREATE INDEX IF NOT EXISTS idx_invites_invite_key ON invites(invite_key);
+CREATE INDEX IF NOT EXISTS idx_invites_invited_by ON invites(invited_by);
+CREATE INDEX IF NOT EXISTS idx_invites_invited_email ON invites(invited_email);
+CREATE INDEX IF NOT EXISTS idx_invites_used_by ON invites(used_by);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -112,6 +130,7 @@ ALTER TABLE notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcement_reads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcement_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invites ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for profiles
 CREATE POLICY "Users can view their own profile"
@@ -240,6 +259,70 @@ CREATE POLICY "Users can insert their own announcement reads"
   ON announcement_reads FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- RLS Policies for invites
+-- Allow authenticated users to view invites they created
+CREATE POLICY "Users can view invites they created"
+  ON invites FOR SELECT
+  USING (auth.uid() = invited_by);
+
+-- Allow authenticated users to view invites sent to their email (for signup)
+CREATE POLICY "Users can view invites for their email"
+  ON invites FOR SELECT
+  USING (
+    invited_email IS NOT NULL 
+    AND invited_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+  );
+
+-- Allow admins to view all invites
+CREATE POLICY "Admins can view all invites"
+  ON invites FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
+
+-- Allow authenticated users to create invites
+CREATE POLICY "Authenticated users can create invites"
+  ON invites FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = invited_by);
+
+-- Allow system to update invites (when used)
+CREATE POLICY "System can update invites when used"
+  ON invites FOR UPDATE
+  TO authenticated
+  USING (
+    auth.uid() = used_by 
+    OR auth.uid() = invited_by
+    OR EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
+
+-- Allow users to delete their own invites
+CREATE POLICY "Users can delete their own invites"
+  ON invites FOR DELETE
+  TO authenticated
+  USING (auth.uid() = invited_by);
+
+-- Allow admins to delete any invite
+CREATE POLICY "Admins can delete any invite"
+  ON invites FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
+
 -- RLS Policies for announcement_templates
 -- Allow authenticated users to view templates
 CREATE POLICY "Authenticated users can view templates"
@@ -326,5 +409,9 @@ CREATE TRIGGER update_announcements_updated_at
 
 CREATE TRIGGER update_announcement_templates_updated_at
   BEFORE UPDATE ON announcement_templates
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER update_invites_updated_at
+  BEFORE UPDATE ON invites
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
