@@ -39,28 +39,29 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
 
     const validateInvite = async () => {
       try {
+        // First, try to find the invite without filtering by is_active
         const { data, error } = await supabase
           .from("invites")
           .select("*")
           .eq("invite_key", inviteKey)
-          .eq("is_active", true)
           .single()
 
         if (error || !data) {
+          console.error("Invite validation error:", error)
           toast({
             title: "Invalid Invite",
-            description: "This invite link is invalid or has expired",
+            description: error?.message || "This invite link was not found",
             variant: "destructive",
           })
           setValidatingInvite(false)
           return
         }
 
-        // Check if invite has expired
-        if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        // Check if invite is active
+        if (!data.is_active) {
           toast({
-            title: "Invite Expired",
-            description: "This invite link has expired",
+            title: "Invite Inactive",
+            description: "This invite link has been deactivated",
             variant: "destructive",
           })
           setValidatingInvite(false)
@@ -76,6 +77,32 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
           })
           setValidatingInvite(false)
           return
+        }
+
+        // Check if invite has expired
+        if (data.expires_at) {
+          const expiresAt = new Date(data.expires_at)
+          const now = new Date()
+          console.log("Invite expiration check:", {
+            expiresAt: expiresAt.toISOString(),
+            now: now.toISOString(),
+            expiresAtLocal: expiresAt.toLocaleString(),
+            nowLocal: now.toLocaleString(),
+            isExpired: expiresAt < now,
+            hoursUntilExpiry: Math.round((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60))
+          })
+          if (expiresAt < now) {
+            const hoursAgo = Math.round((now.getTime() - expiresAt.getTime()) / (1000 * 60 * 60))
+            toast({
+              title: "Invite Expired",
+              description: `This invite link expired ${hoursAgo} hour${hoursAgo !== 1 ? 's' : ''} ago`,
+              variant: "destructive",
+            })
+            setValidatingInvite(false)
+            return
+          }
+        } else {
+          console.log("Invite has no expiration date set")
         }
 
         // Check if invite has required email
