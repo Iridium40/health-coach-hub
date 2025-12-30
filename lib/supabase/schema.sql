@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   full_name TEXT,
   avatar_url TEXT,
   is_new_coach BOOLEAN DEFAULT true,
+  user_role TEXT CHECK (user_role IN ('admin', 'coach')),
+  coach_rank TEXT CHECK (coach_rank IN ('SC', 'ED', 'IN', 'IR', 'GB', 'IPD')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -60,6 +62,24 @@ CREATE TABLE IF NOT EXISTS announcements (
   priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
   is_active BOOLEAN DEFAULT true,
   send_push BOOLEAN DEFAULT false,
+  push_scheduled_at TIMESTAMPTZ,
+  send_email BOOLEAN DEFAULT false,
+  email_template_id UUID REFERENCES announcement_templates(id),
+  start_date TIMESTAMPTZ,
+  end_date TIMESTAMPTZ,
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create announcement_templates table for email notifications
+CREATE TABLE IF NOT EXISTS announcement_templates (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  is_html BOOLEAN DEFAULT false,
   created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -91,6 +111,7 @@ ALTER TABLE favorite_recipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcement_reads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE announcement_templates ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for profiles
 CREATE POLICY "Users can view their own profile"
@@ -162,6 +183,54 @@ CREATE POLICY "Authenticated users can view active announcements"
   ON announcements FOR SELECT
   USING (auth.role() = 'authenticated' AND is_active = true);
 
+-- RLS Policies for announcements (admins can view all announcements)
+CREATE POLICY "Admins can view all announcements"
+  ON announcements FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
+
+-- RLS Policies for announcements (admins can insert)
+CREATE POLICY "Admins can insert announcements"
+  ON announcements FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
+
+-- RLS Policies for announcements (admins can update)
+CREATE POLICY "Admins can update announcements"
+  ON announcements FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
+
+-- RLS Policies for announcements (admins can delete)
+CREATE POLICY "Admins can delete announcements"
+  ON announcements FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
+
 -- RLS Policies for announcement_reads
 CREATE POLICY "Users can view their own announcement reads"
   ON announcement_reads FOR SELECT
@@ -170,6 +239,48 @@ CREATE POLICY "Users can view their own announcement reads"
 CREATE POLICY "Users can insert their own announcement reads"
   ON announcement_reads FOR INSERT
   WITH CHECK (auth.uid() = user_id);
+
+-- RLS Policies for announcement_templates
+-- Allow authenticated users to view templates
+CREATE POLICY "Authenticated users can view templates"
+  ON announcement_templates FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+-- Allow admins to insert templates
+CREATE POLICY "Admins can insert templates"
+  ON announcement_templates FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
+
+-- Allow admins to update templates
+CREATE POLICY "Admins can update templates"
+  ON announcement_templates FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
+
+-- Allow admins to delete templates
+CREATE POLICY "Admins can delete templates"
+  ON announcement_templates FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.user_role = 'admin'
+    )
+  );
 
 -- Function to automatically create profile on user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -211,5 +322,9 @@ CREATE TRIGGER update_notification_settings_updated_at
 
 CREATE TRIGGER update_announcements_updated_at
   BEFORE UPDATE ON announcements
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER update_announcement_templates_updated_at
+  BEFORE UPDATE ON announcement_templates
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,18 +11,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Settings, LogOut, User } from "lucide-react"
+import { Settings, LogOut, User, Bell } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
 
 interface UserMenuProps {
   onSettingsClick?: () => void
+  onAnnouncementsClick?: () => void
 }
 
-export function UserMenu({ onSettingsClick }: UserMenuProps) {
+export function UserMenu({ onSettingsClick, onAnnouncementsClick }: UserMenuProps) {
   const { user, signOut } = useAuth()
-  const { profile } = useSupabaseData(user)
+  const { profile, refreshData } = useSupabaseData(user)
   const [loading, setLoading] = useState(false)
+
+  // Debug: Log profile to check user_role
+  useEffect(() => {
+    if (profile) {
+      console.log("User profile:", { 
+        user_role: profile.user_role, 
+        email: profile.email,
+        full_profile: profile 
+      })
+    }
+  }, [profile])
 
   const handleSignOut = async () => {
     setLoading(true)
@@ -71,6 +83,18 @@ export function UserMenu({ onSettingsClick }: UserMenuProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-gray-200" />
+        {profile?.user_role?.toLowerCase() === "admin" && onAnnouncementsClick && (
+          <>
+            <DropdownMenuItem 
+              onClick={onAnnouncementsClick}
+              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+            >
+              <Bell className="mr-2 h-4 w-4" />
+              <span>Manage Announcements</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-gray-200" />
+          </>
+        )}
         <DropdownMenuItem 
           onClick={onSettingsClick}
           className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
@@ -78,6 +102,7 @@ export function UserMenu({ onSettingsClick }: UserMenuProps) {
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-gray-200" />
         <DropdownMenuItem 
           onClick={handleSignOut} 
           disabled={loading}

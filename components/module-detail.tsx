@@ -164,10 +164,14 @@ export function ModuleDetail({ module, userData, setUserData, onBack }: ModuleDe
           const isBookmarked = effectiveBookmarks.includes(resource.id)
 
           return (
-            <Card key={resource.id} className="p-3 sm:p-4">
+            <Card key={resource.id} className="p-3 sm:p-4 bg-white border border-gray-200 shadow-sm">
               <div className="flex items-start gap-2 sm:gap-4">
                 <div className="pt-1 flex-shrink-0">
-                  <Checkbox checked={isCompleted} onCheckedChange={() => handleToggleComplete(resource.id)} />
+                  <Checkbox 
+                    checked={isCompleted} 
+                    onCheckedChange={() => handleToggleComplete(resource.id)}
+                    className="border-gray-400 data-[state=checked]:bg-[hsl(var(--optavia-green))] data-[state=checked]:border-[hsl(var(--optavia-green))]"
+                  />
                 </div>
 
                 <div className="flex-1 min-w-0">

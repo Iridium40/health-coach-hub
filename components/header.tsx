@@ -11,9 +11,10 @@ import { useAuth } from "@/hooks/use-auth"
 interface HeaderProps {
   onSettingsClick?: () => void
   onHomeClick?: () => void
+  onAnnouncementsClick?: () => void
 }
 
-export function Header({ onSettingsClick, onHomeClick }: HeaderProps) {
+export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick }: HeaderProps) {
   const { user, loading } = useAuth()
   const pathname = usePathname()
 
@@ -55,7 +56,7 @@ export function Header({ onSettingsClick, onHomeClick }: HeaderProps) {
               <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
             </a>
           </Button>
-          {!loading && user && <UserMenu onSettingsClick={onSettingsClick} />}
+              {!loading && user && <UserMenu onSettingsClick={onSettingsClick} onAnnouncementsClick={onAnnouncementsClick} />}
         </div>
       </div>
     </header>

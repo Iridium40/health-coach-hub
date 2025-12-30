@@ -16,6 +16,8 @@ interface Announcement {
   priority: "low" | "normal" | "high" | "urgent"
   is_active: boolean
   send_push: boolean
+  start_date: string | null
+  end_date: string | null
   created_at: string
 }
 
@@ -38,6 +40,7 @@ export function Announcements() {
   }, [user])
 
   const loadAnnouncements = async () => {
+    const now = new Date().toISOString()
     const { data, error } = await supabase
       .from("announcements")
       .select("*")
@@ -46,7 +49,17 @@ export function Announcements() {
       .limit(5)
 
     if (!error && data) {
-      setAnnouncements(data)
+      // Filter by start_date and end_date if they exist
+      const filtered = data.filter((announcement => {
+        if (announcement.start_date && announcement.start_date > now) {
+          return false // Not started yet
+        }
+        if (announcement.end_date && announcement.end_date < now) {
+          return false // Already expired
+        }
+        return true
+      }))
+      setAnnouncements(filtered)
     }
     setLoading(false)
   }

@@ -10,6 +10,8 @@ export interface UserProfile {
   full_name: string | null
   avatar_url: string | null
   is_new_coach: boolean
+  user_role: string | null
+  coach_rank: string | null
   created_at: string
   updated_at: string
 }
@@ -58,6 +60,7 @@ export function useSupabaseData(user: User | null) {
       if (profileError && profileError.code !== "PGRST116") {
         console.error("Error loading profile:", profileError)
       } else if (profileData) {
+        console.log("Loaded profile data:", profileData)
         setProfile(profileData)
       }
 
