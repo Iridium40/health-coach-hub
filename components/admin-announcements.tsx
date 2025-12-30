@@ -171,9 +171,10 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
     }
 
     if (error) {
+      console.error("Announcement save error:", error)
       toast({
         title: "Error",
-        description: error.message || "Failed to save announcement",
+        description: error.message || error.details || "Failed to save announcement",
         variant: "destructive",
       })
     } else {
