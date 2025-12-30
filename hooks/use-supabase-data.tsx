@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import { getEarnedBadges } from "@/lib/badges"
@@ -48,9 +48,18 @@ export function useSupabaseData(user: User | null) {
   const [badges, setBadges] = useState<AchievementBadge[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const loadingRef = useRef(false)
 
   // Load all user data
   const loadUserData = useCallback(async () => {
+    // Prevent concurrent calls
+    if (loadingRef.current) {
+      return
+    }
+    
+    loadingRef.current = true
+    setLoading(true)
+    
     if (!user) {
       setProfile(null)
       setCompletedResources([])
@@ -59,6 +68,7 @@ export function useSupabaseData(user: User | null) {
       setNotificationSettings(null)
       setBadges([])
       setLoading(false)
+      loadingRef.current = false
       return
     }
 
@@ -165,8 +175,9 @@ export function useSupabaseData(user: User | null) {
       console.error("Error loading user data:", error)
     } finally {
       setLoading(false)
+      loadingRef.current = false
     }
-  }, [user, supabase])
+  }, [user])
 
   // Check and award badges for completed categories
   const checkAndAwardBadges = useCallback(
@@ -226,6 +237,8 @@ export function useSupabaseData(user: User | null) {
   )
 
   useEffect(() => {
+    // Reset loading ref when user changes
+    loadingRef.current = false
     loadUserData()
   }, [loadUserData])
 

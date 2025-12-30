@@ -58,7 +58,7 @@ export default function Home() {
     if (profile) {
       setCurrentView("dashboard")
     }
-  }, [user, profile, authLoading, dataLoading])
+  }, [user, profile, authLoading, dataLoading, router])
 
   const handleOnboardingComplete = async (isNewCoach: boolean) => {
     if (!user) return
@@ -105,17 +105,6 @@ export default function Home() {
         createdAt: profile.created_at,
       }
     : null
-
-  if (authLoading || dataLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
-          <p className="text-optavia-gray">Loading...</p>
-        </div>
-      </div>
-    )
-  }
 
   if (authLoading || dataLoading) {
     return (
