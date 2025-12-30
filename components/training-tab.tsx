@@ -13,13 +13,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-interface ResourcesTabProps {
+interface TrainingTabProps {
   userData: UserData
   setUserData: (data: UserData) => void
   onSelectModule: (module: Module) => void
 }
 
-export function ResourcesTab({ userData, setUserData, onSelectModule }: ResourcesTabProps) {
+export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
 
   // Get all available modules for this user
@@ -29,17 +29,17 @@ export function ResourcesTab({ userData, setUserData, onSelectModule }: Resource
   })
 
   // Get unique categories from available modules
-  const availableCategories = Array.from(
+  const availableCategories: string[] = Array.from(
     new Set(availableModules.map((module) => module.category))
   )
 
   // Define the desired order for categories
-  const categoryOrder = ["Getting Started", "Business Building", "Client Support", "Training"]
+  const categoryOrder: string[] = ["Getting Started", "Business Building", "Client Support", "Training"]
   
   // Sort categories according to the desired order, then add any remaining categories
-  const orderedCategories = categoryOrder.filter(cat => availableCategories.includes(cat))
+  const orderedCategories = categoryOrder.filter((cat: string) => availableCategories.includes(cat))
   const remainingCategories = availableCategories
-    .filter(cat => !categoryOrder.includes(cat))
+    .filter((cat: string) => !categoryOrder.includes(cat))
     .sort()
   
   // Build categories list: always include "All" first, then ordered categories

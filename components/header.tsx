@@ -15,27 +15,25 @@ interface HeaderProps {
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
   onInviteClick?: () => void
-  activeTab?: "resources" | "blog" | "recipes" | "connect" | "optavia-profile"
-  onTabChange?: (tab: "resources" | "blog" | "recipes" | "connect" | "optavia-profile") => void
+  activeTab?: "training" | "resources" | "recipes"
+  onTabChange?: (tab: "training" | "resources" | "recipes") => void
 }
 
-export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab = "resources", onTabChange }: HeaderProps) {
+export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab = "training", onTabChange }: HeaderProps) {
   const { user, loading } = useAuth()
   const { profile } = useSupabaseData(user)
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const handleTabChange = (tab: "resources" | "blog" | "recipes" | "connect" | "optavia-profile") => {
+  const handleTabChange = (tab: "training" | "resources" | "recipes") => {
     onTabChange?.(tab)
     setMobileMenuOpen(false) // Close mobile menu when tab is selected
   }
 
   const navItems = [
-    { id: "resources" as const, label: "Training" },
+    { id: "training" as const, label: "Training" },
+    { id: "resources" as const, label: "Resources" },
     { id: "recipes" as const, label: "Recipes" },
-    { id: "blog" as const, label: "Optavia Blog" },
-    { id: "connect" as const, label: "OPTAVIA Connect", mobileLabel: "Connect" },
-    ...(profile?.optavia_id ? [{ id: "optavia-profile" as const, label: "OPTAVIA Profile", mobileLabel: "Profile" }] : []),
   ]
 
   return (
@@ -116,12 +114,12 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
 
         {/* Desktop Navigation Menu */}
         {user && (
-          <nav className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8 border-t border-optavia-border">
+          <nav className="hidden md:flex items-center justify-center gap-6 lg:gap-8 xl:gap-10 border-t border-optavia-border py-2">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleTabChange(item.id)}
-                className={`pb-3 lg:pb-4 px-2 lg:px-3 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 ${
+                className={`pb-3 lg:pb-4 px-4 lg:px-6 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 ${
                   activeTab === item.id
                     ? "text-[hsl(var(--optavia-green))]"
                     : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"

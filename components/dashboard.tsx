@@ -1,11 +1,9 @@
 "use client"
 
 import { Hero } from "@/components/hero"
-import { ResourcesTab } from "@/components/resources-tab"
-import { BlogTab } from "@/components/blog-tab"
+import { TrainingTab } from "@/components/training-tab"
+import { ExternalResourcesTab } from "@/components/external-resources-tab"
 import { RecipesTab } from "@/components/recipes-tab"
-import { ConnectTab } from "@/components/connect-tab"
-import { OptaviaProfileTab } from "@/components/optavia-profile-tab"
 import type { UserData, Module, Recipe } from "@/lib/types"
 import type { UserProfile } from "@/hooks/use-supabase-data"
 
@@ -17,21 +15,21 @@ interface DashboardProps {
   toggleFavoriteRecipe?: (recipeId: string) => Promise<void>
   onSelectModule: (module: Module) => void
   onSelectRecipe: (recipe: Recipe) => void
-  activeTab?: "resources" | "blog" | "recipes" | "connect" | "optavia-profile"
+  activeTab?: "training" | "resources" | "recipes"
 }
 
-export function Dashboard({ userData, profile, badges = [], setUserData, toggleFavoriteRecipe, onSelectModule, onSelectRecipe, activeTab = "resources" }: DashboardProps) {
+export function Dashboard({ userData, profile, badges = [], setUserData, toggleFavoriteRecipe, onSelectModule, onSelectRecipe, activeTab = "training" }: DashboardProps) {
   return (
     <>
       <Hero />
 
       <div className="container mx-auto px-4 py-4 sm:py-8 bg-white">
         {/* Tab Content */}
-        {activeTab === "resources" && (
-          <ResourcesTab userData={userData} setUserData={setUserData} onSelectModule={onSelectModule} />
+        {activeTab === "training" && (
+          <TrainingTab userData={userData} setUserData={setUserData} onSelectModule={onSelectModule} />
         )}
 
-        {activeTab === "blog" && <BlogTab />}
+        {activeTab === "resources" && <ExternalResourcesTab />}
 
         {activeTab === "recipes" && (
           <RecipesTab 
@@ -40,12 +38,6 @@ export function Dashboard({ userData, profile, badges = [], setUserData, toggleF
             toggleFavoriteRecipe={toggleFavoriteRecipe}
             onSelectRecipe={onSelectRecipe} 
           />
-        )}
-
-        {activeTab === "connect" && <ConnectTab />}
-
-        {activeTab === "optavia-profile" && profile?.optavia_id && (
-          <OptaviaProfileTab optaviaId={profile.optavia_id} />
         )}
       </div>
     </>

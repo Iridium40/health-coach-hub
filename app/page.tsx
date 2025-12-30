@@ -38,7 +38,7 @@ export default function Home() {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null)
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
   const [dashboardKey, setDashboardKey] = useState(0) // Key to force Dashboard remount
-  const [activeTab, setActiveTab] = useState<"resources" | "blog" | "recipes" | "connect" | "optavia-profile">("resources")
+  const [activeTab, setActiveTab] = useState<"training" | "resources" | "recipes">("training")
 
   useEffect(() => {
     if (authLoading || dataLoading) return
@@ -83,11 +83,11 @@ export default function Home() {
   }
 
   const handleHomeNavigation = () => {
-    // Reset to dashboard view with resources tab
+    // Reset to dashboard view with training tab
     setCurrentView("dashboard")
     setSelectedModule(null)
     setSelectedRecipe(null)
-    setActiveTab("resources")
+    setActiveTab("training")
     setDashboardKey((prev) => prev + 1) // Force Dashboard remount to reset tab state
   }
 
