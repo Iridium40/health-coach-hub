@@ -18,9 +18,9 @@ import { useAuth } from "@/hooks/use-auth"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
-import { Upload, X } from "lucide-react"
-import { InviteShareButton } from "@/components/invite-share-button"
+import { Upload, X, Trophy } from "lucide-react"
 import { ProgressBar } from "@/components/progress-bar"
+import { BadgeDisplay } from "@/components/badge-display"
 
 interface UserSettingsProps {
   onClose?: () => void
@@ -34,6 +34,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
     completedResources,
     bookmarks,
     favoriteRecipes,
+    badges,
     updateProfile,
     updateNotificationSettings,
     refreshData,
@@ -236,14 +237,23 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             <CardDescription className="text-optavia-gray">Update your profile information</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center gap-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
-                <AvatarFallback className="bg-[hsl(var(--optavia-green))] text-white text-2xl">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col gap-2">
+            <div className="flex items-start gap-6">
+              <div className="flex flex-col items-center gap-3">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
+                  <AvatarFallback className="bg-[hsl(var(--optavia-green))] text-white text-2xl">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                {/* Badge Status */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+                  <Trophy className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
+                  <span className="text-sm font-semibold text-optavia-dark">
+                    {badges.length} {badges.length === 1 ? "Badge" : "Badges"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 flex-1">
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -377,19 +387,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
           </Card>
         )}
 
-        {/* Invite Management */}
-        <Card className="bg-white border border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-optavia-dark">Invite Users</CardTitle>
-            <CardDescription className="text-optavia-gray">
-              Generate invite links to share with new users
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <InviteShareButton />
-          </CardContent>
-        </Card>
-
         {/* Progress Summary */}
         <Card className="bg-white border border-gray-200 shadow-lg">
           <CardHeader>
@@ -417,6 +414,16 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Achievements */}
+        <BadgeDisplay 
+          badges={badges.map(badge => ({
+            id: badge.id,
+            category: badge.category || "",
+            badgeType: badge.badge_type,
+            earnedAt: badge.earned_at,
+          }))} 
+        />
       </div>
     </div>
   )

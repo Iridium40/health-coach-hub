@@ -12,6 +12,7 @@ import { UserSettings } from "@/components/user-settings"
 import { Announcements } from "@/components/announcements"
 import { AdminAnnouncements } from "@/components/admin-announcements"
 import { AdminReports } from "@/components/admin-reports"
+import { InviteManagement } from "@/components/invite-management"
 import { useAuth } from "@/hooks/use-auth"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
 import { createClient } from "@/lib/supabase/client"
@@ -32,7 +33,7 @@ export default function Home() {
     updateProfile,
   } = useSupabaseData(user)
 
-  const [currentView, setCurrentView] = useState<"onboarding" | "dashboard" | "settings" | "admin-announcements" | "admin-reports">("onboarding")
+  const [currentView, setCurrentView] = useState<"onboarding" | "dashboard" | "settings" | "admin-announcements" | "admin-reports" | "invite-management">("onboarding")
   const [selectedModule, setSelectedModule] = useState<Module | null>(null)
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
   const [dashboardKey, setDashboardKey] = useState(0) // Key to force Dashboard remount
@@ -137,6 +138,7 @@ export default function Home() {
         onHomeClick={handleHomeNavigation}
         onAnnouncementsClick={() => setCurrentView("admin-announcements")}
         onReportsClick={() => setCurrentView("admin-reports")}
+        onInviteClick={() => setCurrentView("invite-management")}
         activeTab={activeTab}
         onTabChange={(tab) => {
           setActiveTab(tab)
@@ -161,6 +163,10 @@ export default function Home() {
 
         {currentView === "admin-reports" && user && (
           <AdminReports onClose={() => setCurrentView("dashboard")} />
+        )}
+
+        {currentView === "invite-management" && user && (
+          <InviteManagement onClose={() => setCurrentView("dashboard")} />
         )}
 
         {currentView === "dashboard" && user && userData && (

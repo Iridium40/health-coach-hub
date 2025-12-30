@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Settings, LogOut, User, Bell, BarChart3 } from "lucide-react"
+import { Settings, LogOut, User, Bell, BarChart3, UserPlus } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
 
@@ -19,9 +19,10 @@ interface UserMenuProps {
   onSettingsClick?: () => void
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
+  onInviteClick?: () => void
 }
 
-export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick }: UserMenuProps) {
+export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick, onInviteClick }: UserMenuProps) {
   const { user, signOut } = useAuth()
   const { profile, refreshData } = useSupabaseData(user)
   const [loading, setLoading] = useState(false)
@@ -63,7 +64,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+        <Button variant="ghost" className="relative h-10 w-10 rounded">
           <Avatar className="h-10 w-10">
             <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
             <AvatarFallback className="bg-[hsl(var(--optavia-green))] text-white">
@@ -92,7 +93,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
                 className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
               >
                 <Bell className="mr-2 h-4 w-4" />
-                <span>Manage Announcements</span>
+                <span>Announcements</span>
               </DropdownMenuItem>
             )}
             {onReportsClick && (
@@ -104,7 +105,16 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
                 <span>Reports</span>
               </DropdownMenuItem>
             )}
-            {(onAnnouncementsClick || onReportsClick) && (
+            {onInviteClick && (
+              <DropdownMenuItem 
+                onClick={onInviteClick}
+                className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                <span>Invite Coach</span>
+              </DropdownMenuItem>
+            )}
+            {(onAnnouncementsClick || onReportsClick || onInviteClick) && (
               <DropdownMenuSeparator className="bg-gray-200" />
             )}
           </>

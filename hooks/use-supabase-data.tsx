@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
+import { getEarnedBadges } from "@/lib/badges"
 
 export interface UserProfile {
   id: string
@@ -28,12 +29,21 @@ export interface NotificationSettings {
   updated_at: string
 }
 
+export interface AchievementBadge {
+  id: string
+  user_id: string
+  badge_type: string
+  category: string | null
+  earned_at: string
+}
+
 export function useSupabaseData(user: User | null) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [completedResources, setCompletedResources] = useState<string[]>([])
   const [bookmarks, setBookmarks] = useState<string[]>([])
   const [favoriteRecipes, setFavoriteRecipes] = useState<string[]>([])
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(null)
+  const [badges, setBadges] = useState<AchievementBadge[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -45,6 +55,7 @@ export function useSupabaseData(user: User | null) {
       setBookmarks([])
       setFavoriteRecipes([])
       setNotificationSettings(null)
+      setBadges([])
       setLoading(false)
       return
     }
@@ -104,12 +115,99 @@ export function useSupabaseData(user: User | null) {
       if (settingsData) {
         setNotificationSettings(settingsData)
       }
+
+      // Load badges
+      const { data: badgesData } = await supabase
+        .from("user_badges")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("earned_at", { ascending: false })
+
+      if (badgesData) {
+        setBadges(badgesData)
+      }
+
+      // Check and award badges on initial load
+      if (profileData && progressData) {
+        const completedResourceIds = progressData.map((p) => p.resource_id)
+        // Check and award badges inline to avoid dependency issues
+        const earnedBadges = getEarnedBadges(completedResourceIds, profileData.is_new_coach)
+        for (const badge of earnedBadges) {
+          const { data: existingBadge } = await supabase
+            .from("user_badges")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("badge_type", badge.badgeType)
+            .eq("category", badge.category)
+            .single()
+
+          if (!existingBadge) {
+            await supabase.from("user_badges").insert({
+              user_id: user.id,
+              badge_type: badge.badgeType,
+              category: badge.category,
+            })
+          }
+        }
+        // Reload badges after checking
+        const { data: updatedBadgesData } = await supabase
+          .from("user_badges")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("earned_at", { ascending: false })
+        if (updatedBadgesData) {
+          setBadges(updatedBadgesData)
+        }
+      }
     } catch (error) {
       console.error("Error loading user data:", error)
     } finally {
       setLoading(false)
     }
   }, [user, supabase])
+
+  // Check and award badges for completed categories
+  const checkAndAwardBadges = useCallback(
+    async (completedResourceIds: string[], isNewCoach: boolean) => {
+      if (!user) return
+
+      const earnedBadges = getEarnedBadges(completedResourceIds, isNewCoach)
+
+      for (const badge of earnedBadges) {
+        // Check if badge already exists
+        const { data: existingBadge } = await supabase
+          .from("user_badges")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("badge_type", badge.badgeType)
+          .eq("category", badge.category)
+          .single()
+
+        // If badge doesn't exist, award it
+        if (!existingBadge) {
+          const { error } = await supabase.from("user_badges").insert({
+            user_id: user.id,
+            badge_type: badge.badgeType,
+            category: badge.category,
+          })
+
+          if (!error) {
+            // Reload badges to update UI
+            const { data: badgesData } = await supabase
+              .from("user_badges")
+              .select("*")
+              .eq("user_id", user.id)
+              .order("earned_at", { ascending: false })
+
+            if (badgesData) {
+              setBadges(badgesData)
+            }
+          }
+        }
+      }
+    },
+    [user, supabase]
+  )
 
   useEffect(() => {
     loadUserData()
@@ -146,14 +244,16 @@ export function useSupabaseData(user: User | null) {
           return
         }
 
-        setCompletedResources((prev) => {
-          // Avoid duplicates
-          if (prev.includes(resourceId)) return prev
-          return [...prev, resourceId]
-        })
+        const newCompletedResources = [...completedResources, resourceId]
+        setCompletedResources(newCompletedResources)
+
+        // Check and award badges after completing a resource
+        if (profile) {
+          await checkAndAwardBadges(newCompletedResources, profile.is_new_coach)
+        }
       }
     },
-    [user, completedResources, supabase]
+    [user, completedResources, profile, supabase, checkAndAwardBadges]
   )
 
   // Toggle bookmark
@@ -266,6 +366,7 @@ export function useSupabaseData(user: User | null) {
     bookmarks,
     favoriteRecipes,
     notificationSettings,
+    badges,
     loading,
     toggleCompletedResource,
     toggleBookmark,

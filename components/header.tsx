@@ -14,11 +14,12 @@ interface HeaderProps {
   onHomeClick?: () => void
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
+  onInviteClick?: () => void
   activeTab?: "resources" | "blog" | "recipes" | "connect"
   onTabChange?: (tab: "resources" | "blog" | "recipes" | "connect") => void
 }
 
-export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, activeTab = "resources", onTabChange }: HeaderProps) {
+export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab = "resources", onTabChange }: HeaderProps) {
   const { user, loading } = useAuth()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -80,7 +81,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                 )}
               </Button>
             )}
-            {!loading && user && <UserMenu onSettingsClick={onSettingsClick} onAnnouncementsClick={onAnnouncementsClick} onReportsClick={onReportsClick} />}
+            {!loading && user && <UserMenu onSettingsClick={onSettingsClick} onAnnouncementsClick={onAnnouncementsClick} onReportsClick={onReportsClick} onInviteClick={onInviteClick} />}
           </div>
         </div>
 
