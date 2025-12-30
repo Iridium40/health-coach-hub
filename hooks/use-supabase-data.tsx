@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import { getEarnedBadges } from "@/lib/badges"
@@ -48,13 +48,21 @@ export function useSupabaseData(user: User | null) {
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(null)
   const [badges, setBadges] = useState<AchievementBadge[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  // Memoize supabase client to prevent re-creation on every render
+  const supabase = useMemo(() => createClient(), [])
   const loadingRef = useRef(false)
+  const loadedUserIdRef = useRef<string | null>(null)
 
   // Load all user data
-  const loadUserData = useCallback(async () => {
+  const loadUserData = useCallback(async (forceRefresh = false) => {
     // Prevent concurrent calls
     if (loadingRef.current) {
+      return
+    }
+    
+    // Skip if already loaded for this user (unless forced)
+    if (!forceRefresh && user && loadedUserIdRef.current === user.id && profile) {
+      setLoading(false)
       return
     }
     
@@ -70,6 +78,7 @@ export function useSupabaseData(user: User | null) {
       setBadges([])
       setLoading(false)
       loadingRef.current = false
+      loadedUserIdRef.current = null
       return
     }
 
