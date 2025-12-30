@@ -33,7 +33,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   const navItems = [
     { id: "resources" as const, label: "Resources" },
     { id: "recipes" as const, label: "Recipes" },
-    { id: "blog" as const, label: "Optavia Blog", showExternalIcon: true },
+    { id: "blog" as const, label: "Optavia Blog" },
     { id: "connect" as const, label: "OPTAVIA Connect", mobileLabel: "Connect" },
   ]
 
@@ -125,16 +125,13 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
               <button
                 key={item.id}
                 onClick={() => handleTabChange(item.id)}
-                className={`pb-3 lg:pb-4 px-2 lg:px-3 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 flex items-center gap-1 ${
+                className={`pb-3 lg:pb-4 px-2 lg:px-3 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 ${
                   activeTab === item.id
                     ? "text-[hsl(var(--optavia-green))]"
                     : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
                 }`}
               >
                 {item.label}
-                {item.showExternalIcon && (
-                  <ExternalLink className="h-3 w-3" />
-                )}
                 {activeTab === item.id && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[hsl(var(--optavia-green))]" />
                 )}
@@ -146,10 +143,9 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                 href={optaviaProfileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="pb-3 lg:pb-4 px-2 lg:px-3 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 text-optavia-dark hover:text-[hsl(var(--optavia-green))] flex items-center gap-1"
+                className="pb-3 lg:pb-4 px-2 lg:px-3 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
               >
                 OPTAVIA Profile
-                <ExternalLink className="h-3 w-3" />
               </a>
             )}
           </nav>
@@ -163,16 +159,13 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                 <button
                   key={item.id}
                   onClick={() => handleTabChange(item.id)}
-                  className={`px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 flex items-center gap-2 ${
+                  className={`px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 ${
                     activeTab === item.id
                       ? "text-[hsl(var(--optavia-green))] bg-green-50"
                       : "text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
                   }`}
                 >
                   {item.mobileLabel || item.label}
-                  {item.showExternalIcon && (
-                    <ExternalLink className="h-4 w-4" />
-                  )}
                 </button>
               ))}
               {/* Optavia Profile - External Link */}
@@ -182,10 +175,9 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50 flex items-center gap-2"
+                  className="px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
                 >
                   OPTAVIA Profile
-                  <ExternalLink className="h-4 w-4" />
                 </a>
               )}
             </div>
