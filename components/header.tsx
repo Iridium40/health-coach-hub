@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { UserMenu } from "@/components/user-menu"
 import { useAuth } from "@/hooks/use-auth"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
-import { Menu, X, ExternalLink } from "lucide-react"
+import { Menu, X, ExternalLink, Facebook, Instagram, Youtube } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface HeaderProps {
@@ -66,7 +66,37 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
             </Link>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {/* Social Media Icons */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <a
+                href="https://www.facebook.com/optavia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-optavia-dark hover:text-[hsl(var(--optavia-green))] transition-colors"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-5 w-5 sm:h-6 sm:w-6" />
+              </a>
+              <a
+                href="https://www.instagram.com/optavia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-optavia-dark hover:text-[hsl(var(--optavia-green))] transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-5 w-5 sm:h-6 sm:w-6" />
+              </a>
+              <a
+                href="https://www.youtube.com/optavia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-optavia-dark hover:text-[hsl(var(--optavia-green))] transition-colors"
+                aria-label="YouTube"
+              >
+                <Youtube className="h-5 w-5 sm:h-6 sm:w-6" />
+              </a>
+            </div>
             {/* Hamburger Menu Button (Mobile Only) */}
             {!loading && user && (
               <Button

@@ -66,6 +66,10 @@ export function Footer() {
           </div>
 
           <p className="text-xs text-gray-400">© {new Date().getFullYear()} Coaching Amplifier. All rights reserved.</p>
+          
+          <p className="text-xs text-gray-400 text-center max-w-2xl px-4 mt-2">
+            This website is independently operated by Coaching Amplifier and is not affiliated with, endorsed by, or operated by OPTAVIA LLC.
+          </p>
         </div>
       </div>
     </footer>
