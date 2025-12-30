@@ -1,11 +1,12 @@
 "use client"
 
 import type React from "react"
+import { useState } from "react"
 
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Heart, Clock, Users } from "lucide-react"
+import { Heart, Clock, Users, Image as ImageIcon } from "lucide-react"
 import type { Recipe, UserData } from "@/lib/types"
 
 interface RecipeCardProps {
@@ -18,6 +19,7 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe, userData, setUserData, toggleFavoriteRecipe, onClick }: RecipeCardProps) {
   const isFavorite = userData.favoriteRecipes.includes(recipe.id)
+  const [imageError, setImageError] = useState(false)
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -38,14 +40,70 @@ export function RecipeCard({ recipe, userData, setUserData, toggleFavoriteRecipe
     }
   }
 
+  const handleImageError = () => {
+    setImageError(true)
+  }
+
+  // Generate a placeholder image URL based on recipe category
+  const getPlaceholderImage = () => {
+    const categoryColors: Record<string, string> = {
+      Chicken: "fbbf24",
+      Seafood: "3b82f6",
+      Beef: "ef4444",
+      Turkey: "f97316",
+      Pork: "ec4899",
+      Vegetarian: "10b981",
+      Breakfast: "8b5cf6",
+    }
+    const color = categoryColors[recipe.category] || "6b7280"
+    return `https://via.placeholder.com/400x300/${color}/ffffff?text=${encodeURIComponent(recipe.title)}`
+  }
+
+  // Get category color for placeholder
+  const getCategoryColor = () => {
+    const categoryColors: Record<string, string> = {
+      Chicken: "bg-yellow-400",
+      Seafood: "bg-blue-500",
+      Beef: "bg-red-500",
+      Turkey: "bg-orange-500",
+      Pork: "bg-pink-500",
+      Vegetarian: "bg-green-500",
+      Breakfast: "bg-purple-500",
+    }
+    return categoryColors[recipe.category] || "bg-gray-500"
+  }
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer border border-optavia-border">
       <div onClick={onClick}>
         <div className="relative h-48 bg-gray-100">
-          <img src={recipe.image || "/placeholder.svg"} alt={recipe.title} className="w-full h-full object-cover" />
+          {imageError || !recipe.image ? (
+            <div className={`w-full h-full flex items-center justify-center ${getCategoryColor()}`}>
+              <div className="text-center text-white px-4">
+                <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-80" />
+                <p className="text-sm font-semibold">{recipe.title}</p>
+              </div>
+            </div>
+          ) : (
+            <img 
+              src={recipe.image} 
+              alt={recipe.title} 
+              className="w-full h-full object-cover"
+              onError={handleImageError}
+            />
+          )}
           <Badge className="absolute top-3 left-3 bg-[hsl(var(--optavia-green-light))] text-[hsl(var(--optavia-green))]">
             {recipe.category}
           </Badge>
+          <button
+            onClick={toggleFavorite}
+            className={`absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white transition-colors shadow-md ${
+              isFavorite ? "text-red-500" : "text-optavia-gray hover:text-red-500"
+            }`}
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
+          </button>
         </div>
 
         <div className="p-4">
@@ -64,7 +122,7 @@ export function RecipeCard({ recipe, userData, setUserData, toggleFavoriteRecipe
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="flex flex-wrap gap-2">
             <Badge variant="outline" className="text-xs">
               L: {recipe.counts.lean}
             </Badge>
@@ -79,18 +137,6 @@ export function RecipeCard({ recipe, userData, setUserData, toggleFavoriteRecipe
             </Badge>
           </div>
         </div>
-      </div>
-
-      <div className="px-4 pb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleFavorite}
-          className={`w-full gap-2 ${isFavorite ? "text-red-500 hover:text-red-600" : "text-optavia-gray hover:text-red-500"}`}
-        >
-          <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
-          {isFavorite ? "Saved" : "Save Recipe"}
-        </Button>
       </div>
     </Card>
   )
