@@ -120,7 +120,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
             )}
             {/* OPTAVIA Connect - External Link */}
             <a
-              href="https://portal.optaviaconnect.com/"
+              href="https://optaviaconnect.com/login"
               target="_blank"
               rel="noopener noreferrer"
               className="pb-3 lg:pb-4 px-2 lg:px-3 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 text-optavia-dark hover:text-[hsl(var(--optavia-green))] flex items-center gap-1"
@@ -163,7 +163,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
               )}
               {/* OPTAVIA Connect - External Link */}
               <a
-                href="https://portal.optaviaconnect.com/"
+                href="https://optaviaconnect.com/login"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setMobileMenuOpen(false)}
