@@ -38,7 +38,7 @@ export default function Home() {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null)
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
   const [dashboardKey, setDashboardKey] = useState(0) // Key to force Dashboard remount
-  const [activeTab, setActiveTab] = useState<"resources" | "blog" | "recipes">("resources")
+  const [activeTab, setActiveTab] = useState<"resources" | "blog" | "recipes" | "connect">("resources")
 
   useEffect(() => {
     if (authLoading || dataLoading) return

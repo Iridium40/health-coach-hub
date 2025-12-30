@@ -4,6 +4,7 @@ import { Hero } from "@/components/hero"
 import { ResourcesTab } from "@/components/resources-tab"
 import { BlogTab } from "@/components/blog-tab"
 import { RecipesTab } from "@/components/recipes-tab"
+import { ConnectTab } from "@/components/connect-tab"
 import type { UserData, Module, Recipe } from "@/lib/types"
 import type { UserProfile } from "@/hooks/use-supabase-data"
 
@@ -15,7 +16,7 @@ interface DashboardProps {
   toggleFavoriteRecipe?: (recipeId: string) => Promise<void>
   onSelectModule: (module: Module) => void
   onSelectRecipe: (recipe: Recipe) => void
-  activeTab?: "resources" | "blog" | "recipes"
+  activeTab?: "resources" | "blog" | "recipes" | "connect"
 }
 
 export function Dashboard({ userData, profile, badges = [], setUserData, toggleFavoriteRecipe, onSelectModule, onSelectRecipe, activeTab = "resources" }: DashboardProps) {
@@ -39,6 +40,8 @@ export function Dashboard({ userData, profile, badges = [], setUserData, toggleF
             onSelectRecipe={onSelectRecipe} 
           />
         )}
+
+        {activeTab === "connect" && <ConnectTab />}
       </div>
     </>
   )
