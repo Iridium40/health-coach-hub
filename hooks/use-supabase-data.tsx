@@ -61,7 +61,7 @@ export function useSupabaseData(user: User | null) {
     }
     
     // Skip if already loaded for this user (unless forced)
-    if (!forceRefresh && user && loadedUserIdRef.current === user.id && profile) {
+    if (!forceRefresh && user && loadedUserIdRef.current === user.id) {
       setLoading(false)
       return
     }
@@ -93,7 +93,6 @@ export function useSupabaseData(user: User | null) {
       if (profileError && profileError.code !== "PGRST116") {
         console.error("Error loading profile:", profileError)
       } else if (profileData) {
-        console.log("Loaded profile data:", profileData)
         setProfile(profileData)
       }
 
@@ -181,13 +180,15 @@ export function useSupabaseData(user: User | null) {
           setBadges(updatedBadgesData)
         }
       }
+      // Mark as loaded for this user
+      loadedUserIdRef.current = user.id
     } catch (error) {
       console.error("Error loading user data:", error)
     } finally {
       setLoading(false)
       loadingRef.current = false
     }
-  }, [user])
+  }, [user, supabase])
 
   // Check and award badges for completed categories
   const checkAndAwardBadges = useCallback(
@@ -248,9 +249,13 @@ export function useSupabaseData(user: User | null) {
 
   useEffect(() => {
     // Reset loading ref when user changes
-    loadingRef.current = false
+    if (user?.id !== loadedUserIdRef.current) {
+      loadingRef.current = false
+      loadedUserIdRef.current = null
+    }
     loadUserData()
-  }, [loadUserData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   // Toggle completed resource
   const toggleCompletedResource = useCallback(
