@@ -18,6 +18,7 @@ export default function TrainingPage() {
     completedResources,
     bookmarks,
     favoriteRecipes,
+    modules,
   } = useUserData()
 
   // Convert Supabase data to UserData format - memoize to prevent unnecessary re-renders
@@ -73,6 +74,7 @@ export default function TrainingPage() {
             userData={userData}
             setUserData={handleSetUserData}
             onSelectModule={handleSelectModule}
+            modules={modules}
           />
         </div>
       </main>

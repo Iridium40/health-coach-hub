@@ -6,7 +6,6 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ModuleDetail } from "@/components/module-detail"
 import { useUserData } from "@/contexts/user-data-context"
-import { modules } from "@/lib/data"
 import type { UserData } from "@/lib/types"
 
 export default function TrainingModulePage() {
@@ -19,12 +18,13 @@ export default function TrainingModulePage() {
     completedResources,
     bookmarks,
     favoriteRecipes,
+    modules,
   } = useUserData()
 
   // Find the module by ID
   const module = useMemo(() => {
     return modules.find((m) => m.id === moduleId)
-  }, [moduleId])
+  }, [moduleId, modules])
 
   // Convert Supabase data to UserData format - memoize to prevent unnecessary re-renders
   const userData = useMemo(() => {

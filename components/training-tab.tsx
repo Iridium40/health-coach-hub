@@ -3,7 +3,6 @@
 import { useState, useMemo, useCallback, memo } from "react"
 import { ModuleCard } from "@/components/module-card"
 import { SearchWithHistory } from "@/components/search-with-history"
-import { modules } from "@/lib/data"
 import type { UserData, Module } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,9 +17,10 @@ interface TrainingTabProps {
   userData: UserData
   setUserData: (data: UserData) => void
   onSelectModule: (module: Module) => void
+  modules: Module[]
 }
 
-export const TrainingTab = memo(function TrainingTab({ userData, setUserData, onSelectModule }: TrainingTabProps) {
+export const TrainingTab = memo(function TrainingTab({ userData, setUserData, onSelectModule, modules }: TrainingTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")
 

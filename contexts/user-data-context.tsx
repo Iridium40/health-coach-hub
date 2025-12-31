@@ -1,9 +1,13 @@
 "use client"
 
-import { createContext, useContext, ReactNode } from "react"
+import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from "react"
 import type { User } from "@supabase/supabase-js"
 import { useAuth } from "@/hooks/use-auth"
 import { useSupabaseData, UserProfile, NotificationSettings, AchievementBadge } from "@/hooks/use-supabase-data"
+import { getModules, getRecipes } from "@/lib/supabase/data"
+import type { Module, Recipe } from "@/lib/types"
+// Static data as fallback
+import { modules as staticModules, recipes as staticRecipes } from "@/lib/data"
 
 interface UserDataContextType {
   // Auth state
@@ -23,6 +27,11 @@ interface UserDataContextType {
   badges: AchievementBadge[]
   loading: boolean
   
+  // Content data (from Supabase or static fallback)
+  modules: Module[]
+  recipes: Recipe[]
+  contentLoading: boolean
+  
   // Actions
   toggleCompletedResource: (resourceId: string) => Promise<void>
   toggleBookmark: (resourceId: string) => Promise<void>
@@ -30,6 +39,7 @@ interface UserDataContextType {
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ data?: UserProfile; error?: Error }>
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => Promise<{ data?: NotificationSettings; error?: Error }>
   refreshData: (forceRefresh?: boolean) => Promise<void>
+  refreshContent: () => Promise<void>
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null)
@@ -52,6 +62,34 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     refreshData,
   } = useSupabaseData(user)
 
+  // Content state (modules and recipes from Supabase)
+  const [modules, setModules] = useState<Module[]>(staticModules)
+  const [recipes, setRecipes] = useState<Recipe[]>(staticRecipes)
+  const [contentLoading, setContentLoading] = useState(true)
+
+  // Load content from Supabase
+  const loadContent = useCallback(async () => {
+    setContentLoading(true)
+    try {
+      const [loadedModules, loadedRecipes] = await Promise.all([
+        getModules(),
+        getRecipes(),
+      ])
+      setModules(loadedModules)
+      setRecipes(loadedRecipes)
+    } catch (error) {
+      console.error("Error loading content from Supabase:", error)
+      // Keep using static data as fallback
+    } finally {
+      setContentLoading(false)
+    }
+  }, [])
+
+  // Load content on mount
+  useEffect(() => {
+    loadContent()
+  }, [loadContent])
+
   const value: UserDataContextType = {
     // Auth
     user,
@@ -68,6 +106,10 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     notificationSettings,
     badges,
     loading,
+    // Content
+    modules,
+    recipes,
+    contentLoading,
     // Actions
     toggleCompletedResource,
     toggleBookmark,
@@ -75,6 +117,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     updateProfile,
     updateNotificationSettings,
     refreshData,
+    refreshContent: loadContent,
   }
 
   return (

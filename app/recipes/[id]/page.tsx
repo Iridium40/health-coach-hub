@@ -6,7 +6,6 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { RecipeDetail } from "@/components/recipe-detail"
 import { useUserData } from "@/contexts/user-data-context"
-import { recipes } from "@/lib/data"
 import type { UserData } from "@/lib/types"
 
 export default function RecipeDetailPage() {
@@ -20,12 +19,13 @@ export default function RecipeDetailPage() {
     bookmarks,
     favoriteRecipes,
     toggleFavoriteRecipe,
+    recipes,
   } = useUserData()
 
   // Find the recipe by ID
   const recipe = useMemo(() => {
     return recipes.find((r) => r.id === recipeId)
-  }, [recipeId])
+  }, [recipeId, recipes])
 
   // Convert Supabase data to UserData format - memoize to prevent unnecessary re-renders
   const userData = useMemo(() => {

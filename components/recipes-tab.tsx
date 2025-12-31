@@ -3,7 +3,6 @@
 import { useState, useMemo, useCallback, memo } from "react"
 import { RecipeCard } from "@/components/recipe-card"
 import { SearchWithHistory } from "@/components/search-with-history"
-import { recipes } from "@/lib/data"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -19,12 +18,13 @@ interface RecipesTabProps {
   setUserData: (data: UserData) => void
   toggleFavoriteRecipe?: (recipeId: string) => Promise<void>
   onSelectRecipe: (recipe: Recipe) => void
+  recipes: Recipe[]
 }
 
 // Memoized categories - static array
 const categories = ["All", "Favorites", "Chicken", "Seafood", "Beef", "Turkey", "Pork", "Vegetarian", "Breakfast"]
 
-export const RecipesTab = memo(function RecipesTab({ userData, setUserData, toggleFavoriteRecipe, onSelectRecipe }: RecipesTabProps) {
+export const RecipesTab = memo(function RecipesTab({ userData, setUserData, toggleFavoriteRecipe, onSelectRecipe, recipes }: RecipesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -68,7 +68,7 @@ export const RecipesTab = memo(function RecipesTab({ userData, setUserData, togg
       })
     })
     return Array.from(suggestions)
-  }, [])
+  }, [recipes])
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value)

@@ -19,6 +19,7 @@ export default function RecipesPage() {
     bookmarks,
     favoriteRecipes,
     toggleFavoriteRecipe,
+    recipes,
   } = useUserData()
 
   // Convert Supabase data to UserData format - memoize to prevent unnecessary re-renders
@@ -75,6 +76,7 @@ export default function RecipesPage() {
             setUserData={handleSetUserData}
             toggleFavoriteRecipe={toggleFavoriteRecipe}
             onSelectRecipe={handleSelectRecipe}
+            recipes={recipes}
           />
         </div>
       </main>
