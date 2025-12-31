@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client"
 import { 
   Video, Calendar, Clock, Users, UserCircle, ChevronRight,
   BookOpen, UtensilsCrossed, Wrench, ExternalLink, Award,
-  CheckCircle, PlayCircle, Sparkles
+  CheckCircle, PlayCircle, Sparkles, Star
 } from "lucide-react"
 import type { ZoomCall } from "@/lib/types"
 
@@ -314,10 +314,10 @@ export function DashboardOverview() {
                 </div>
               </Link>
               
-              <Link href="/recipes">
-                <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-colors text-center cursor-pointer">
-                  <UtensilsCrossed className="h-6 w-6 mx-auto mb-2 text-green-600" />
-                  <p className="text-sm font-medium text-optavia-dark">Browse Recipes</p>
+              <Link href="/favorites">
+                <div className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 hover:from-amber-100 hover:to-yellow-100 transition-colors text-center cursor-pointer">
+                  <Star className="h-6 w-6 mx-auto mb-2 text-amber-600" />
+                  <p className="text-sm font-medium text-optavia-dark">Favorites</p>
                 </div>
               </Link>
               
