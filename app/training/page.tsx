@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -22,16 +22,28 @@ export default function TrainingPage() {
     loading: dataLoading,
   } = useSupabaseData(user)
 
-  // Convert Supabase data to UserData format
-  const userData = profile
-    ? {
-        isNewCoach: profile.is_new_coach,
-        completedResources,
-        bookmarks,
-        favoriteRecipes,
-        createdAt: profile.created_at,
-      }
-    : null
+  // Convert Supabase data to UserData format - memoize to prevent unnecessary re-renders
+  const userData = useMemo(() => {
+    return profile
+      ? {
+          isNewCoach: profile.is_new_coach,
+          completedResources,
+          bookmarks,
+          favoriteRecipes,
+          createdAt: profile.created_at,
+        }
+      : null
+  }, [profile, completedResources, bookmarks, favoriteRecipes])
+
+  // Memoize the onSelectModule callback to prevent re-renders
+  const handleSelectModule = useCallback((module: Module) => {
+    router.push(`/training/${module.id}`)
+  }, [router])
+
+  // Memoize setUserData to prevent re-renders (no-op function for this page)
+  const handleSetUserData = useCallback(() => {
+    // No-op: user data updates are handled by useSupabaseData hook
+  }, [])
 
   useEffect(() => {
     if (authLoading || dataLoading) return
@@ -81,10 +93,8 @@ export default function TrainingPage() {
         <div className="container mx-auto px-4 py-4 sm:py-8 bg-white">
           <TrainingTab
             userData={userData}
-            setUserData={() => {}}
-            onSelectModule={(module: Module) => {
-              router.push(`/training/${module.id}`)
-            }}
+            setUserData={handleSetUserData}
+            onSelectModule={handleSelectModule}
           />
         </div>
       </main>
