@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useCallback, memo } from "react"
 import { RecipeCard } from "@/components/recipe-card"
 import { recipes } from "@/lib/data"
 import { Button } from "@/components/ui/button"
@@ -22,33 +22,42 @@ interface RecipesTabProps {
   onSelectRecipe: (recipe: Recipe) => void
 }
 
-export function RecipesTab({ userData, setUserData, toggleFavoriteRecipe, onSelectRecipe }: RecipesTabProps) {
+// Memoized categories - static array
+const categories = ["All", "Favorites", "Chicken", "Seafood", "Beef", "Turkey", "Pork", "Vegetarian", "Breakfast"]
+
+export const RecipesTab = memo(function RecipesTab({ userData, setUserData, toggleFavoriteRecipe, onSelectRecipe }: RecipesTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")
 
-  const filteredRecipes = recipes.filter((recipe) => {
-    // Check if favorites filter is selected
-    if (selectedCategory === "Favorites") {
-      if (!userData.favoriteRecipes.includes(recipe.id)) {
-        return false
+  // Memoize filtered recipes
+  const filteredRecipes = useMemo(() => 
+    recipes.filter((recipe) => {
+      // Check if favorites filter is selected
+      if (selectedCategory === "Favorites") {
+        if (!userData.favoriteRecipes.includes(recipe.id)) {
+          return false
+        }
+      } else {
+        // Apply category filter for non-favorites
+        const matchesCategory = selectedCategory === "All" || recipe.category === selectedCategory
+        if (!matchesCategory) {
+          return false
+        }
       }
-    } else {
-      // Apply category filter for non-favorites
-      const matchesCategory = selectedCategory === "All" || recipe.category === selectedCategory
-      if (!matchesCategory) {
-        return false
-      }
-    }
-    
-    // Apply search filter
-    const matchesSearch =
-      searchQuery === "" ||
-      recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recipe.ingredients.some((ing) => ing.toLowerCase().includes(searchQuery.toLowerCase()))
-    return matchesSearch
-  })
+      
+      // Apply search filter
+      const matchesSearch =
+        searchQuery === "" ||
+        recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recipe.ingredients.some((ing) => ing.toLowerCase().includes(searchQuery.toLowerCase()))
+      return matchesSearch
+    }),
+    [selectedCategory, searchQuery, userData.favoriteRecipes]
+  )
 
-  const categories = ["All", "Favorites", "Chicken", "Seafood", "Beef", "Turkey", "Pork", "Vegetarian", "Breakfast"]
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }, [])
 
   return (
     <div>
@@ -70,7 +79,7 @@ export function RecipesTab({ userData, setUserData, toggleFavoriteRecipe, onSele
             type="text"
             placeholder="Search recipes or ingredients..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className="pl-10"
           />
         </div>
@@ -130,4 +139,4 @@ export function RecipesTab({ userData, setUserData, toggleFavoriteRecipe, onSele
       )}
     </div>
   )
-}
+})

@@ -1,11 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { memo, useState, useMemo, useCallback } from "react"
 
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Heart, Clock, Users, Image as ImageIcon } from "lucide-react"
 import type { Recipe, UserData } from "@/lib/types"
 
@@ -17,11 +16,11 @@ interface RecipeCardProps {
   onClick: () => void
 }
 
-export function RecipeCard({ recipe, userData, setUserData, toggleFavoriteRecipe, onClick }: RecipeCardProps) {
-  const isFavorite = userData.favoriteRecipes.includes(recipe.id)
+export const RecipeCard = memo(function RecipeCard({ recipe, userData, setUserData, toggleFavoriteRecipe, onClick }: RecipeCardProps) {
+  const isFavorite = useMemo(() => userData.favoriteRecipes.includes(recipe.id), [userData.favoriteRecipes, recipe.id])
   const [imageError, setImageError] = useState(false)
 
-  const toggleFavorite = async (e: React.MouseEvent) => {
+  const toggleFavorite = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation()
     
     if (toggleFavoriteRecipe) {
@@ -38,11 +37,11 @@ export function RecipeCard({ recipe, userData, setUserData, toggleFavoriteRecipe
         favoriteRecipes: newFavorites,
       })
     }
-  }
+  }, [recipe.id, toggleFavoriteRecipe, isFavorite, userData, setUserData])
 
-  const handleImageError = () => {
+  const handleImageError = useCallback(() => {
     setImageError(true)
-  }
+  }, [])
 
   // Generate a placeholder image URL based on recipe category
   const getPlaceholderImage = () => {
@@ -140,4 +139,4 @@ export function RecipeCard({ recipe, userData, setUserData, toggleFavoriteRecipe
       </div>
     </Card>
   )
-}
+})

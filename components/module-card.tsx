@@ -1,5 +1,6 @@
 "use client"
 
+import { memo, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ProgressBar } from "@/components/progress-bar"
@@ -11,10 +12,16 @@ interface ModuleCardProps {
   onClick: () => void
 }
 
-export function ModuleCard({ module, userData, onClick }: ModuleCardProps) {
-  const completedCount = module.resources.filter((resource) => userData.completedResources.includes(resource.id)).length
+export const ModuleCard = memo(function ModuleCard({ module, userData, onClick }: ModuleCardProps) {
+  const completedCount = useMemo(() => 
+    module.resources.filter((resource) => userData.completedResources.includes(resource.id)).length,
+    [module.resources, userData.completedResources]
+  )
 
-  const progress = module.resources.length > 0 ? Math.round((completedCount / module.resources.length) * 100) : 0
+  const progress = useMemo(() => 
+    module.resources.length > 0 ? Math.round((completedCount / module.resources.length) * 100) : 0,
+    [module.resources.length, completedCount]
+  )
 
   return (
     <Card
@@ -45,4 +52,4 @@ export function ModuleCard({ module, userData, onClick }: ModuleCardProps) {
       </div>
     </Card>
   )
-}
+})

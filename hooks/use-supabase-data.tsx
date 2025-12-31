@@ -83,103 +83,61 @@ export function useSupabaseData(user: User | null) {
     }
 
     try {
-      // Load profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single()
+      // Load all user data in parallel for better performance
+      const [
+        profileResult,
+        progressResult,
+        bookmarksResult,
+        recipesResult,
+        settingsResult,
+        badgesResult,
+      ] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("user_progress").select("resource_id").eq("user_id", user.id),
+        supabase.from("user_bookmarks").select("resource_id").eq("user_id", user.id),
+        supabase.from("favorite_recipes").select("recipe_id").eq("user_id", user.id),
+        supabase.from("notification_settings").select("*").eq("user_id", user.id).single(),
+        supabase.from("user_badges").select("*").eq("user_id", user.id).order("earned_at", { ascending: false }),
+      ])
 
+      // Process profile
+      const { data: profileData, error: profileError } = profileResult
       if (profileError && profileError.code !== "PGRST116") {
         console.error("Error loading profile:", profileError)
       } else if (profileData) {
         setProfile(profileData)
       }
 
-      // Load completed resources
-      const { data: progressData } = await supabase
-        .from("user_progress")
-        .select("resource_id")
-        .eq("user_id", user.id)
-
+      // Process completed resources
+      const { data: progressData } = progressResult
       if (progressData) {
         setCompletedResources(progressData.map((p) => p.resource_id))
       }
 
-      // Load bookmarks
-      const { data: bookmarksData } = await supabase
-        .from("user_bookmarks")
-        .select("resource_id")
-        .eq("user_id", user.id)
-
+      // Process bookmarks
+      const { data: bookmarksData } = bookmarksResult
       if (bookmarksData) {
         setBookmarks(bookmarksData.map((b) => b.resource_id))
       }
 
-      // Load favorite recipes
-      const { data: recipesData } = await supabase
-        .from("favorite_recipes")
-        .select("recipe_id")
-        .eq("user_id", user.id)
-
+      // Process favorite recipes
+      const { data: recipesData } = recipesResult
       if (recipesData) {
         setFavoriteRecipes(recipesData.map((r) => r.recipe_id))
       }
 
-      // Load notification settings
-      const { data: settingsData } = await supabase
-        .from("notification_settings")
-        .select("*")
-        .eq("user_id", user.id)
-        .single()
-
+      // Process notification settings
+      const { data: settingsData } = settingsResult
       if (settingsData) {
         setNotificationSettings(settingsData)
       }
 
-      // Load badges
-      const { data: badgesData } = await supabase
-        .from("user_badges")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("earned_at", { ascending: false })
-
+      // Process badges
+      const { data: badgesData } = badgesResult
       if (badgesData) {
         setBadges(badgesData)
       }
 
-      // Check and award badges on initial load
-      if (profileData && progressData) {
-        const completedResourceIds = progressData.map((p) => p.resource_id)
-        // Check and award badges inline to avoid dependency issues
-        const earnedBadges = getEarnedBadges(completedResourceIds, profileData.is_new_coach)
-        for (const badge of earnedBadges) {
-          const { data: existingBadge } = await supabase
-            .from("user_badges")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("badge_type", badge.badgeType)
-            .eq("category", badge.category)
-            .single()
-
-          if (!existingBadge) {
-            await supabase.from("user_badges").insert({
-              user_id: user.id,
-              badge_type: badge.badgeType,
-              category: badge.category,
-            })
-          }
-        }
-        // Reload badges after checking
-        const { data: updatedBadgesData } = await supabase
-          .from("user_badges")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("earned_at", { ascending: false })
-        if (updatedBadgesData) {
-          setBadges(updatedBadgesData)
-        }
-      }
       // Mark as loaded for this user
       loadedUserIdRef.current = user.id
     } catch (error) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useCallback, memo } from "react"
 import { ModuleCard } from "@/components/module-card"
 import { modules } from "@/lib/data"
 import type { UserData, Module } from "@/lib/types"
@@ -21,48 +21,62 @@ interface TrainingTabProps {
   onSelectModule: (module: Module) => void
 }
 
-export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingTabProps) {
+export const TrainingTab = memo(function TrainingTab({ userData, setUserData, onSelectModule }: TrainingTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Get all available modules for this user
-  const availableModules = modules.filter((module) => {
-    if (userData.isNewCoach && !module.forNewCoach) return false
-    return true
-  })
-
-  // Get unique categories from available modules
-  const availableCategories: string[] = Array.from(
-    new Set(availableModules.map((module) => module.category))
+  // Memoize available modules for this user
+  const availableModules = useMemo(() => 
+    modules.filter((module) => {
+      if (userData.isNewCoach && !module.forNewCoach) return false
+      return true
+    }),
+    [userData.isNewCoach]
   )
 
-  // Define the desired order for categories
-  const categoryOrder: string[] = ["Getting Started", "Client Support", "Business Building"]
-  
-  // Sort categories according to the desired order, then add any remaining categories
-  const orderedCategories = categoryOrder.filter((cat: string) => availableCategories.includes(cat))
-  const remainingCategories = availableCategories
-    .filter((cat: string) => !categoryOrder.includes(cat))
-    .sort()
-  
-  // Build categories list: always include "All" first, then ordered categories
-  const categories = ["All", ...orderedCategories, ...remainingCategories]
+  // Memoize categories list
+  const categories = useMemo(() => {
+    // Get unique categories from available modules
+    const availableCategories: string[] = Array.from(
+      new Set(availableModules.map((module) => module.category))
+    )
 
-  const filteredModules = availableModules.filter((module) => {
-    // Apply category filter
-    const matchesCategory = selectedCategory === "All" || module.category === selectedCategory
-    if (!matchesCategory) return false
+    // Define the desired order for categories
+    const categoryOrder: string[] = ["Getting Started", "Client Support", "Business Building"]
     
-    // Apply search filter
-    const matchesSearch =
-      searchQuery === "" ||
-      module.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      module.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      module.resources.some((resource) =>
-        resource.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    return matchesSearch
-  })
+    // Sort categories according to the desired order, then add any remaining categories
+    const orderedCategories = categoryOrder.filter((cat: string) => availableCategories.includes(cat))
+    const remainingCategories = availableCategories
+      .filter((cat: string) => !categoryOrder.includes(cat))
+      .sort()
+    
+    // Build categories list: always include "All" first, then ordered categories
+    return ["All", ...orderedCategories, ...remainingCategories]
+  }, [availableModules])
+
+  // Memoize filtered modules
+  const filteredModules = useMemo(() => 
+    availableModules.filter((module) => {
+      // Apply category filter
+      const matchesCategory = selectedCategory === "All" || module.category === selectedCategory
+      if (!matchesCategory) return false
+      
+      // Apply search filter
+      const matchesSearch =
+        searchQuery === "" ||
+        module.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        module.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        module.resources.some((resource) =>
+          resource.title.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      return matchesSearch
+    }),
+    [availableModules, selectedCategory, searchQuery]
+  )
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }, [])
 
   return (
     <div>
@@ -84,7 +98,7 @@ export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingT
             type="text"
             placeholder="Search modules or resources..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className="pl-10"
           />
         </div>
@@ -137,4 +151,4 @@ export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingT
       )}
     </div>
   )
-}
+})
