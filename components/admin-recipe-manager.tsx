@@ -144,6 +144,57 @@ export function AdminRecipeManager({ onClose }: AdminRecipeManagerProps) {
     setIsCreating(true)
   }
 
+  // Resize image to 400x300 before upload
+  const resizeImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'))
+        return
+      }
+
+      img.onload = () => {
+        // Set target dimensions
+        const targetWidth = 400
+        const targetHeight = 300
+        
+        canvas.width = targetWidth
+        canvas.height = targetHeight
+        
+        // Calculate scaling to cover the target area (crop to fit)
+        const scale = Math.max(targetWidth / img.width, targetHeight / img.height)
+        const scaledWidth = img.width * scale
+        const scaledHeight = img.height * scale
+        
+        // Center the image (crop excess)
+        const offsetX = (targetWidth - scaledWidth) / 2
+        const offsetY = (targetHeight - scaledHeight) / 2
+        
+        // Fill with white background (in case of transparency)
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, targetWidth, targetHeight)
+        
+        // Draw resized image
+        ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight)
+        
+        // Convert to blob
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob)
+          } else {
+            reject(new Error('Failed to create blob'))
+          }
+        }, 'image/jpeg', 0.85) // Use JPEG with 85% quality for smaller file size
+      }
+
+      img.onerror = () => reject(new Error('Failed to load image'))
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !editingRecipe) return
@@ -171,15 +222,17 @@ export function AdminRecipeManager({ onClose }: AdminRecipeManagerProps) {
     setUploading(true)
 
     try {
-      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg"
-      const fileName = `${editingRecipe.id}-${Date.now()}.${fileExt}`
+      // Resize image to 400x300
+      const resizedBlob = await resizeImage(file)
+      const fileName = `${editingRecipe.id}-${Date.now()}.jpg` // Always save as jpg after resize
 
       // Upload to recipes bucket
       const { error: uploadError } = await supabase.storage
         .from("recipes")
-        .upload(fileName, file, {
+        .upload(fileName, resizedBlob, {
           cacheControl: "3600",
           upsert: true,
+          contentType: 'image/jpeg',
         })
 
       if (uploadError) throw uploadError
@@ -632,7 +685,7 @@ export function AdminRecipeManager({ onClose }: AdminRecipeManagerProps) {
                         )}
                       </Button>
                       <p className="text-xs text-optavia-gray">
-                        JPG, PNG, or WebP • Max 5MB
+                        Auto-resized to 400×300 • JPG, PNG, or WebP
                       </p>
                       <div className="flex gap-2">
                         <Input
