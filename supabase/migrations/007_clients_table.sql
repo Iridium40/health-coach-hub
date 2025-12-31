@@ -7,6 +7,7 @@
 CREATE TABLE IF NOT EXISTS clients (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   coach_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  coach_optavia_id TEXT, -- Coach's Optavia ID at time of client creation
   name TEXT NOT NULL,
   email TEXT NOT NULL,
   phone TEXT,

@@ -33,7 +33,12 @@ export default function MealPlannerPage() {
       <Header activeTab="recipes" />
       <main className="flex-1 bg-white">
         <div className="container mx-auto px-4 py-4 sm:py-8">
-          <MealPlanner recipes={recipes} coachName={profile?.full_name || "Your Coach"} coachId={user.id} />
+          <MealPlanner 
+            recipes={recipes} 
+            coachName={profile?.full_name || "Your Coach"} 
+            coachId={user.id}
+            coachOptaviaId={profile?.optavia_id || undefined}
+          />
         </div>
       </main>
       <Footer />

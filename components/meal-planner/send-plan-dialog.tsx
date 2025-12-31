@@ -26,6 +26,7 @@ interface SendPlanDialogProps {
   mealPlan: MealPlan
   coachName: string
   coachId: string
+  coachOptaviaId?: string
   planType: PlanType
 }
 
@@ -33,7 +34,7 @@ const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
 const MEALS_5_1 = ["meal"]
 const MEALS_4_2 = ["lunch", "dinner"]
 
-export function SendPlanDialog({ open, onOpenChange, mealPlan, coachName, coachId, planType }: SendPlanDialogProps) {
+export function SendPlanDialog({ open, onOpenChange, mealPlan, coachName, coachId, coachOptaviaId, planType }: SendPlanDialogProps) {
   const { toast } = useToast()
   const supabase = createClient()
   const [clientName, setClientName] = useState("")
@@ -140,6 +141,7 @@ export function SendPlanDialog({ open, onOpenChange, mealPlan, coachName, coachI
           .from("clients")
           .upsert({
             coach_id: coachId,
+            coach_optavia_id: coachOptaviaId || null,
             name: clientName.trim(),
             email: clientEmail.trim().toLowerCase(),
             last_plan_sent_at: new Date().toISOString(),
