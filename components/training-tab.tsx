@@ -5,6 +5,8 @@ import { ModuleCard } from "@/components/module-card"
 import { modules } from "@/lib/data"
 import type { UserData, Module } from "@/lib/types"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Search } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -21,6 +23,7 @@ interface TrainingTabProps {
 
 export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
+  const [searchQuery, setSearchQuery] = useState("")
 
   // Get all available modules for this user
   const availableModules = modules.filter((module) => {
@@ -46,8 +49,19 @@ export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingT
   const categories = ["All", ...orderedCategories, ...remainingCategories]
 
   const filteredModules = availableModules.filter((module) => {
-    if (selectedCategory === "All") return true
-    return module.category === selectedCategory
+    // Apply category filter
+    const matchesCategory = selectedCategory === "All" || module.category === selectedCategory
+    if (!matchesCategory) return false
+    
+    // Apply search filter
+    const matchesSearch =
+      searchQuery === "" ||
+      module.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      module.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      module.resources.some((resource) =>
+        resource.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    return matchesSearch
   })
 
   return (
@@ -62,24 +76,37 @@ export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingT
         </p>
       </div>
 
-      {/* Category Filter - Mobile Dropdown */}
-      <div className="md:hidden mb-6">
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full border-2 border-gray-300 text-optavia-dark bg-white hover:border-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))] focus:ring-[hsl(var(--optavia-green-light))]">
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent className="bg-white text-optavia-dark">
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Search and Filter */}
+      <div className="mb-6 space-y-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-optavia-light-gray" />
+          <Input
+            type="text"
+            placeholder="Search modules or resources..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
-      {/* Category Filter - Desktop Buttons */}
-      <div className="hidden md:flex flex-wrap gap-2 mb-6">
+        {/* Category Filter - Mobile Dropdown */}
+        <div className="md:hidden">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full border-2 border-gray-300 text-optavia-dark bg-white hover:border-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))] focus:ring-[hsl(var(--optavia-green-light))]">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent className="bg-white text-optavia-dark">
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Category Filter - Desktop Buttons */}
+        <div className="hidden md:flex flex-wrap gap-2">
         {categories.map((category) => (
           <Button
             key={category}
@@ -95,6 +122,7 @@ export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingT
             {category}
           </Button>
         ))}
+        </div>
       </div>
 
       {/* Module Cards */}
@@ -105,7 +133,7 @@ export function TrainingTab({ userData, setUserData, onSelectModule }: TrainingT
       </div>
 
       {filteredModules.length === 0 && (
-        <div className="text-center py-12 text-optavia-gray">No modules found in this category.</div>
+        <div className="text-center py-12 text-optavia-gray">No modules found matching your criteria.</div>
       )}
     </div>
   )

@@ -5,8 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ModuleDetail } from "@/components/module-detail"
-import { useAuth } from "@/hooks/use-auth"
-import { useSupabaseData } from "@/hooks/use-supabase-data"
+import { useUserData } from "@/contexts/user-data-context"
 import { modules } from "@/lib/data"
 import type { UserData } from "@/lib/types"
 
@@ -14,13 +13,13 @@ export default function TrainingModulePage() {
   const router = useRouter()
   const params = useParams()
   const moduleId = params?.id as string
-  const { user, loading: authLoading } = useAuth()
   const {
+    authLoading,
     profile,
     completedResources,
     bookmarks,
     favoriteRecipes,
-  } = useSupabaseData(user)
+  } = useUserData()
 
   // Find the module by ID
   const module = useMemo(() => {
@@ -49,7 +48,7 @@ export default function TrainingModulePage() {
 
   // Memoize setUserData to prevent re-renders (no-op function for this page)
   const handleSetUserData = useCallback((data: UserData) => {
-    // No-op: user data updates are handled by useSupabaseData hook
+    // No-op: user data updates are handled by useUserData context
   }, [])
 
   // Handle back navigation
@@ -103,4 +102,3 @@ export default function TrainingModulePage() {
     </div>
   )
 }
-

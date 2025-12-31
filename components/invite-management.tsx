@@ -12,8 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useAuth } from "@/hooks/use-auth"
-import { useSupabaseData } from "@/hooks/use-supabase-data"
+import { useUserData } from "@/contexts/user-data-context"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { generateInviteKey, createInviteLink } from "@/lib/invites"
@@ -53,8 +52,7 @@ interface InviteHistory {
 }
 
 export function InviteManagement({ onClose }: InviteManagementProps) {
-  const { user } = useAuth()
-  const { profile } = useSupabaseData(user)
+  const { user, profile } = useUserData()
   const { toast } = useToast()
   const supabase = createClient()
 

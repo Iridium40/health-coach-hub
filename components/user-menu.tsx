@@ -12,9 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Settings, LogOut, User, Bell, BarChart3, UserPlus } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
-import { useSupabaseData } from "@/hooks/use-supabase-data"
+import { Settings, LogOut, Bell, BarChart3, UserPlus } from "lucide-react"
+import { useUserData } from "@/contexts/user-data-context"
 
 interface UserMenuProps {
   onSettingsClick?: () => void
@@ -25,8 +24,7 @@ interface UserMenuProps {
 
 export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick, onInviteClick }: UserMenuProps) {
   const router = useRouter()
-  const { user, signOut } = useAuth()
-  const { profile } = useSupabaseData(user)
+  const { user, profile, signOut } = useUserData()
   const [loading, setLoading] = useState(false)
 
   const isAdmin = profile?.user_role?.toLowerCase() === "admin"

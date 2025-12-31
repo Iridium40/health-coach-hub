@@ -7,19 +7,18 @@ import { Footer } from "@/components/footer"
 import { Hero } from "@/components/hero"
 import { TrainingTab } from "@/components/training-tab"
 import { Announcements } from "@/components/announcements"
-import { useAuth } from "@/hooks/use-auth"
-import { useSupabaseData } from "@/hooks/use-supabase-data"
+import { useUserData } from "@/contexts/user-data-context"
 import type { Module } from "@/lib/types"
 
 export default function TrainingPage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
   const {
+    authLoading,
     profile,
     completedResources,
     bookmarks,
     favoriteRecipes,
-  } = useSupabaseData(user)
+  } = useUserData()
 
   // Convert Supabase data to UserData format - memoize to prevent unnecessary re-renders
   const userData = useMemo(() => {
@@ -48,7 +47,7 @@ export default function TrainingPage() {
 
   // Memoize setUserData to prevent re-renders (no-op function for this page)
   const handleSetUserData = useCallback(() => {
-    // No-op: user data updates are handled by useSupabaseData hook
+    // No-op: user data updates are handled by useUserData context
   }, [])
 
   // Show loading only during initial auth check
@@ -81,4 +80,3 @@ export default function TrainingPage() {
     </div>
   )
 }
-

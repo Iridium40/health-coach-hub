@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { ResourceCard } from "@/components/resource-card"
-import { useSupabaseData } from "@/hooks/use-supabase-data"
-import { useAuth } from "@/hooks/use-auth"
+import { useUserData } from "@/contexts/user-data-context"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -14,8 +13,7 @@ import {
 } from "@/components/ui/select"
 
 export function ExternalResourcesTab() {
-  const { user } = useAuth()
-  const { profile } = useSupabaseData(user)
+  const { profile } = useUserData()
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
 
   // Memoize resources array to prevent unnecessary re-renders

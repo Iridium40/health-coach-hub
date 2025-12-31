@@ -14,8 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useAuth } from "@/hooks/use-auth"
-import { useSupabaseData } from "@/hooks/use-supabase-data"
+import { useUserData } from "@/contexts/user-data-context"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { Upload, X, Trophy } from "lucide-react"
@@ -27,8 +26,8 @@ interface UserSettingsProps {
 }
 
 export function UserSettings({ onClose }: UserSettingsProps) {
-  const { user } = useAuth()
   const {
+    user,
     profile,
     notificationSettings,
     completedResources,
@@ -38,7 +37,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
     updateProfile,
     updateNotificationSettings,
     refreshData,
-  } = useSupabaseData(user)
+  } = useUserData()
   const { toast } = useToast()
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)

@@ -6,16 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/hooks/use-auth"
-import { useSupabaseData } from "@/hooks/use-supabase-data"
+import { useUserData } from "@/contexts/user-data-context"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { sendAnnouncementEmail } from "@/lib/email"
@@ -38,8 +30,7 @@ interface Announcement {
 }
 
 export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
-  const { user } = useAuth()
-  const { profile } = useSupabaseData(user)
+  const { user, profile } = useUserData()
   const { toast } = useToast()
   const supabase = createClient()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
