@@ -12,7 +12,10 @@ import { ArrowLeft, Users, BookOpen, Award, TrendingUp } from "lucide-react"
 
 interface ReportStats {
   totalUsers: number
-  activeUsers: number
+  activeUsers7Days: number
+  activeUsers30Days: number
+  activePercent7Days: number
+  activePercent30Days: number
   newCoaches: number
   experiencedCoaches: number
   totalCompletedResources: number
@@ -55,13 +58,26 @@ export default function AdminReportsPage() {
       const newCoaches = coachData?.filter(c => c.is_new_coach).length || 0
       const experiencedCoaches = coachData?.filter(c => !c.is_new_coach).length || 0
 
+      // Get active users (signed in within last 7 days)
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const { count: activeUsers7Days } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .gte("last_sign_in_at", sevenDaysAgo.toISOString())
+
       // Get active users (signed in within last 30 days)
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      const { count: activeUsers } = await supabase
+      const { count: activeUsers30Days } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true })
         .gte("last_sign_in_at", thirtyDaysAgo.toISOString())
+      
+      // Calculate percentages
+      const total = totalUsers || 1 // Avoid division by zero
+      const activePercent7Days = Math.round(((activeUsers7Days || 0) / total) * 100)
+      const activePercent30Days = Math.round(((activeUsers30Days || 0) / total) * 100)
 
       // Get total completed resources
       const { count: totalCompletedResources } = await supabase
@@ -75,7 +91,10 @@ export default function AdminReportsPage() {
 
       setStats({
         totalUsers: totalUsers || 0,
-        activeUsers: activeUsers || 0,
+        activeUsers7Days: activeUsers7Days || 0,
+        activeUsers30Days: activeUsers30Days || 0,
+        activePercent7Days,
+        activePercent30Days,
         newCoaches,
         experiencedCoaches,
         totalCompletedResources: totalCompletedResources || 0,
@@ -150,14 +169,43 @@ export default function AdminReportsPage() {
 
               <Card className="bg-white border border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-optavia-gray">Active Coaches</CardTitle>
+                  <CardTitle className="text-sm font-medium text-optavia-gray">Active Last 7 Days</CardTitle>
                   <TrendingUp className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-optavia-dark">{stats.activeUsers}</div>
+                  <div className="text-3xl font-bold text-optavia-dark">
+                    {stats.activePercent7Days}%
+                  </div>
                   <p className="text-xs text-optavia-gray mt-1">
-                    Signed in within last 30 days
+                    {stats.activeUsers7Days} of {stats.totalUsers} coaches
                   </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-[hsl(var(--optavia-green))] h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${stats.activePercent7Days}%` }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-optavia-gray">Active Last 30 Days</CardTitle>
+                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-optavia-dark">
+                    {stats.activePercent30Days}%
+                  </div>
+                  <p className="text-xs text-optavia-gray mt-1">
+                    {stats.activeUsers30Days} of {stats.totalUsers} coaches
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${stats.activePercent30Days}%` }}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
