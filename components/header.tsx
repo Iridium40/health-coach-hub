@@ -71,11 +71,14 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                 }
               }}
             >
-                <img
-                    src="/branding/ca_logo_large.svg"
+                <picture>
+                  <source srcSet="/branding/ca_logo_large.svg" type="image/svg+xml" />
+                  <img
+                    src="/branding/ca_logo_large.png"
                     alt="Coaching Amplifier"
                     className="h-10 sm:h-12 md:h-14 w-auto"
-                />
+                  />
+                </picture>
             </Link>
           </div>
 
