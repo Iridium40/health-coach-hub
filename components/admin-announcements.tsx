@@ -11,7 +11,7 @@ import { useUserData } from "@/contexts/user-data-context"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { sendAnnouncementEmail } from "@/lib/email"
-import { X, Plus, Edit, Trash2 } from "lucide-react"
+import { X, Plus, Edit, Trash2, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface Announcement {
@@ -37,6 +37,7 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
   // Form state
   const [title, setTitle] = useState("")
@@ -395,15 +396,60 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div className="space-y-4">
-        <h2 className="font-heading font-bold text-xl text-optavia-dark">Existing Announcements</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h2 className="font-heading font-bold text-xl text-optavia-dark">Existing Announcements</h2>
+          {announcements.length > 0 && (
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search announcements..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 border-gray-300 focus:border-[hsl(var(--optavia-green))] focus:ring-[hsl(var(--optavia-green-light))]"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
         {announcements.length === 0 ? (
           <Card className="bg-white border border-gray-200">
             <CardContent className="pt-6">
               <p className="text-center text-optavia-gray">No announcements yet. Create one to get started.</p>
             </CardContent>
           </Card>
-        ) : (
-          announcements.map((announcement) => (
+        ) : (() => {
+          const filteredAnnouncements = announcements.filter((announcement) => {
+            if (!searchQuery.trim()) return true
+            const query = searchQuery.toLowerCase()
+            return (
+              announcement.title.toLowerCase().includes(query) ||
+              announcement.content.toLowerCase().includes(query)
+            )
+          })
+          
+          if (filteredAnnouncements.length === 0) {
+            return (
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="pt-6">
+                  <p className="text-center text-optavia-gray">
+                    No announcements found matching "{searchQuery}"
+                  </p>
+                </CardContent>
+              </Card>
+            )
+          }
+          
+          return filteredAnnouncements.map((announcement) => (
             <Card 
               key={announcement.id} 
               className="bg-white border border-gray-200 shadow-sm"
@@ -482,7 +528,7 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
               </CardContent>
             </Card>
           ))
-        )}
+        })()}
       </div>
     </div>
   )
