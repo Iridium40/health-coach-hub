@@ -336,6 +336,19 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="email" className="text-optavia-dark">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                value={user?.email || profile?.email || ""}
+                readOnly
+                disabled
+                className="bg-gray-100 border-gray-200 text-optavia-dark cursor-not-allowed opacity-70"
+              />
+              <p className="text-xs text-optavia-gray">Email cannot be changed</p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="phoneNumber" className="text-optavia-dark">Phone Number</Label>
               <Input
                 id="phoneNumber"
