@@ -57,6 +57,7 @@ function ClientMealPlanContent() {
   const [recipes, setRecipes] = useState<Recipe[]>(staticRecipes)
   const [loading, setLoading] = useState(true)
   const [copiedList, setCopiedList] = useState(false)
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
   
   // Get data from URL params
   const clientName = searchParams.get("client") || "Client"
@@ -166,6 +167,18 @@ function ClientMealPlanContent() {
         variant: "destructive",
       })
     }
+  }
+
+  const toggleCheckedItem = (ingredient: string) => {
+    setCheckedItems(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(ingredient)) {
+        newSet.delete(ingredient)
+      } else {
+        newSet.add(ingredient)
+      }
+      return newSet
+    })
   }
 
   const handlePrint = () => {
@@ -392,15 +405,36 @@ function ClientMealPlanContent() {
           <Card className="bg-white">
             <CardContent className="p-6">
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
-                {shoppingList.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 py-1">
-                    <div className="w-5 h-5 rounded border-2 border-gray-300 flex-shrink-0" />
-                    <span className="text-gray-700">{item.ingredient}</span>
-                    {item.count > 1 && (
-                      <span className="text-gray-400 text-sm">(x{item.count})</span>
-                    )}
-                  </div>
-                ))}
+                {shoppingList.map((item, index) => {
+                  const isChecked = checkedItems.has(item.ingredient)
+                  return (
+                    <div 
+                      key={index} 
+                      className="flex items-center gap-2 py-1 cursor-pointer group"
+                      onClick={() => toggleCheckedItem(item.ingredient)}
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                        isChecked 
+                          ? 'bg-[#2d5016] border-[#2d5016]' 
+                          : 'border-gray-300 group-hover:border-[#2d5016]'
+                      }`}>
+                        {isChecked && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                      <span className={`transition-colors ${
+                        isChecked 
+                          ? 'text-gray-400 line-through' 
+                          : 'text-gray-700'
+                      }`}>
+                        {item.ingredient}
+                      </span>
+                      {item.count > 1 && (
+                        <span className={`text-sm ${isChecked ? 'text-gray-300' : 'text-gray-400'}`}>
+                          (x{item.count})
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
