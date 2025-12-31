@@ -12,9 +12,26 @@ import { createClient } from "@/lib/supabase/client"
 import { 
   Video, Calendar, Clock, Users, UserCircle, ChevronRight,
   BookOpen, UtensilsCrossed, Wrench, ExternalLink, Award,
-  CheckCircle, PlayCircle, Sparkles, Star
+  CheckCircle, PlayCircle, Sparkles, Star, Rocket, Building2, GraduationCap
 } from "lucide-react"
+import { badgeConfig } from "@/lib/badge-config"
 import type { ZoomCall } from "@/lib/types"
+
+// Icon mapping for badge categories (matching badge-display.tsx)
+const badgeIcons: Record<string, React.ReactNode> = {
+  "Getting Started": <Rocket className="h-3 w-3" />,
+  "Business Building": <Building2 className="h-3 w-3" />,
+  "Client Support": <Users className="h-3 w-3" />,
+  "Training": <GraduationCap className="h-3 w-3" />,
+}
+
+// Color mapping for badge categories
+const badgeColors: Record<string, string> = {
+  "Getting Started": "bg-blue-500",
+  "Business Building": "bg-purple-500",
+  "Client Support": "bg-green-500",
+  "Training": "bg-orange-500",
+}
 
 export function DashboardOverview() {
   const { user, profile, badges, completedResources, modules, recipes } = useUserData()
@@ -261,16 +278,26 @@ export function DashboardOverview() {
                   Recent Badges
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {recentBadges.map((badge, idx) => (
-                    <Badge 
-                      key={idx} 
-                      variant="secondary" 
-                      className="bg-amber-100 text-amber-700 text-xs"
-                    >
-                      <Award className="h-3 w-3 mr-1" />
-                      {badge.badgeType}
-                    </Badge>
-                  ))}
+                  {recentBadges.map((badge, idx) => {
+                    const category = badge.category || badge.badgeType
+                    const config = badgeConfig[category]
+                    const icon = badgeIcons[category] || <Award className="h-3 w-3" />
+                    const bgColor = badgeColors[category] || "bg-gray-500"
+                    
+                    return (
+                      <div 
+                        key={idx} 
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-100 border border-gray-200"
+                      >
+                        <div className={`${bgColor} text-white p-1 rounded-full`}>
+                          {icon}
+                        </div>
+                        <span className="text-xs font-medium text-optavia-dark">
+                          {config?.name || badge.badgeType}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
