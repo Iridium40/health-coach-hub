@@ -53,15 +53,12 @@ export default function TrainingPage() {
       return
     }
 
-    // If user exists but no profile, redirect to home for onboarding
-    if (user && !profile) {
-      router.replace("/")
-      return
-    }
-  }, [user, profile, authLoading, dataLoading, router])
+    // Don't redirect if profile is missing - it will be created by database trigger
+    // Just wait for it to load
+  }, [user, authLoading, dataLoading, router])
 
-  // Show loading state
-  if (authLoading || dataLoading) {
+  // Show loading state while auth or data is loading, or if user exists but profile hasn't been created yet
+  if (authLoading || dataLoading || (user && !profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
@@ -72,13 +69,25 @@ export default function TrainingPage() {
     )
   }
 
-  // Don't render anything if redirecting
-  if (!user || !userData) {
+  // Redirect to login if no user
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
           <p className="text-optavia-gray">Redirecting...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // If no userData, show loading (shouldn't happen if profile exists)
+  if (!userData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
+          <p className="text-optavia-gray">Loading...</p>
         </div>
       </div>
     )
