@@ -264,38 +264,37 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark">Manage Announcements</h1>
-        <div className="flex gap-2">
-          {!showForm && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Announcement
-            </Button>
-          )}
-          {onClose && (
-            <Button variant="ghost" onClick={onClose} className="text-optavia-gray hover:bg-gray-100">
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        {onClose && (
+          <Button variant="ghost" onClick={onClose} className="text-optavia-gray hover:bg-gray-100">
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
-      {showForm && (
-        <Card 
-          className="mb-6 bg-white border border-gray-200 shadow-sm"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <CardHeader>
-            <CardTitle className="text-optavia-dark">
-              {editingId ? "Edit Announcement" : "Create New Announcement"}
-            </CardTitle>
-            <CardDescription className="text-optavia-gray">
-              Create announcements that will be shown to users based on their notification settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* Create New Announcement Section */}
+      <div className="mb-8">
+        {!showForm ? (
+          <Button
+            onClick={() => setShowForm(true)}
+            className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Announcement
+          </Button>
+        ) : (
+          <Card 
+            className="bg-white border border-gray-200 shadow-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader>
+              <CardTitle className="text-optavia-dark">
+                {editingId ? "Edit Announcement" : "Create New Announcement"}
+              </CardTitle>
+              <CardDescription className="text-optavia-gray">
+                Create announcements that will be shown to users based on their notification settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
             <form 
               onSubmit={handleSubmit} 
               className="space-y-4"
@@ -389,10 +388,11 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
                   Cancel
                 </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       <div className="space-y-4">
         <h2 className="font-heading font-bold text-xl text-optavia-dark">Existing Announcements</h2>
