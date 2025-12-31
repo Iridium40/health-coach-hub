@@ -168,30 +168,53 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const handleSaveProfile = async () => {
     if (!user) return
 
-    // Automatically set is_new_coach based on coach rank
-    const isNewCoach = coachRank === "Coach" || coachRank === ""
+    // Check if user is a coach (not admin)
+    const userIsCoach = profile?.user_role?.toLowerCase() !== "admin"
 
-    const { error } = await updateProfile({
-      full_name: fullName,
-      is_new_coach: isNewCoach,
-      coach_rank: coachRank || null,
-      optavia_id: optaviaId || null,
-    })
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+    // Coaches can only update their name; admins can update all fields
+    if (userIsCoach) {
+      const { error } = await updateProfile({
+        full_name: fullName,
       })
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        })
+      } else {
+        await refreshData()
+        toast({
+          title: "Success",
+          description: "Profile updated successfully",
+        })
+      }
     } else {
-      // Refresh data to ensure state is updated
-      await refreshData()
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
+      // Admins can update all fields
+      // Automatically set is_new_coach based on coach rank
+      const isNewCoach = coachRank === "Coach" || coachRank === ""
+
+      const { error } = await updateProfile({
+        full_name: fullName,
+        is_new_coach: isNewCoach,
+        coach_rank: coachRank || null,
+        optavia_id: optaviaId || null,
       })
-      // Don't close, let user see the updated values
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        })
+      } else {
+        await refreshData()
+        toast({
+          title: "Success",
+          description: "Profile updated successfully",
+        })
+      }
     }
   }
 
@@ -220,6 +243,9 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   }
 
   const totalResources = completedResources.length + bookmarks.length + favoriteRecipes.length
+
+  // Check if user is a coach (not admin) - coaches have read-only profile fields except Full Name
+  const isCoach = profile?.user_role?.toLowerCase() !== "admin"
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -306,10 +332,18 @@ export function UserSettings({ onClose }: UserSettingsProps) {
 
             <div className="space-y-2">
               <Label htmlFor="coachRank" className="text-optavia-dark">Coach Rank</Label>
-              <Select value={coachRank || "none"} onValueChange={(value) => setCoachRank(value === "none" ? "" : value)}>
+              <Select 
+                value={coachRank || "none"} 
+                onValueChange={(value) => setCoachRank(value === "none" ? "" : value)}
+                disabled={isCoach}
+              >
                 <SelectTrigger 
                   id="coachRank" 
-                  className="w-full bg-white border-2 border-gray-300 text-optavia-dark hover:border-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
+                  className={`w-full border-2 text-optavia-dark ${
+                    isCoach 
+                      ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-70" 
+                      : "bg-white border-gray-300 hover:border-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
+                  }`}
                 >
                   <SelectValue placeholder="Select coach rank" />
                 </SelectTrigger>
@@ -329,6 +363,9 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                   <SelectItem value="IPD" className="text-optavia-dark hover:bg-gray-100">Integrated Presidential Director (IPD)</SelectItem>
                 </SelectContent>
               </Select>
+              {isCoach && (
+                <p className="text-xs text-optavia-gray">Contact an admin to update your coach rank</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -338,8 +375,17 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 value={optaviaId}
                 onChange={(e) => setOptaviaId(e.target.value)}
                 placeholder="Enter your Optavia ID"
-                className="bg-white border-gray-300 text-optavia-dark"
+                disabled={isCoach}
+                readOnly={isCoach}
+                className={`${
+                  isCoach 
+                    ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-70" 
+                    : "bg-white border-gray-300"
+                } text-optavia-dark`}
               />
+              {isCoach && (
+                <p className="text-xs text-optavia-gray">Contact an admin to update your Optavia ID</p>
+              )}
             </div>
 
             <Button 
