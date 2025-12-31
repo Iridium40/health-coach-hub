@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,13 +22,34 @@ import type { Recipe } from "@/lib/types"
 
 interface MealPlanEntry {
   day: string
-  meal: "lunch" | "dinner"
+  meal: "lunch" | "dinner" | "meal"
   recipeId: string
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
+// Loading component for Suspense fallback
+function LoadingState() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d5016] mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading your meal plan...</p>
+      </div>
+    </div>
+  )
+}
+
+// Main page wrapper with Suspense
 export default function ClientMealPlanPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ClientMealPlanContent />
+    </Suspense>
+  )
+}
+
+function ClientMealPlanContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()

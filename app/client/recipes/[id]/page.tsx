@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, Suspense } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,7 +11,28 @@ import { getRecipes } from "@/lib/supabase/data"
 import { recipes as staticRecipes } from "@/lib/data"
 import type { Recipe } from "@/lib/types"
 
+// Loading component for Suspense fallback
+function LoadingState() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d5016] mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading recipe...</p>
+      </div>
+    </div>
+  )
+}
+
+// Main page wrapper with Suspense
 export default function ClientRecipeDetailPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ClientRecipeDetailContent />
+    </Suspense>
+  )
+}
+
+function ClientRecipeDetailContent() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,7 +21,28 @@ import { recipes as staticRecipes } from "@/lib/data"
 
 const categories = ["All", "Chicken", "Seafood", "Beef", "Turkey", "Pork", "Vegetarian", "Breakfast"]
 
+// Loading component for Suspense fallback
+function LoadingState() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d5016] mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading recipes...</p>
+      </div>
+    </div>
+  )
+}
+
+// Main page wrapper with Suspense
 export default function ClientRecipesPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ClientRecipesContent />
+    </Suspense>
+  )
+}
+
+function ClientRecipesContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [recipes, setRecipes] = useState<Recipe[]>(staticRecipes)
