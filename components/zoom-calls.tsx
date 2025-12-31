@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
+import { AddToCalendar } from "@/components/add-to-calendar"
 import type { ZoomCall } from "@/lib/types"
 
 export function ZoomCalls() {
@@ -214,6 +215,7 @@ export function ZoomCalls() {
                         </>
                       )}
                     </Button>
+                    <AddToCalendar event={call} />
                   </div>
                 )}
 

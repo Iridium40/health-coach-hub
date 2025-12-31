@@ -12,6 +12,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
+import { AddToCalendar } from "@/components/add-to-calendar"
 import type { ZoomCall } from "@/lib/types"
 
 type ViewMode = "month" | "week"
@@ -522,6 +523,13 @@ export function CalendarView() {
                       <span className="ml-1 text-xs opacity-75">({selectedEvent.recording_platform})</span>
                     )}
                   </Button>
+                )}
+
+                {/* Add to Calendar */}
+                {selectedEvent.status !== "completed" && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <AddToCalendar event={selectedEvent} className="w-full" />
+                  </div>
                 )}
               </div>
             </CardContent>
