@@ -234,7 +234,7 @@ export function ModuleDetail({ module, userData, setUserData, onBack }: ModuleDe
 
       {/* Resource View Modal */}
       <Dialog open={!!openResource} onOpenChange={(open) => !open && setOpenResource(null)}>
-        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col" showCloseButton={false}>
+        <DialogContent className="max-w-[98vw] md:max-w-[95vw] lg:max-w-[92vw] xl:max-w-[90vw] w-[98vw] md:w-[95vw] lg:w-[92vw] xl:w-[90vw] h-[95vh] md:h-[96vh] lg:h-[97vh] p-0 flex flex-col" showCloseButton={false}>
           <DialogHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b flex-shrink-0">
             <div className="flex items-center justify-between gap-2">
               <DialogTitle className="text-base sm:text-lg font-heading truncate flex-1">{openResource?.title}</DialogTitle>
