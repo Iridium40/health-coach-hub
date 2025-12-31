@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Settings, LogOut, Bell, BarChart3, BellRing, UtensilsCrossed, Star, Video } from "lucide-react"
+import { User, LogOut, Bell, BarChart3, BellRing, UtensilsCrossed, Star, CalendarDays } from "lucide-react"
 import { useUserData } from "@/contexts/user-data-context"
 
 interface UserMenuProps {
@@ -103,8 +103,13 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-gray-200" />
+        
+        {/* Manage Section (Admin Only) */}
         {isAdmin && (
           <>
+            <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold text-optavia-gray uppercase tracking-wide">
+              Manage
+            </DropdownMenuLabel>
             <DropdownMenuItem 
               onClick={handleAnnouncementsClick}
               className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
@@ -124,31 +129,36 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
               className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
             >
               <UtensilsCrossed className="mr-2 h-4 w-4" />
-              <span>Manage Recipes</span>
+              <span>Recipes</span>
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => router.push("/admin/zoom-calls")}
               className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
             >
-              <Video className="mr-2 h-4 w-4" />
-              <span>Manage Meetings & Events</span>
+              <CalendarDays className="mr-2 h-4 w-4" />
+              <span>Events</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-gray-200" />
           </>
         )}
+        
+        {/* Settings Section */}
+        <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold text-optavia-gray uppercase tracking-wide">
+          Settings
+        </DropdownMenuLabel>
+        <DropdownMenuItem 
+          onClick={handleSettingsClick}
+          className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+        >
+          <User className="mr-2 h-4 w-4" />
+          <span>Profile</span>
+        </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => router.push("/favorites")}
           className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
         >
           <Star className="mr-2 h-4 w-4" />
-          <span>My Favorites</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={handleSettingsClick}
-          className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-        >
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+          <span>Favorites</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={handleNotificationsClick}
@@ -157,6 +167,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
           <BellRing className="mr-2 h-4 w-4" />
           <span>Notifications</span>
         </DropdownMenuItem>
+        
         <DropdownMenuSeparator className="bg-gray-200" />
         <DropdownMenuItem 
           onClick={handleSignOut} 
