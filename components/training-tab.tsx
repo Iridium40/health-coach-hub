@@ -2,11 +2,10 @@
 
 import { useState, useMemo, useCallback, memo } from "react"
 import { ModuleCard } from "@/components/module-card"
+import { SearchWithHistory } from "@/components/search-with-history"
 import { modules } from "@/lib/data"
 import type { UserData, Module } from "@/lib/types"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -74,8 +73,20 @@ export const TrainingTab = memo(function TrainingTab({ userData, setUserData, on
     [availableModules, selectedCategory, searchQuery]
   )
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value)
+  // Generate search suggestions from module titles and resource titles
+  const searchSuggestions = useMemo(() => {
+    const suggestions: string[] = []
+    availableModules.forEach((module) => {
+      suggestions.push(module.title)
+      module.resources.forEach((resource) => {
+        suggestions.push(resource.title)
+      })
+    })
+    return suggestions
+  }, [availableModules])
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value)
   }, [])
 
   return (
@@ -92,14 +103,13 @@ export const TrainingTab = memo(function TrainingTab({ userData, setUserData, on
 
       {/* Search and Filter */}
       <div className="mb-6 space-y-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-optavia-light-gray" />
-          <Input
-            type="text"
-            placeholder="Search modules or resources..."
+        <div className="max-w-md">
+          <SearchWithHistory
             value={searchQuery}
             onChange={handleSearchChange}
-            className="pl-10"
+            placeholder="Search modules or resources..."
+            suggestions={searchSuggestions}
+            storageKey="training"
           />
         </div>
 

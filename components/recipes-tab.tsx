@@ -2,10 +2,9 @@
 
 import { useState, useMemo, useCallback, memo } from "react"
 import { RecipeCard } from "@/components/recipe-card"
+import { SearchWithHistory } from "@/components/search-with-history"
 import { recipes } from "@/lib/data"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -55,8 +54,24 @@ export const RecipesTab = memo(function RecipesTab({ userData, setUserData, togg
     [selectedCategory, searchQuery, userData.favoriteRecipes]
   )
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value)
+  // Generate search suggestions from recipe titles and common ingredients
+  const searchSuggestions = useMemo(() => {
+    const suggestions: Set<string> = new Set()
+    recipes.forEach((recipe) => {
+      suggestions.add(recipe.title)
+      // Add common ingredient keywords (first word of each ingredient)
+      recipe.ingredients.forEach((ing) => {
+        const firstWord = ing.split(" ").slice(0, 2).join(" ")
+        if (firstWord.length > 3) {
+          suggestions.add(firstWord)
+        }
+      })
+    })
+    return Array.from(suggestions)
+  }, [])
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value)
   }, [])
 
   return (
@@ -73,14 +88,13 @@ export const RecipesTab = memo(function RecipesTab({ userData, setUserData, togg
 
       {/* Search and Filter */}
       <div className="mb-6 space-y-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-optavia-light-gray" />
-          <Input
-            type="text"
-            placeholder="Search recipes or ingredients..."
+        <div className="max-w-md">
+          <SearchWithHistory
             value={searchQuery}
             onChange={handleSearchChange}
-            className="pl-10"
+            placeholder="Search recipes or ingredients..."
+            suggestions={searchSuggestions}
+            storageKey="recipes"
           />
         </div>
 
