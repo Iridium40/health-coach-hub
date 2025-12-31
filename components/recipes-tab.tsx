@@ -51,7 +51,7 @@ export const RecipesTab = memo(function RecipesTab({ userData, setUserData, togg
         recipe.ingredients.some((ing) => ing.toLowerCase().includes(searchQuery.toLowerCase()))
       return matchesSearch
     }),
-    [selectedCategory, searchQuery, userData.favoriteRecipes]
+    [recipes, selectedCategory, searchQuery, userData.favoriteRecipes]
   )
 
   // Generate search suggestions from recipe titles and common ingredients

@@ -30,7 +30,7 @@ export const TrainingTab = memo(function TrainingTab({ userData, setUserData, on
       if (userData.isNewCoach && !module.forNewCoach) return false
       return true
     }),
-    [userData.isNewCoach]
+    [modules, userData.isNewCoach]
   )
 
   // Memoize categories list

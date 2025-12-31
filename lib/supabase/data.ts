@@ -70,16 +70,26 @@ async function loadModulesFromSupabase(): Promise<Module[]> {
   ])
 
   if (modulesResult.error) {
-    console.error("Error fetching modules:", modulesResult.error)
+    console.log("Modules table not found in Supabase, using static data. Error:", modulesResult.error.message)
     // Fall back to static data
     const { modules } = await import("@/lib/data")
+    console.log("Loaded", modules.length, "modules from static data")
     return modules
   }
 
   if (resourcesResult.error) {
-    console.error("Error fetching resources:", resourcesResult.error)
+    console.log("Resources table not found in Supabase, using static data. Error:", resourcesResult.error.message)
     // Fall back to static data
     const { modules } = await import("@/lib/data")
+    console.log("Loaded", modules.length, "modules from static data")
+    return modules
+  }
+
+  // If tables exist but are empty, fall back to static data
+  if (!modulesResult.data || modulesResult.data.length === 0) {
+    console.log("Modules table empty, using static data")
+    const { modules } = await import("@/lib/data")
+    console.log("Loaded", modules.length, "modules from static data")
     return modules
   }
 
@@ -123,9 +133,18 @@ async function loadRecipesFromSupabase(): Promise<Recipe[]> {
     .order("title", { ascending: true })
 
   if (error) {
-    console.error("Error fetching recipes:", error)
+    console.log("Recipes table not found in Supabase, using static data. Error:", error.message)
     // Fall back to static data
     const { recipes } = await import("@/lib/data")
+    console.log("Loaded", recipes.length, "recipes from static data")
+    return recipes
+  }
+
+  // If table exists but is empty, fall back to static data
+  if (!data || data.length === 0) {
+    console.log("Recipes table empty, using static data")
+    const { recipes } = await import("@/lib/data")
+    console.log("Loaded", recipes.length, "recipes from static data")
     return recipes
   }
 
