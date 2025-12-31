@@ -24,10 +24,10 @@ export default function Home() {
       return
     }
 
-    // User exists - redirect to training (don't wait for profile if it's taking too long)
+    // User exists - redirect to dashboard (don't wait for profile if it's taking too long)
     // Profile will be created by database trigger, but we don't want to block on it
     const redirectTimeout = setTimeout(() => {
-      router.replace("/training")
+      router.replace("/dashboard")
     }, profile ? 0 : 1500) // If profile exists, redirect immediately, otherwise wait 1.5s
 
     return () => clearTimeout(redirectTimeout)
@@ -45,7 +45,7 @@ export default function Home() {
     )
   }
 
-  // If user is authenticated, show redirecting message and redirect to training
+  // If user is authenticated, show redirecting message and redirect to dashboard
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
