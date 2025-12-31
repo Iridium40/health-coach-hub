@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client"
 import { 
   Video, Calendar, Clock, Users, UserCircle, ChevronRight,
   BookOpen, UtensilsCrossed, Wrench, ExternalLink, Award,
-  CheckCircle, PlayCircle, Sparkles, Star, Rocket, Building2, GraduationCap, Link2
+  CheckCircle, PlayCircle, Sparkles, Star, Rocket, Building2, GraduationCap, Link2, Facebook
 } from "lucide-react"
 import { badgeConfig } from "@/lib/badge-config"
 import type { ZoomCall } from "@/lib/types"
@@ -259,7 +259,7 @@ export function DashboardOverview() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
               >
-                <ExternalLink className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
+                <Facebook className="h-4 w-4 text-[#1877F2] flex-shrink-0" />
                 <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1 truncate">
                   Optavia Strong Facebook Group
                 </span>
@@ -272,7 +272,7 @@ export function DashboardOverview() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
               >
-                <ExternalLink className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
+                <img src="/media/optavia_logo.svg" alt="" className="h-4 w-4 flex-shrink-0" />
                 <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
                   OPTAVIA Connect
                 </span>
@@ -285,7 +285,7 @@ export function DashboardOverview() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
               >
-                <ExternalLink className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
+                <img src="/media/optavia_logo.svg" alt="" className="h-4 w-4 flex-shrink-0" />
                 <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
                   OPTAVIA Profile
                 </span>
