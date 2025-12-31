@@ -16,8 +16,8 @@ interface HeaderProps {
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
   onInviteClick?: () => void
-  activeTab?: "training" | "resources" | "recipes" | "calendar"
-  onTabChange?: (tab: "training" | "resources" | "recipes" | "calendar") => void
+  activeTab?: "dashboard" | "training" | "resources" | "recipes" | "calendar"
+  onTabChange?: (tab: "dashboard" | "training" | "resources" | "recipes" | "calendar") => void
 }
 
 export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab, onTabChange }: HeaderProps) {
@@ -38,18 +38,20 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   }
 
   // Determine active tab from pathname if not provided
-  const getActiveTab = (): "training" | "resources" | "recipes" | "calendar" => {
+  const getActiveTab = (): "dashboard" | "training" | "resources" | "recipes" | "calendar" => {
     if (activeTab) return activeTab
+    if (pathname?.startsWith("/dashboard") || pathname === "/") return "dashboard"
     if (pathname?.startsWith("/training")) return "training"
     if (pathname?.startsWith("/resources")) return "resources"
     if (pathname?.startsWith("/recipes")) return "recipes"
     if (pathname?.startsWith("/calendar")) return "calendar"
-    return "training" // default
+    return "dashboard" // default
   }
 
   const currentActiveTab = getActiveTab()
 
   const navItems = [
+    { id: "dashboard" as const, label: "Dashboard", href: "/dashboard" },
     { id: "training" as const, label: "Training", href: "/training" },
     { id: "calendar" as const, label: "Calendar", href: "/calendar" },
     { id: "resources" as const, label: "Resources", href: "/resources" },
@@ -63,7 +65,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
         <div className="flex items-center justify-between gap-2 py-3 sm:py-4">
           <div className="flex items-center gap-2 min-w-0 flex-shrink">
             <Link 
-              href="/training" 
+              href="/dashboard" 
               className="hover:opacity-80 transition-opacity"
               onClick={(e) => {
                 // If we're on the home page, prevent default and call handler
