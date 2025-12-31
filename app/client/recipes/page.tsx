@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/select"
 import { Search, Clock, Users, ChefHat, UtensilsCrossed, ArrowLeft, Bell, CheckCircle, Loader2, Flame } from "lucide-react"
 import { getRecipes } from "@/lib/supabase/data"
-import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { estimateCaloriesPerServing } from "@/lib/calorie-utils"
+import { Turnstile } from "@/components/turnstile"
 import type { Recipe } from "@/lib/types"
 import { recipes as staticRecipes } from "@/lib/data"
 
@@ -49,7 +49,6 @@ function ClientRecipesContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  const supabase = createClient()
   
   const [recipes, setRecipes] = useState<Recipe[]>(staticRecipes)
   const [loading, setLoading] = useState(true)
@@ -61,6 +60,7 @@ function ClientRecipesContent() {
   const [subscriberName, setSubscriberName] = useState("")
   const [subscribing, setSubscribing] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   
   // Get coach name from URL if present (from email link)
   const coachName = searchParams.get("coach")
@@ -117,22 +117,36 @@ function ClientRecipesContent() {
       return
     }
 
+    // Check Turnstile token (allow bypass in development)
+    if (!turnstileToken && process.env.NODE_ENV !== "development") {
+      toast({
+        title: "Verification required",
+        description: "Please complete the security check",
+        variant: "destructive",
+      })
+      return
+    }
+
     setSubscribing(true)
 
     try {
-      const { error } = await supabase
-        .from("recipe_subscribers")
-        .upsert({
-          email: subscriberEmail.trim().toLowerCase(),
+      const response = await fetch("/api/subscribe-recipes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: subscriberEmail.trim(),
           name: subscriberName.trim() || null,
-          subscribed: true,
-          subscribed_at: new Date().toISOString(),
-        }, {
-          onConflict: "email",
-          ignoreDuplicates: false,
-        })
+          turnstileToken: turnstileToken || "development-bypass",
+        }),
+      })
 
-      if (error) throw error
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to subscribe")
+      }
 
       setSubscribed(true)
       toast({
@@ -143,7 +157,7 @@ function ClientRecipesContent() {
       console.error("Error subscribing:", error)
       toast({
         title: "Error",
-        description: "Failed to subscribe. Please try again.",
+        description: error.message || "Failed to subscribe. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -241,9 +255,9 @@ function ClientRecipesContent() {
                       />
                       <Button
                         type="submit"
-                        disabled={subscribing}
+                        disabled={subscribing || (!turnstileToken && process.env.NODE_ENV !== "development")}
                         size="sm"
-                        className="bg-white text-[#2d5016] hover:bg-green-50 font-semibold px-4 h-9 whitespace-nowrap"
+                        className="bg-white text-[#2d5016] hover:bg-green-50 font-semibold px-4 h-9 whitespace-nowrap disabled:opacity-50"
                       >
                         {subscribing ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -252,6 +266,10 @@ function ClientRecipesContent() {
                         )}
                       </Button>
                     </div>
+                    <Turnstile
+                      onVerify={(token) => setTurnstileToken(token)}
+                      onExpire={() => setTurnstileToken(null)}
+                    />
                     <p className="text-[10px] text-green-200/70 text-center sm:text-left">
                       We respect your privacy. Unsubscribe anytime.
                     </p>
