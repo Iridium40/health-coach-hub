@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { ResourceCard } from "@/components/resource-card"
 import { useSupabaseData } from "@/hooks/use-supabase-data"
 import { useAuth } from "@/hooks/use-auth"
@@ -18,7 +18,8 @@ export function ExternalResourcesTab() {
   const { profile } = useSupabaseData(user)
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
 
-  const resources = [
+  // Memoize resources array to prevent unnecessary re-renders
+  const resources = useMemo(() => [
     {
       title: "Optavia Strong Facebook Group",
       description: "Join our community of coaches within OPTAVIA. Connect, share experiences, and support each other in building successful coaching businesses.",
@@ -121,29 +122,35 @@ export function ExternalResourcesTab() {
         "Live events and webinars",
       ],
     },
-  ]
+  ], [profile?.optavia_id])
 
   // Define the desired order for categories
   const categoryOrder: string[] = ["Community", "OPTAVIA Resources", "Social Media"]
   
-  // Get unique categories from resources
-  const availableCategories: string[] = Array.from(
-    new Set(resources.map((resource) => resource.category))
-  )
-  
-  // Sort categories according to the desired order, then add any remaining categories
-  const orderedCategories = categoryOrder.filter((cat: string) => availableCategories.includes(cat))
-  const remainingCategories = availableCategories
-    .filter((cat: string) => !categoryOrder.includes(cat))
-    .sort()
-  
-  // Build categories list: always include "All" first, then ordered categories
-  const categories = ["All", ...orderedCategories, ...remainingCategories]
+  // Memoize categories to prevent unnecessary re-renders
+  const categories = useMemo(() => {
+    // Get unique categories from resources
+    const availableCategories: string[] = Array.from(
+      new Set(resources.map((resource) => resource.category))
+    )
+    
+    // Sort categories according to the desired order, then add any remaining categories
+    const orderedCategories = categoryOrder.filter((cat: string) => availableCategories.includes(cat))
+    const remainingCategories = availableCategories
+      .filter((cat: string) => !categoryOrder.includes(cat))
+      .sort()
+    
+    // Build categories list: always include "All" first, then ordered categories
+    return ["All", ...orderedCategories, ...remainingCategories]
+  }, [resources])
 
-  const filteredResources = resources.filter((resource) => {
-    if (selectedCategory === "All") return true
-    return resource.category === selectedCategory
-  })
+  // Memoize filtered resources to prevent unnecessary re-renders
+  const filteredResources = useMemo(() => {
+    return resources.filter((resource) => {
+      if (selectedCategory === "All") return true
+      return resource.category === selectedCategory
+    })
+  }, [resources, selectedCategory])
 
   return (
     <div>
