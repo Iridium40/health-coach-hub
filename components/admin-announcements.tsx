@@ -11,7 +11,7 @@ import { useUserData } from "@/contexts/user-data-context"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { sendAnnouncementEmail } from "@/lib/email"
-import { X, Plus, Edit, Trash2, Search } from "lucide-react"
+import { X, Plus, Edit, Trash2, Search, Send, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface Announcement {
@@ -38,6 +38,7 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [resendingId, setResendingId] = useState<string | null>(null)
 
   // Form state
   const [title, setTitle] = useState("")
@@ -126,6 +127,108 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
       })
       loadAnnouncements()
     }
+  }
+
+  const handleResend = async (announcement: Announcement, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    e?.preventDefault()
+    
+    if (!user || !profile) return
+
+    setResendingId(announcement.id)
+
+    try {
+      // Update the announcement's updated_at timestamp
+      const { error: updateError } = await supabase
+        .from("announcements")
+        .update({ 
+          updated_at: new Date().toISOString(),
+          is_active: true // Ensure it's active when resending
+        })
+        .eq("id", announcement.id)
+
+      if (updateError) throw updateError
+
+      // Send email notifications
+      const { data: usersData, error: usersError } = await supabase
+        .from("profiles")
+        .select("id, email, full_name")
+        .not("email", "is", null)
+
+      if (!usersError && usersData) {
+        // Get users with email notifications enabled
+        const { data: notificationSettings } = await supabase
+          .from("notification_settings")
+          .select("user_id")
+          .eq("email_notifications", true)
+          .eq("announcements_enabled", true)
+
+        const userIdsWithEmailEnabled = new Set(
+          notificationSettings?.map((ns) => ns.user_id) || []
+        )
+
+        // Filter users with email notifications enabled
+        const usersToEmail = usersData.filter(
+          (u) => userIdsWithEmailEnabled.has(u.id) && u.email
+        )
+
+        // Send emails with throttling
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+        let emailsSent = 0
+        
+        for (const u of usersToEmail) {
+          try {
+            await sendAnnouncementEmail({
+              to: u.email!,
+              fullName: u.full_name || "Coach",
+              announcementTitle: announcement.title,
+              announcementContent: announcement.content,
+              priority: announcement.priority,
+            })
+            emailsSent++
+            await delay(600) // Throttle to stay under rate limit
+          } catch (emailErr) {
+            console.error(`Failed to send email to ${u.email}:`, emailErr)
+          }
+        }
+
+        toast({
+          title: "Announcement Resent",
+          description: `Sent ${emailsSent} email notification(s)`,
+        })
+      } else {
+        toast({
+          title: "Announcement Resent",
+          description: "Announcement has been resent",
+        })
+      }
+
+      loadAnnouncements()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend announcement",
+        variant: "destructive",
+      })
+    } finally {
+      setResendingId(null)
+    }
+  }
+
+  const handleEditAndResend = (announcement: Announcement, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    e?.preventDefault()
+    
+    // Pre-fill form with announcement data
+    setTitle(announcement.title)
+    setContent(announcement.content)
+    setPriority(announcement.priority)
+    setIsActive(true) // Set to active for resend
+    setSendPushNow(true) // Default to send now for resend
+    setPushScheduledAt("")
+    setSendEmail(true) // Default to send email for resend
+    setEditingId(announcement.id)
+    setShowForm(true)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -478,45 +581,47 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
                     </div>
                     <CardDescription className="text-optavia-gray">
                       Created: {new Date(announcement.created_at).toLocaleString()}
+                      {announcement.updated_at && announcement.updated_at !== announcement.created_at && (
+                        <> • <span className="text-[hsl(var(--optavia-green))] font-medium">Last Sent: {new Date(announcement.updated_at).toLocaleString()}</span></>
+                      )}
                       {announcement.start_date && (
                         <> • Starts: {new Date(announcement.start_date).toLocaleString()}</>
                       )}
                       {announcement.end_date && (
                         <> • Ends: {new Date(announcement.end_date).toLocaleString()}</>
                       )}
-                      {announcement.send_push && (
-                        <>
-                          {announcement.push_scheduled_at ? (
-                            <> • Push Scheduled: {new Date(announcement.push_scheduled_at).toLocaleString()}</>
-                          ) : (
-                            <> • Push: Send Now</>
-                          )}
-                        </>
-                      )}
                     </CardDescription>
                   </div>
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        e.preventDefault()
-                        handleEdit(announcement, e)
-                      }}
-                      className="text-optavia-gray hover:bg-gray-100"
+                      onClick={(e) => handleResend(announcement, e)}
+                      disabled={resendingId === announcement.id}
+                      className="text-[hsl(var(--optavia-green))] hover:bg-green-50"
+                      title="Resend Now"
+                    >
+                      {resendingId === announcement.id ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleEditAndResend(announcement, e)}
+                      className="text-blue-500 hover:bg-blue-50"
+                      title="Edit & Resend"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        e.preventDefault()
-                        handleDelete(announcement.id, e)
-                      }}
+                      onClick={(e) => handleDelete(announcement.id, e)}
                       className="text-red-500 hover:bg-red-50"
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
