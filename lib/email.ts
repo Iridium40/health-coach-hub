@@ -32,6 +32,22 @@ export interface AnnouncementEmailData {
   priority?: string
 }
 
+export interface MeetingEmailData {
+  to: string
+  fullName: string
+  meetingTitle: string
+  meetingDescription?: string
+  meetingDate: string
+  meetingTime: string
+  durationMinutes: number
+  callType: "coach_only" | "with_clients"
+  zoomLink?: string
+  zoomMeetingId?: string
+  zoomPasscode?: string
+  isRecurring?: boolean
+  recurrencePattern?: string
+}
+
 /**
  * Send an invite email to a coach
  */

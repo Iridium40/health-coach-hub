@@ -10,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { useUserData } from "@/contexts/user-data-context"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { sendMeetingEmail } from "@/lib/email"
 import { 
   X, Plus, Edit, Trash2, Search, Video, Calendar, Clock, Users, 
-  Link as LinkIcon, PlayCircle, Copy, Check, ExternalLink
+  Link as LinkIcon, PlayCircle, Copy, Check, ExternalLink, Mail, Loader2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -50,6 +51,8 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
   const [recordingUrl, setRecordingUrl] = useState("")
   const [recordingPlatform, setRecordingPlatform] = useState<"zoom" | "vimeo" | "youtube" | "">("vimeo")
   const [status, setStatus] = useState<"upcoming" | "live" | "completed" | "cancelled">("upcoming")
+  const [sendEmailNotification, setSendEmailNotification] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
   // Check if user is admin (case-insensitive)
   const isAdmin = profile?.user_role?.toLowerCase() === "admin"
@@ -95,6 +98,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setRecordingUrl("")
     setRecordingPlatform("vimeo")
     setStatus("upcoming")
+    setSendEmailNotification(true)
     setEditingId(null)
     setShowForm(false)
   }
@@ -159,11 +163,14 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
 
     if (!user) return
 
+    setSubmitting(true)
+
+    const scheduledDate = new Date(scheduledAt)
     const callData = {
       title,
       description: description || null,
       call_type: callType,
-      scheduled_at: new Date(scheduledAt).toISOString(),
+      scheduled_at: scheduledDate.toISOString(),
       duration_minutes: durationMinutes,
       is_recurring: isRecurring,
       recurrence_pattern: isRecurring ? recurrencePattern : null,
@@ -197,14 +204,97 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
         description: error.message || "Failed to save meeting",
         variant: "destructive",
       })
-    } else {
-      toast({
-        title: "Success",
-        description: editingId ? "Meeting updated" : "Meeting created",
-      })
-      resetForm()
-      loadZoomCalls()
+      setSubmitting(false)
+      return
     }
+    
+    toast({
+      title: "Success",
+      description: editingId ? "Meeting updated" : "Meeting created",
+    })
+
+    // Send email notifications if enabled and this is a new meeting (not editing)
+    if (sendEmailNotification && !editingId && status === "upcoming") {
+      try {
+        // Get all users with email notifications enabled
+        const { data: usersData, error: usersError } = await supabase
+          .from("profiles")
+          .select("id, email, full_name")
+          .not("email", "is", null)
+
+        if (!usersError && usersData) {
+          // Get users with email notifications enabled
+          const { data: notificationSettings } = await supabase
+            .from("notification_settings")
+            .select("user_id")
+            .eq("email_notifications", true)
+            .eq("announcements_enabled", true)
+
+          const userIdsWithEmailEnabled = new Set(
+            notificationSettings?.map((ns) => ns.user_id) || []
+          )
+
+          // Filter users with email notifications enabled
+          const usersToEmail = usersData.filter(
+            (u) => userIdsWithEmailEnabled.has(u.id) && u.email
+          )
+
+          // Format date and time for email
+          const meetingDate = scheduledDate.toLocaleDateString(undefined, {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+          })
+          const meetingTime = scheduledDate.toLocaleTimeString(undefined, {
+            hour: 'numeric',
+            minute: '2-digit'
+          })
+
+          // Send emails with throttling
+          const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+          let emailsSent = 0
+          
+          for (const u of usersToEmail) {
+            try {
+              await sendMeetingEmail({
+                to: u.email!,
+                fullName: u.full_name || "Coach",
+                meetingTitle: title,
+                meetingDescription: description || undefined,
+                meetingDate,
+                meetingTime,
+                durationMinutes,
+                callType,
+                zoomLink: zoomLink || undefined,
+                zoomMeetingId: zoomMeetingId || undefined,
+                zoomPasscode: zoomPasscode || undefined,
+                isRecurring,
+                recurrencePattern: isRecurring ? recurrencePattern : undefined,
+              })
+              emailsSent++
+              await delay(600) // Throttle to stay under rate limit
+            } catch (emailErr) {
+              console.error(`Failed to send email to ${u.email}:`, emailErr)
+            }
+          }
+
+          if (emailsSent > 0) {
+            toast({
+              title: "Emails Sent",
+              description: `Sent ${emailsSent} email notification(s)`,
+            })
+          }
+        }
+      } catch (emailError) {
+        console.error("Error sending meeting emails:", emailError)
+        // Don't fail the meeting creation if emails fail
+      }
+    }
+
+    resetForm()
+    loadZoomCalls()
+    setSubmitting(false)
   }
 
   const getStatusBadge = (status: string) => {
@@ -494,14 +584,46 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                   </div>
                 </div>
 
+                {/* Email Notification Toggle */}
+                {!editingId && (
+                  <div className="bg-amber-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-5 w-5 text-amber-600" />
+                        <div>
+                          <Label htmlFor="sendEmail" className="text-optavia-dark font-medium cursor-pointer">
+                            Send Email Notification
+                          </Label>
+                          <p className="text-xs text-optavia-gray mt-0.5">
+                            Notify all coaches about this new meeting
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        id="sendEmail"
+                        checked={sendEmailNotification}
+                        onCheckedChange={setSendEmailNotification}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Button
                     type="submit"
+                    disabled={submitting}
                     className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]"
                   >
-                    {editingId ? "Update" : "Create"} Meeting / Event
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {sendEmailNotification && !editingId ? "Saving & Sending..." : "Saving..."}
+                      </>
+                    ) : (
+                      <>{editingId ? "Update" : "Create"} Meeting / Event</>
+                    )}
                   </Button>
-                  <Button type="button" variant="outline" onClick={resetForm}>
+                  <Button type="button" variant="outline" onClick={resetForm} disabled={submitting}>
                     Cancel
                   </Button>
                 </div>
