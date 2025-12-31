@@ -40,7 +40,7 @@ export function SendPlanDialog({ open, onOpenChange, mealPlan, coachName }: Send
 
   // Get selected recipes from meal plan
   const mealPlanEntries = useMemo(() => {
-    const entries: { day: string; meal: string; recipeTitle: string; recipeImage: string }[] = []
+    const entries: { day: string; meal: string; recipeId: string; recipeTitle: string; recipeImage: string }[] = []
     
     DAYS.forEach((day) => {
       MEALS.forEach((meal) => {
@@ -50,6 +50,7 @@ export function SendPlanDialog({ open, onOpenChange, mealPlan, coachName }: Send
           entries.push({
             day,
             meal,
+            recipeId: recipe.id,
             recipeTitle: recipe.title,
             recipeImage: recipe.image || "",
           })

@@ -7,6 +7,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 interface MealPlanEntry {
   day: string
   meal: string
+  recipeId: string
   recipeTitle: string
   recipeImage: string
 }
@@ -42,6 +43,18 @@ export async function POST(request: NextRequest) {
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://www.coachingamplifier.com"
+
+    // Create shareable meal plan URL with encoded data
+    const planDataForUrl = mealPlanEntries.map(entry => ({
+      day: entry.day,
+      meal: entry.meal,
+      recipeId: entry.recipeId || entry.recipeTitle.toLowerCase().replace(/\s+/g, '-'), // Fallback for older entries
+    }))
+    const encodedPlan = Buffer.from(JSON.stringify(planDataForUrl)).toString('base64')
+    const mealPlanUrl = `${appUrl}/client/meal-plan?client=${encodeURIComponent(clientName)}&coach=${encodeURIComponent(coachName)}&plan=${encodedPlan}`
+    
+    // Client-facing recipe URL (public, no auth required)
+    const clientRecipesUrl = `${appUrl}/client/recipes?coach=${encodeURIComponent(coachName)}`
 
     // Group meals by day
     const mealsByDay: Record<string, { lunch?: string; dinner?: string }> = {}
@@ -149,8 +162,14 @@ export async function POST(request: NextRequest) {
         ${shoppingListHtml}
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${appUrl}/recipes" style="${getButtonStyle()}">
-            View All Recipes
+          <a href="${mealPlanUrl}" style="${getButtonStyle()}">
+            View Your Meal Plan Online
+          </a>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="${clientRecipesUrl}" style="color: #2d5016; text-decoration: underline; font-size: 14px;">
+            Browse All Lean & Green Recipes →
           </a>
         </div>
         
@@ -198,7 +217,9 @@ ${"-".repeat(20)}
 ${mealPlanText}
 ${shoppingListText}
 
-View all recipes at: ${appUrl}/recipes
+View your meal plan online: ${mealPlanUrl}
+
+Browse all recipes at: ${clientRecipesUrl}
 
 Tip: Print out your shopping list and meal plan to keep them handy throughout the week. Remember, preparation is key to success!
 
