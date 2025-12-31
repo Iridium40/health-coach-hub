@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, memo } from "react"
 import { ModuleCard } from "@/components/module-card"
 import { SearchWithHistory } from "@/components/search-with-history"
+import { ZoomCalls } from "@/components/zoom-calls"
 import type { UserData, Module } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import {
@@ -99,6 +100,11 @@ export const TrainingTab = memo(function TrainingTab({ userData, setUserData, on
         <p className="text-optavia-gray text-base sm:text-lg max-w-2xl mx-auto px-4">
           Access training modules, guides, and tools to support your coaching journey and help your clients succeed.
         </p>
+      </div>
+
+      {/* Weekly Zoom Calls Section */}
+      <div className="mb-8">
+        <ZoomCalls />
       </div>
 
       {/* Search and Filter */}

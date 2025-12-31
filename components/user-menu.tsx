@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Settings, LogOut, Bell, BarChart3, BellRing, UtensilsCrossed, Star } from "lucide-react"
+import { Settings, LogOut, Bell, BarChart3, BellRing, UtensilsCrossed, Star, Video } from "lucide-react"
 import { useUserData } from "@/contexts/user-data-context"
 
 interface UserMenuProps {
@@ -125,6 +125,13 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
             >
               <UtensilsCrossed className="mr-2 h-4 w-4" />
               <span>Manage Recipes</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => router.push("/admin/zoom-calls")}
+              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+            >
+              <Video className="mr-2 h-4 w-4" />
+              <span>Manage Zoom Calls</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-gray-200" />
           </>
