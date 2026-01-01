@@ -29,6 +29,7 @@ export function WaterCalculator() {
   const [useKg, setUseKg] = useState(false)
   const [activityLevel, setActivityLevel] = useState<string>("sedentary")
   const [copied, setCopied] = useState(false)
+  const [glassesConsumed, setGlassesConsumed] = useState(0)
 
   // Calculate water intake
   const calculateWaterIntake = () => {
@@ -169,22 +170,46 @@ Remember: This is a general guideline. Adjust based on climate, health condition
             </div>
           </div>
 
-          {/* Visual progress bar */}
+          {/* Interactive progress tracker */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-optavia-gray">
-              <span>Daily Progress Tracker</span>
-              <span>{result.glasses} glasses to drink</span>
+              <span>Daily Progress Tracker (click to track)</span>
+              <span>{glassesConsumed} of {result.glasses} glasses</span>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {Array.from({ length: result.glasses }).map((_, i) => (
-                <div
+                <button
                   key={i}
-                  className="flex-1 h-6 rounded bg-white border border-blue-200 flex items-center justify-center"
+                  type="button"
+                  onClick={() => setGlassesConsumed(i + 1 === glassesConsumed ? i : i + 1)}
+                  className={`flex-1 min-w-[2rem] h-8 rounded border-2 flex items-center justify-center transition-all cursor-pointer hover:scale-105 ${
+                    i < glassesConsumed
+                      ? "bg-blue-500 border-blue-600"
+                      : "bg-white border-blue-200 hover:border-blue-400"
+                  }`}
+                  title={i < glassesConsumed ? `Glass ${i + 1} - Click to remove` : `Click to mark glass ${i + 1} as drunk`}
                 >
-                  <Droplets className="h-3 w-3 text-blue-300" />
-                </div>
+                  <Droplets className={`h-4 w-4 ${i < glassesConsumed ? "text-white" : "text-blue-300"}`} />
+                </button>
               ))}
             </div>
+            {glassesConsumed > 0 && (
+              <div className="flex justify-between items-center">
+                <p className="text-xs text-blue-600 font-medium">
+                  {glassesConsumed === result.glasses 
+                    ? "🎉 Goal reached! Great job staying hydrated!" 
+                    : `${result.glasses - glassesConsumed} more to go!`}
+                </p>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setGlassesConsumed(0)}
+                  className="text-xs text-optavia-gray hover:text-optavia-dark h-6 px-2"
+                >
+                  Reset
+                </Button>
+              </div>
+            )}
           </div>
 
           <p className="text-xs text-optavia-gray">
