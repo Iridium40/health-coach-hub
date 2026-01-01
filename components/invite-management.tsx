@@ -63,7 +63,7 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
   const [coachRank, setCoachRank] = useState("")
   const [optaviaId, setOptaviaId] = useState("")
   const [sendEmail, setSendEmail] = useState(true) // Default to sending email
-  const [isNewCoach, setIsNewCoach] = useState(true) // Default to new coach (sends welcome email)
+  const [isNewCoach, setIsNewCoach] = useState(false) // Default to false, existing coaches
   const [certifyCoach, setCertifyCoach] = useState(false) // Certification checkbox
   const [loading, setLoading] = useState(false)
   const [generatedInvites, setGeneratedInvites] = useState<GeneratedInvite[]>([])
@@ -429,6 +429,33 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* New Coach Toggle - at the top */}
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center space-x-3">
+                <Switch
+                  id="isNewCoach"
+                  checked={isNewCoach}
+                  onCheckedChange={(checked) => {
+                    setIsNewCoach(checked)
+                    // If new coach, default rank to "Coach"
+                    if (checked && !coachRank) {
+                      setCoachRank("Coach")
+                    }
+                  }}
+                />
+                <div>
+                  <Label htmlFor="isNewCoach" className="cursor-pointer text-optavia-dark font-medium">
+                    This is a new coach
+                  </Label>
+                  <p className="text-xs text-optavia-gray">
+                    {isNewCoach 
+                      ? "A welcome email with onboarding resources will be sent" 
+                      : "Only the invite email will be sent"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-optavia-dark">Full Name *</Label>
               <Input
@@ -504,22 +531,6 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
             {sendEmail && (
               <p className="text-xs text-optavia-gray -mt-2">
                 An email with the invite link will be sent to {email || "the coach"}
-              </p>
-            )}
-
-            <div className="flex items-center space-x-2 pt-2">
-              <Switch
-                id="isNewCoach"
-                checked={isNewCoach}
-                onCheckedChange={setIsNewCoach}
-              />
-              <Label htmlFor="isNewCoach" className="cursor-pointer text-optavia-dark">
-                This is a new coach
-              </Label>
-            </div>
-            {isNewCoach && (
-              <p className="text-xs text-optavia-gray -mt-2">
-                A welcome email with onboarding resources will also be sent
               </p>
             )}
 
