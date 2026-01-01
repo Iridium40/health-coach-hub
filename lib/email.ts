@@ -48,6 +48,11 @@ export interface MeetingEmailData {
   recurrencePattern?: string
 }
 
+export interface NewCoachWelcomeEmailData {
+  to: string
+  fullName: string
+}
+
 /**
  * Send an invite email to a coach
  */
@@ -154,6 +159,31 @@ export async function sendAnnouncementEmail(data: AnnouncementEmailData): Promis
 export async function sendMeetingEmail(data: MeetingEmailData): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch("/api/send-meeting-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      return { success: false, error: result.error || "Failed to send email" }
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to send email" }
+  }
+}
+
+/**
+ * Send a new coach welcome email with onboarding resources
+ */
+export async function sendNewCoachWelcomeEmail(data: NewCoachWelcomeEmailData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/send-new-coach-welcome-email", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -16,7 +16,7 @@ import { useUserData } from "@/contexts/user-data-context"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { generateInviteKey, createInviteLink } from "@/lib/invites"
-import { sendInviteEmail } from "@/lib/email"
+import { sendInviteEmail, sendNewCoachWelcomeEmail } from "@/lib/email"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { X, Copy, Check, UserPlus, History, Clock, UserCheck, UserX, AlertTriangle } from "lucide-react"
@@ -63,6 +63,7 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
   const [coachRank, setCoachRank] = useState("")
   const [optaviaId, setOptaviaId] = useState("")
   const [sendEmail, setSendEmail] = useState(true) // Default to sending email
+  const [isNewCoach, setIsNewCoach] = useState(true) // Default to new coach (sends welcome email)
   const [certifyCoach, setCertifyCoach] = useState(false) // Certification checkbox
   const [loading, setLoading] = useState(false)
   const [generatedInvites, setGeneratedInvites] = useState<GeneratedInvite[]>([])
@@ -234,7 +235,10 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
 
       setGeneratedInvites((prev) => [newInvite, ...prev])
 
-      // Send email if enabled
+      // Send emails if enabled
+      let inviteEmailSent = false
+      let welcomeEmailSent = false
+
       if (sendEmail) {
         const emailResult = await sendInviteEmail({
           to: email,
@@ -243,17 +247,68 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
           inviteLink: link,
           invitedBy: profile?.full_name || user.email || "an admin",
         })
+        inviteEmailSent = emailResult.success
+      }
 
-        if (!emailResult.success) {
+      // Send welcome email if this is a new coach
+      if (isNewCoach) {
+        const welcomeResult = await sendNewCoachWelcomeEmail({
+          to: email,
+          fullName: fullName,
+        })
+        welcomeEmailSent = welcomeResult.success
+      }
+
+      // Show appropriate toast message
+      if (sendEmail && isNewCoach) {
+        if (inviteEmailSent && welcomeEmailSent) {
           toast({
-            title: "Invite Created",
-            description: "Invite link generated, but email failed to send. You can copy the link manually.",
+            title: "Success",
+            description: "Invite and welcome emails sent successfully",
+          })
+        } else if (inviteEmailSent) {
+          toast({
+            title: "Partial Success",
+            description: "Invite sent, but welcome email failed. The new coach can still access onboarding resources.",
+            variant: "default",
+          })
+        } else if (welcomeEmailSent) {
+          toast({
+            title: "Partial Success",
+            description: "Welcome email sent, but invite email failed. Copy the link manually.",
             variant: "default",
           })
         } else {
           toast({
+            title: "Invite Created",
+            description: "Invite generated but emails failed. Copy the link manually.",
+            variant: "default",
+          })
+        }
+      } else if (sendEmail) {
+        if (inviteEmailSent) {
+          toast({
             title: "Success",
             description: "Invite link generated and email sent successfully",
+          })
+        } else {
+          toast({
+            title: "Invite Created",
+            description: "Invite generated but email failed. Copy the link manually.",
+            variant: "default",
+          })
+        }
+      } else if (isNewCoach) {
+        if (welcomeEmailSent) {
+          toast({
+            title: "Success",
+            description: "Invite generated and welcome email sent",
+          })
+        } else {
+          toast({
+            title: "Invite Created",
+            description: "Invite generated but welcome email failed.",
+            variant: "default",
           })
         }
       } else {
@@ -446,6 +501,22 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
             {sendEmail && (
               <p className="text-xs text-optavia-gray -mt-2">
                 An email with the invite link will be sent to {email || "the coach"}
+              </p>
+            )}
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Switch
+                id="isNewCoach"
+                checked={isNewCoach}
+                onCheckedChange={setIsNewCoach}
+              />
+              <Label htmlFor="isNewCoach" className="cursor-pointer text-optavia-dark">
+                This is a new coach
+              </Label>
+            </div>
+            {isNewCoach && (
+              <p className="text-xs text-optavia-gray -mt-2">
+                A welcome email with onboarding resources will also be sent
               </p>
             )}
 
