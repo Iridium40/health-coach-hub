@@ -1,6 +1,9 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface Acronym {
   id: string
@@ -124,6 +127,25 @@ export default function OnboardingAcronymsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100/50" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+      {/* Navigation Bar */}
+      <div className="bg-white border-b border-green-100 sticky top-0 z-40">
+        <div className="container max-w-3xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Link href="/onboarding/business">
+              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[#00A651]">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Previous: Business Resources
+              </Button>
+            </Link>
+            <Link href="/training">
+              <Button size="sm" className="bg-[#00A651] hover:bg-[#00c760] text-white">
+                Back to Training
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <div className="container max-w-3xl mx-auto px-4 py-12 pb-16">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-[#00A651] mb-2">📖 Acronyms Guide</h1>
@@ -208,6 +230,21 @@ export default function OnboardingAcronymsPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Navigation Footer */}
+        <div className="flex justify-between items-center gap-4 pt-8 border-t border-green-200 mt-8">
+          <Link href="/onboarding/business">
+            <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Previous: Business Resources
+            </Button>
+          </Link>
+          <Link href="/training">
+            <Button className="bg-[#00A651] hover:bg-[#00c760] text-white">
+              Back to Training
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

@@ -1,12 +1,32 @@
 "use client"
 
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 export default function OnboardingWelcomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100/50" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+      {/* Navigation Bar */}
+      <div className="bg-white border-b border-green-100 sticky top-0 z-40">
+        <div className="container max-w-3xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Link href="/training">
+              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[#00A651]">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Training
+              </Button>
+            </Link>
+            <Link href="/onboarding/business">
+              <Button size="sm" className="bg-[#00A651] hover:bg-[#00c760] text-white">
+                Next: Business Resources
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#00A651] via-[#00c760] to-[#00A651] rounded-b-3xl px-6 py-12 md:py-16 text-center text-white relative overflow-hidden mb-8">
         <div className="absolute inset-0 bg-gradient-radial from-white/10 to-transparent animate-pulse"></div>
@@ -160,6 +180,22 @@ export default function OnboardingWelcomePage() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Navigation Footer */}
+        <div className="flex justify-between items-center gap-4 pt-8 border-t border-green-200 mt-8">
+          <Link href="/training">
+            <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Training
+            </Button>
+          </Link>
+          <Link href="/onboarding/business">
+            <Button className="bg-[#00A651] hover:bg-[#00c760] text-white">
+              Next: Business Resources
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
