@@ -66,4 +66,9 @@ export interface ZoomCall {
   created_by: string | null
   created_at: string
   updated_at: string
+  // Event-specific fields
+  event_type?: "meeting" | "event"
+  end_date?: string | null
+  location?: string | null
+  is_virtual?: boolean
 }

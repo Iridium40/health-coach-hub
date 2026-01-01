@@ -13,7 +13,8 @@ import { useToast } from "@/hooks/use-toast"
 import { sendMeetingEmail } from "@/lib/email"
 import { 
   X, Plus, Edit, Trash2, Search, Video, Calendar, Clock, Users, 
-  Link as LinkIcon, PlayCircle, Copy, Check, ExternalLink, Mail, Loader2
+  Link as LinkIcon, PlayCircle, Copy, Check, ExternalLink, Mail, Loader2,
+  MapPin, Globe
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -53,6 +54,11 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
   const [status, setStatus] = useState<"upcoming" | "live" | "completed" | "cancelled">("upcoming")
   const [sendEmailNotification, setSendEmailNotification] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  // Event-specific fields
+  const [eventType, setEventType] = useState<"meeting" | "event">("meeting")
+  const [endDate, setEndDate] = useState("")
+  const [location, setLocation] = useState("")
+  const [isVirtual, setIsVirtual] = useState(true)
 
   // Check if user is admin (case-insensitive)
   const isAdmin = profile?.user_role?.toLowerCase() === "admin"
@@ -99,6 +105,10 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setRecordingPlatform("vimeo")
     setStatus("upcoming")
     setSendEmailNotification(true)
+    setEventType("meeting")
+    setEndDate("")
+    setLocation("")
+    setIsVirtual(true)
     setEditingId(null)
     setShowForm(false)
   }
@@ -121,6 +131,10 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setRecordingUrl(call.recording_url || "")
     setRecordingPlatform(call.recording_platform || "")
     setStatus(call.status)
+    setEventType(call.event_type || "meeting")
+    setEndDate(call.end_date || "")
+    setLocation(call.location || "")
+    setIsVirtual(call.is_virtual !== false)
     setEditingId(call.id)
     setShowForm(true)
   }
@@ -171,18 +185,22 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
       description: description || null,
       call_type: callType,
       scheduled_at: scheduledDate.toISOString(),
-      duration_minutes: durationMinutes,
+      duration_minutes: eventType === "event" ? null : durationMinutes,
       is_recurring: isRecurring,
       recurrence_pattern: isRecurring ? recurrencePattern : null,
       recurrence_day: isRecurring ? recurrenceDay : null,
-      zoom_link: zoomLink || null,
-      zoom_meeting_id: zoomMeetingId || null,
-      zoom_passcode: zoomPasscode || null,
+      zoom_link: isVirtual ? (zoomLink || null) : null,
+      zoom_meeting_id: isVirtual ? (zoomMeetingId || null) : null,
+      zoom_passcode: isVirtual ? (zoomPasscode || null) : null,
       recording_url: recordingUrl || null,
       recording_platform: recordingPlatform || null,
       recording_available_at: recordingUrl ? new Date().toISOString() : null,
       status,
       created_by: user.id,
+      event_type: eventType,
+      end_date: eventType === "event" && endDate ? endDate : null,
+      location: location || null,
+      is_virtual: isVirtual,
     }
 
     let error
@@ -371,6 +389,45 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Event Type Toggle */}
+                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <Label className="text-optavia-dark font-medium">Type:</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={eventType === "meeting" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setEventType("meeting")}
+                      className={eventType === "meeting" 
+                        ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" 
+                        : "border-gray-300 text-optavia-dark hover:bg-gray-100"
+                      }
+                    >
+                      <Video className="h-4 w-4 mr-1" />
+                      Meeting
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={eventType === "event" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setEventType("event")}
+                      className={eventType === "event" 
+                        ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" 
+                        : "border-gray-300 text-optavia-dark hover:bg-gray-100"
+                      }
+                    >
+                      <Calendar className="h-4 w-4 mr-1" />
+                      Event
+                    </Button>
+                  </div>
+                  <span className="text-sm text-optavia-gray ml-2">
+                    {eventType === "meeting" 
+                      ? "Single time-slot meeting (e.g., Zoom call)" 
+                      : "Multi-day event (e.g., incentive trip, conference)"
+                    }
+                  </span>
+                </div>
+
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -379,19 +436,19 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                       id="title"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g., Weekly Coach Training"
+                      placeholder={eventType === "event" ? "e.g., 2026 Optavia Mexico Trip" : "e.g., Weekly Coach Training"}
                       required
                       className="border-gray-300"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="callType" className="text-optavia-dark">Call Type *</Label>
+                    <Label htmlFor="callType" className="text-optavia-dark">Audience *</Label>
                     <Select value={callType} onValueChange={(v) => setCallType(v as typeof callType)}>
                       <SelectTrigger className="border-gray-300">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white border border-gray-200 shadow-lg">
                         <SelectItem value="coach_only">Coach Only</SelectItem>
                         <SelectItem value="with_clients">With Clients</SelectItem>
                       </SelectContent>
@@ -415,64 +472,112 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                 <div className="bg-gray-50 rounded-lg p-4 space-y-4">
                   <h4 className="font-medium text-optavia-dark text-sm flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    Scheduling
+                    {eventType === "event" ? "Event Dates" : "Scheduling"}
                   </h4>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="scheduledAt" className="text-optavia-dark">Date & Time *</Label>
-                      <Input
-                        id="scheduledAt"
-                        type="datetime-local"
-                        value={scheduledAt}
-                        onChange={(e) => setScheduledAt(e.target.value)}
-                        required
-                        className="border-gray-300"
+                  {eventType === "event" ? (
+                    /* Event date range */
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="scheduledAt" className="text-optavia-dark">Start Date *</Label>
+                        <Input
+                          id="scheduledAt"
+                          type="date"
+                          value={scheduledAt ? scheduledAt.split("T")[0] : ""}
+                          onChange={(e) => setScheduledAt(e.target.value + "T00:00")}
+                          required
+                          className="border-gray-300"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate" className="text-optavia-dark">End Date *</Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          required
+                          className="border-gray-300"
+                          min={scheduledAt ? scheduledAt.split("T")[0] : undefined}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="status" className="text-optavia-dark">Status</Label>
+                        <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+                          <SelectTrigger className="border-gray-300">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                            <SelectItem value="upcoming">Upcoming</SelectItem>
+                            <SelectItem value="live">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Meeting date/time */
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="scheduledAt" className="text-optavia-dark">Date & Time *</Label>
+                        <Input
+                          id="scheduledAt"
+                          type="datetime-local"
+                          value={scheduledAt}
+                          onChange={(e) => setScheduledAt(e.target.value)}
+                          required
+                          className="border-gray-300"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="duration" className="text-optavia-dark">Duration (min)</Label>
+                        <Input
+                          id="duration"
+                          type="number"
+                          value={durationMinutes}
+                          onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 60)}
+                          min={15}
+                          max={240}
+                          className="border-gray-300"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="status" className="text-optavia-dark">Status</Label>
+                        <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+                          <SelectTrigger className="border-gray-300">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                            <SelectItem value="upcoming">Upcoming</SelectItem>
+                            <SelectItem value="live">Live</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recurring Toggle - only for meetings */}
+                  {eventType === "meeting" && (
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-md border border-gray-200">
+                      <Switch
+                        id="isRecurring"
+                        checked={isRecurring}
+                        onCheckedChange={setIsRecurring}
                       />
+                      <Label htmlFor="isRecurring" className="cursor-pointer text-optavia-dark text-sm">
+                        This is a recurring call
+                      </Label>
                     </div>
+                  )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="duration" className="text-optavia-dark">Duration (min)</Label>
-                      <Input
-                        id="duration"
-                        type="number"
-                        value={durationMinutes}
-                        onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 60)}
-                        min={15}
-                        max={240}
-                        className="border-gray-300"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="status" className="text-optavia-dark">Status</Label>
-                      <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-                        <SelectTrigger className="border-gray-300">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="upcoming">Upcoming</SelectItem>
-                          <SelectItem value="live">Live</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Recurring Toggle */}
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-md border border-gray-200">
-                    <Switch
-                      id="isRecurring"
-                      checked={isRecurring}
-                      onCheckedChange={setIsRecurring}
-                    />
-                    <Label htmlFor="isRecurring" className="cursor-pointer text-optavia-dark text-sm">
-                      This is a recurring call
-                    </Label>
-                  </div>
-
-                  {isRecurring && (
+                  {isRecurring && eventType === "meeting" && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-optavia-dark">Pattern</Label>
@@ -480,7 +585,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                           <SelectTrigger className="border-gray-300">
                             <SelectValue placeholder="Select pattern" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white border border-gray-200 shadow-lg">
                             <SelectItem value="weekly">Weekly</SelectItem>
                             <SelectItem value="biweekly">Bi-weekly</SelectItem>
                             <SelectItem value="monthly">Monthly</SelectItem>
@@ -493,7 +598,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                           <SelectTrigger className="border-gray-300">
                             <SelectValue placeholder="Select day" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white border border-gray-200 shadow-lg">
                             <SelectItem value="Monday">Monday</SelectItem>
                             <SelectItem value="Tuesday">Tuesday</SelectItem>
                             <SelectItem value="Wednesday">Wednesday</SelectItem>
@@ -508,11 +613,79 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                   )}
                 </div>
 
-                {/* Zoom Details */}
+                {/* Location & Format */}
+                <div className="bg-amber-50 rounded-lg p-4 space-y-4">
+                  <h4 className="font-medium text-optavia-dark text-sm flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-amber-600" />
+                    Location & Format
+                  </h4>
+
+                  {/* Virtual/In-Person Toggle */}
+                  <div className="flex items-center gap-4">
+                    <Label className="text-optavia-dark font-medium">Format:</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={isVirtual ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setIsVirtual(true)}
+                        className={isVirtual 
+                          ? "bg-blue-600 hover:bg-blue-700" 
+                          : "border-gray-300 text-optavia-dark hover:bg-gray-100"
+                        }
+                      >
+                        <Globe className="h-4 w-4 mr-1" />
+                        Virtual
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={!isVirtual ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setIsVirtual(false)}
+                        className={!isVirtual 
+                          ? "bg-amber-600 hover:bg-amber-700" 
+                          : "border-gray-300 text-optavia-dark hover:bg-gray-100"
+                        }
+                      >
+                        <MapPin className="h-4 w-4 mr-1" />
+                        In-Person
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Location field - show for in-person or events */}
+                  {(!isVirtual || eventType === "event") && (
+                    <div className="space-y-2">
+                      <Label htmlFor="location" className="text-optavia-dark">
+                        Location {!isVirtual && "*"}
+                      </Label>
+                      <Input
+                        id="location"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder={eventType === "event" 
+                          ? "e.g., Cancun, Mexico" 
+                          : "e.g., Conference Room A, 123 Main St"
+                        }
+                        required={!isVirtual}
+                        className="border-gray-300"
+                      />
+                      <p className="text-xs text-optavia-gray">
+                        {eventType === "event" 
+                          ? "Where is this event taking place?" 
+                          : "Enter the address or venue for this in-person meeting"
+                        }
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Zoom Details - only show for virtual */}
+                {isVirtual && (
                 <div className="bg-blue-50 rounded-lg p-4 space-y-4">
                   <h4 className="font-medium text-optavia-dark text-sm flex items-center gap-2">
                     <Video className="h-4 w-4 text-blue-600" />
-                    Zoom Details
+                    {eventType === "event" ? "Virtual Meeting Details (Optional)" : "Zoom Details"}
                   </h4>
                   
                   <div className="space-y-2">
@@ -549,8 +722,10 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                     </div>
                   </div>
                 </div>
+                )}
 
-                {/* Recording (for completed calls) */}
+                {/* Recording (for completed calls) - only for virtual meetings */}
+                {isVirtual && (
                 <div className="bg-green-50 rounded-lg p-4 space-y-4">
                   <h4 className="font-medium text-optavia-dark text-sm flex items-center gap-2">
                     <PlayCircle className="h-4 w-4 text-green-600" />
@@ -574,7 +749,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                         <SelectTrigger className="border-gray-300">
                           <SelectValue placeholder="Vimeo" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white border border-gray-200 shadow-lg">
                           <SelectItem value="vimeo">Vimeo</SelectItem>
                           <SelectItem value="zoom">Zoom</SelectItem>
                           <SelectItem value="youtube">YouTube</SelectItem>
@@ -583,19 +758,20 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Email Notification Toggle */}
                 {!editingId && (
-                  <div className="bg-amber-50 rounded-lg p-4">
+                  <div className="bg-purple-50 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Mail className="h-5 w-5 text-amber-600" />
+                        <Mail className="h-5 w-5 text-purple-600" />
                         <div>
                           <Label htmlFor="sendEmail" className="text-optavia-dark font-medium cursor-pointer">
                             Send Email Notification
                           </Label>
                           <p className="text-xs text-optavia-gray mt-0.5">
-                            Notify all coaches about this new meeting
+                            Notify all coaches about this new {eventType === "event" ? "event" : "meeting"}
                           </p>
                         </div>
                       </div>
