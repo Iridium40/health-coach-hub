@@ -12,8 +12,8 @@ import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { 
   X, Plus, Edit, Trash2, ChevronDown, ChevronRight, 
-  FileText, Video, ExternalLink, GripVertical, Loader2,
-  BookOpen, Rocket, Users, Building2, GraduationCap
+  FileText, Video, ExternalLink, Loader2,
+  BookOpen, Rocket, Users, Building2, GraduationCap, ArrowUp, ArrowDown
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -375,6 +375,78 @@ export function AdminTraining({ onClose }: { onClose?: () => void }) {
     setDeleteConfirm(null)
   }
 
+  // Reorder module (move up or down within category)
+  const reorderModule = async (categoryId: string, moduleId: string, direction: "up" | "down") => {
+    const categoryModules = modulesByCategory.get(categoryId) || []
+    const currentIndex = categoryModules.findIndex(m => m.id === moduleId)
+    
+    if (currentIndex === -1) return
+    if (direction === "up" && currentIndex === 0) return
+    if (direction === "down" && currentIndex === categoryModules.length - 1) return
+    
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
+    const currentModule = categoryModules[currentIndex]
+    const targetModule = categoryModules[targetIndex]
+    
+    // Swap sort orders
+    const currentOrder = currentModule.sort_order
+    const targetOrder = targetModule.sort_order
+    
+    // Update both modules in parallel
+    const [result1, result2] = await Promise.all([
+      supabase.from("modules").update({ sort_order: targetOrder }).eq("id", currentModule.id),
+      supabase.from("modules").update({ sort_order: currentOrder }).eq("id", targetModule.id),
+    ])
+    
+    if (result1.error || result2.error) {
+      toast({ title: "Error", description: "Failed to reorder module", variant: "destructive" })
+    } else {
+      // Update local state immediately for responsive UI
+      const updatedModules = [...modules]
+      const idx1 = updatedModules.findIndex(m => m.id === currentModule.id)
+      const idx2 = updatedModules.findIndex(m => m.id === targetModule.id)
+      if (idx1 !== -1) updatedModules[idx1] = { ...updatedModules[idx1], sort_order: targetOrder }
+      if (idx2 !== -1) updatedModules[idx2] = { ...updatedModules[idx2], sort_order: currentOrder }
+      setModules(updatedModules.sort((a, b) => a.sort_order - b.sort_order))
+    }
+  }
+
+  // Reorder resource (move up or down)
+  const reorderResource = async (moduleId: string, resourceId: string, direction: "up" | "down") => {
+    const moduleResources = getResourcesForModule(moduleId)
+    const currentIndex = moduleResources.findIndex(r => r.id === resourceId)
+    
+    if (currentIndex === -1) return
+    if (direction === "up" && currentIndex === 0) return
+    if (direction === "down" && currentIndex === moduleResources.length - 1) return
+    
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
+    const currentResource = moduleResources[currentIndex]
+    const targetResource = moduleResources[targetIndex]
+    
+    // Swap sort orders
+    const currentOrder = currentResource.sort_order
+    const targetOrder = targetResource.sort_order
+    
+    // Update both resources in parallel
+    const [result1, result2] = await Promise.all([
+      supabase.from("module_resources").update({ sort_order: targetOrder }).eq("id", currentResource.id),
+      supabase.from("module_resources").update({ sort_order: currentOrder }).eq("id", targetResource.id),
+    ])
+    
+    if (result1.error || result2.error) {
+      toast({ title: "Error", description: "Failed to reorder resource", variant: "destructive" })
+    } else {
+      // Update local state immediately for responsive UI
+      const updatedResources = [...resources]
+      const idx1 = updatedResources.findIndex(r => r.id === currentResource.id)
+      const idx2 = updatedResources.findIndex(r => r.id === targetResource.id)
+      if (idx1 !== -1) updatedResources[idx1] = { ...updatedResources[idx1], sort_order: targetOrder }
+      if (idx2 !== -1) updatedResources[idx2] = { ...updatedResources[idx2], sort_order: currentOrder }
+      setResources(updatedResources.sort((a, b) => a.sort_order - b.sort_order))
+    }
+  }
+
   // Filter categories based on selection
   const displayCategories = selectedCategory === "all" 
     ? CATEGORIES 
@@ -483,18 +555,39 @@ export function AdminTraining({ onClose }: { onClose?: () => void }) {
                     <p className="text-sm text-optavia-gray italic ml-8">No modules in this category</p>
                   ) : (
                     <div className="space-y-2 ml-8">
-                      {categoryModules.map(module => {
+                      {categoryModules.map((module, moduleIndex) => {
                         const moduleResources = getResourcesForModule(module.id)
                         const isModuleExpanded = expandedModules.has(module.id)
 
                         return (
-                          <div key={module.id} className="border border-gray-100 rounded-lg bg-gray-50/50">
+                          <div key={module.id} className="border border-gray-100 rounded-lg bg-gray-50/50 group/module">
                             {/* Module Header */}
                             <div 
                               className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-100 transition-colors rounded-t-lg"
                               onClick={() => toggleModule(module.id)}
                             >
                               <div className="flex items-center gap-3">
+                                {/* Module reorder buttons */}
+                                <div className="flex flex-col gap-0" onClick={e => e.stopPropagation()}>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-5 w-5 p-0 opacity-0 group-hover/module:opacity-100 transition-opacity disabled:opacity-30"
+                                    onClick={() => reorderModule(category.id, module.id, "up")}
+                                    disabled={moduleIndex === 0}
+                                  >
+                                    <ArrowUp className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-5 w-5 p-0 opacity-0 group-hover/module:opacity-100 transition-opacity disabled:opacity-30"
+                                    onClick={() => reorderModule(category.id, module.id, "down")}
+                                    disabled={moduleIndex === categoryModules.length - 1}
+                                  >
+                                    <ArrowDown className="h-3 w-3" />
+                                  </Button>
+                                </div>
                                 {isModuleExpanded ? (
                                   <ChevronDown className="h-4 w-4 text-gray-400" />
                                 ) : (
@@ -532,12 +625,33 @@ export function AdminTraining({ onClose }: { onClose?: () => void }) {
                             {isModuleExpanded && (
                               <div className="px-3 pb-3 pt-1 border-t border-gray-100">
                                 <div className="space-y-1 ml-7">
-                                  {moduleResources.map(resource => (
+                                  {moduleResources.map((resource, index) => (
                                     <div 
                                       key={resource.id}
                                       className="flex items-center justify-between p-2 rounded hover:bg-white transition-colors group"
                                     >
                                       <div className="flex items-center gap-2">
+                                        {/* Reorder buttons */}
+                                        <div className="flex flex-col gap-0">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30"
+                                            onClick={() => reorderResource(module.id, resource.id, "up")}
+                                            disabled={index === 0}
+                                          >
+                                            <ArrowUp className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30"
+                                            onClick={() => reorderResource(module.id, resource.id, "down")}
+                                            disabled={index === moduleResources.length - 1}
+                                          >
+                                            <ArrowDown className="h-3 w-3" />
+                                          </Button>
+                                        </div>
                                         {resource.resource_type === "video" ? (
                                           <Video className="h-4 w-4 text-blue-500" />
                                         ) : (
