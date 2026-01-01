@@ -40,16 +40,22 @@ export function DashboardOverview() {
   const [upcomingMeetings, setUpcomingMeetings] = useState<ZoomCall[]>([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
 
-  // Load upcoming meetings
+  // Load today's meetings only
   useEffect(() => {
     if (!user) return
     
     const loadMeetings = async () => {
+      // Get start and end of today
+      const now = new Date()
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+      
       const { data, error } = await supabase
         .from("zoom_calls")
         .select("*")
         .in("status", ["upcoming", "live"])
-        .gte("scheduled_at", new Date().toISOString())
+        .gte("scheduled_at", startOfToday.toISOString())
+        .lte("scheduled_at", endOfToday.toISOString())
         .order("scheduled_at", { ascending: true })
         .limit(3)
 
@@ -142,13 +148,13 @@ export function DashboardOverview() {
       {/* Main Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
         
-        {/* Upcoming Meetings Card */}
+        {/* Today's Meetings Card */}
         <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2 text-optavia-dark">
                 <Video className="h-5 w-5 text-blue-600" />
-                Upcoming Meetings
+                Today's Meetings
               </CardTitle>
               <Link href="/calendar">
                 <Button variant="ghost" size="sm" className="text-[hsl(var(--optavia-green))] hover:bg-green-50 -mr-2">
@@ -165,7 +171,7 @@ export function DashboardOverview() {
             ) : upcomingMeetings.length === 0 ? (
               <div className="text-center py-6 text-optavia-gray">
                 <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No upcoming meetings</p>
+                <p className="text-sm">No meetings scheduled for today</p>
                 <Link href="/calendar">
                   <Button variant="outline" size="sm" className="mt-3">
                     View Calendar
