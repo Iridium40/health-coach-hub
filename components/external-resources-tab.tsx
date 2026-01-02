@@ -12,12 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Pin, X, ExternalLink, Droplets, Dumbbell, Activity, ClipboardList } from "lucide-react"
+import { Pin, X, ExternalLink, Droplets, Dumbbell, Activity, ClipboardList, Users, Wrench } from "lucide-react"
 import { ToolCard } from "@/components/coach-tools/tool-card"
 import { WaterCalculator } from "@/components/coach-tools/water-calculator"
 import { ExerciseGuide } from "@/components/coach-tools/exercise-guide"
 import { MetabolicHealthInfo } from "@/components/coach-tools/metabolic-health-info"
 import { HealthAssessment } from "@/components/coach-tools/health-assessment"
+import { ClientOnboardingLink } from "@/components/coach-tools/client-onboarding-link"
+import { ClientTroubleshootingLink } from "@/components/coach-tools/client-troubleshooting-link"
 
 interface Resource {
   id: string
@@ -31,6 +33,22 @@ interface Resource {
 
 // Coach Tools definitions
 const COACH_TOOLS = [
+  {
+    id: "client-onboarding",
+    title: "Client Onboarding Tool",
+    description: "Streamline new client onboarding with templates, checklists, and quick-copy messages.",
+    icon: Users,
+    component: ClientOnboardingLink,
+    expandMode: "dialog" as const,
+  },
+  {
+    id: "client-troubleshooting",
+    title: "Client Troubleshooting Guide",
+    description: "Quick solutions and scripts for common client issues and challenges.",
+    icon: Wrench,
+    component: ClientTroubleshootingLink,
+    expandMode: "dialog" as const,
+  },
   {
     id: "water-calculator",
     title: "Water Intake Calculator",
