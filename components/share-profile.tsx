@@ -133,7 +133,7 @@ export function ShareProfile() {
 
       {/* QR Code Dialog */}
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] mx-4">
           <DialogHeader>
             <DialogTitle>Share Your OPTAVIA Profile</DialogTitle>
             <DialogDescription>
@@ -141,16 +141,16 @@ export function ShareProfile() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4 py-4">
-            <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+            <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-gray-200 w-full max-w-xs">
               <img
                 src={qrCodeUrl}
                 alt="QR Code for OPTAVIA Profile"
-                className="w-64 h-64"
+                className="w-full h-auto max-w-full"
               />
             </div>
             <div className="w-full space-y-2">
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                <span className="text-sm text-gray-600 truncate flex-1 mr-2">
+              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md gap-2">
+                <span className="text-xs sm:text-sm text-gray-600 truncate flex-1 min-w-0">
                   {profileUrl}
                 </span>
                 <Button
