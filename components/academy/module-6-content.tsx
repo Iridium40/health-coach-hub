@@ -12,8 +12,9 @@ export function Module6Content() {
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-[hsl(var(--optavia-green))]/10 border-2 border-amber-500/30 rounded-3xl p-8 md:p-12 text-center mb-8">
         <div className="text-6xl md:text-7xl mb-4">✨</div>
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-amber-200 via-white to-[hsl(var(--optavia-green))] bg-clip-text text-transparent">
-          Integrated Presidential Director
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          <div className="text-amber-300/90">Integrated Presidential</div>
+          <div className="text-[hsl(var(--optavia-green))]/90">Director</div>
         </h1>
         <p className="text-xl md:text-2xl text-optavia-dark max-w-3xl mx-auto">
           The highest rank in OPTAVIA. You&apos;ve built a legacy that transforms thousands of lives.

@@ -12,7 +12,7 @@ export function Module5Content() {
     <div className="space-y-6">
       {/* Intro */}
       <div className="bg-gradient-to-br from-white to-gray-50 border border-[hsl(var(--optavia-border))] rounded-2xl p-6 md:p-8 mb-6">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-white via-[hsl(var(--optavia-green))] to-white bg-clip-text text-transparent">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-[hsl(var(--optavia-green))]">
           Executive Leadership
         </h1>
         <p className="text-optavia-dark text-lg leading-relaxed">
