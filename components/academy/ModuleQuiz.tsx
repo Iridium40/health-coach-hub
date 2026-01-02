@@ -7,16 +7,33 @@ import { CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 import type { QuizQuestion } from "@/lib/academy-quiz-questions"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { getAcademyModuleNav, getRankDisplayName, ACADEMY_MODULES } from "@/lib/academy-utils"
 
 interface ModuleQuizProps {
   moduleId: string
   questions: QuizQuestion[]
   userId: string
+  userEmail?: string
+  userName?: string
+  userRank?: string | null
+  moduleTitle?: string
+  moduleNumber?: number
   onComplete: (passed: boolean) => void
   resourceId: string // Module resource ID to mark as complete
 }
 
-export function ModuleQuiz({ moduleId, questions, userId, onComplete, resourceId }: ModuleQuizProps) {
+export function ModuleQuiz({ 
+  moduleId, 
+  questions, 
+  userId, 
+  userEmail,
+  userName,
+  userRank,
+  moduleTitle,
+  moduleNumber,
+  onComplete, 
+  resourceId 
+}: ModuleQuizProps) {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, "A" | "B" | "C" | "D">>({})
   const [submitted, setSubmitted] = useState(false)
   const [score, setScore] = useState<number | null>(null)
@@ -107,6 +124,59 @@ export function ModuleQuiz({ moduleId, questions, userId, onComplete, resourceId
 
       if (progressError) {
         console.error("Error marking module complete:", progressError)
+      }
+
+      // Check if this unlocks a new module and send email
+      if (userEmail && userName && moduleTitle && moduleNumber) {
+        // Extract module number from moduleId (e.g., "academy-module-1" -> "module-1")
+        const moduleMatch = moduleId.match(/module-(\d+)/)
+        if (moduleMatch) {
+          const currentModuleId = `module-${moduleMatch[1]}`
+          const nav = getAcademyModuleNav(currentModuleId, userRank || null)
+
+          // If there's a next module and user can access it, send unlock email
+          if (nav.next && nav.canAccessNext && nav.nextRequiredRank) {
+            const nextModule = ACADEMY_MODULES.find(m => m.id === currentModuleId)?.next
+            const nextModuleData = ACADEMY_MODULES.find(m => m.id === nextModule)
+
+            if (nextModuleData) {
+              const nextModuleNumber = parseInt(nextModule.replace('module-', ''), 10)
+              const rankDisplayName = getRankDisplayName(nav.nextRequiredRank)
+
+              // Send email asynchronously (don't wait for it)
+              fetch('/api/send-module-completion-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  to: userEmail,
+                  fullName: userName,
+                  completedModuleTitle: moduleTitle,
+                  completedModuleNumber: moduleNumber,
+                  unlockedModuleTitle: nextModuleData.title,
+                  unlockedModuleNumber: nextModuleNumber,
+                  unlockedModuleRank: rankDisplayName
+                })
+              }).catch(error => {
+                console.error("Error sending module completion email:", error)
+                // Don't show error to user - email sending failure shouldn't block completion
+              })
+            }
+          } else if (!nav.next) {
+            // Last module completed - send completion email without unlock
+            fetch('/api/send-module-completion-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: userEmail,
+                fullName: userName,
+                completedModuleTitle: moduleTitle,
+                completedModuleNumber: moduleNumber
+              })
+            }).catch(error => {
+              console.error("Error sending module completion email:", error)
+            })
+          }
+        }
       }
     }
 

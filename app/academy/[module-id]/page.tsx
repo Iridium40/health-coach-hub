@@ -269,6 +269,11 @@ export default function AcademyModulePage() {
             moduleId={`academy-${moduleId}`}
             questions={quizQuestions}
             userId={user.id}
+            userEmail={profile?.email || undefined}
+            userName={profile?.full_name || undefined}
+            userRank={profile?.coach_rank || null}
+            moduleTitle={module.title}
+            moduleNumber={parseInt(moduleId.replace('module-', ''), 10)}
             resourceId={resourceId}
             onComplete={handleQuizComplete}
           />
