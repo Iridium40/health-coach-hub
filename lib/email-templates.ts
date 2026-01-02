@@ -17,34 +17,64 @@ export function getLogoUrl(): string {
 }
 
 /**
- * Generate the email header with logo
+ * Get the dark mode logo URL for emails
+ */
+export function getDarkLogoUrl(): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://www.coachingamplifier.com"
+  return `${baseUrl}/branding/ca_logo_dark.png`
+}
+
+/**
+ * Generate the email header with logo (supports dark mode)
  */
 export function getEmailHeader(title: string, subtitle?: string): string {
   const logoUrl = getLogoUrl()
+  const darkLogoUrl = getDarkLogoUrl()
   
   return `
-    <div style="background-color: #ffffff; padding: 30px 20px; text-align: center; border-bottom: 3px solid #2d5016;">
-      <img src="${logoUrl}" alt="Coaching Amplifier" style="max-width: 300px; height: auto; margin-bottom: 20px;" />
-      ${subtitle ? `<p style="color: #666; font-size: 16px; margin: 10px 0 0 0;">${subtitle}</p>` : ""}
+    <style>
+      @media (prefers-color-scheme: dark) {
+        .email-header {
+          background-color: #1a1a1a !important;
+          border-bottom-color: #4a7c59 !important;
+        }
+        .email-header-text {
+          color: #e0e0e0 !important;
+        }
+        .email-logo {
+          display: none !important;
+        }
+        .email-logo-dark {
+          display: block !important;
+        }
+      }
+      .email-logo-dark {
+        display: none;
+      }
+    </style>
+    <div class="email-header" style="background-color: #ffffff; padding: 30px 20px; text-align: center; border-bottom: 3px solid #2d5016;">
+      <img src="${logoUrl}" alt="Coaching Amplifier" class="email-logo" style="max-width: 300px; height: auto; margin-bottom: 20px; display: block;" />
+      <img src="${darkLogoUrl}" alt="Coaching Amplifier" class="email-logo-dark" style="max-width: 300px; height: auto; margin-bottom: 20px; margin-left: auto; margin-right: auto;" />
+      ${subtitle ? `<p class="email-header-text" style="color: #666; font-size: 16px; margin: 10px 0 0 0;">${subtitle}</p>` : ""}
     </div>
   `
 }
 
 /**
- * Generate the email footer
+ * Generate the email footer (supports dark mode)
  */
 export function getEmailFooter(): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://www.coachingamplifier.com"
   
   return `
-    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
-      <p style="color: #666; font-size: 14px; margin: 10px 0;">
-        <a href="${appUrl}" style="color: #2d5016; text-decoration: none;">Coaching Amplifier</a>
+    <div class="email-border" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+      <p class="email-text-muted" style="color: #666; font-size: 14px; margin: 10px 0;">
+        <a href="${appUrl}" class="email-link" style="color: #2d5016; text-decoration: none;">Coaching Amplifier</a>
       </p>
-      <p style="color: #999; font-size: 12px; margin: 5px 0;">
+      <p class="email-text-muted" style="color: #999; font-size: 12px; margin: 5px 0;">
         Amplify your coaching business with powerful resources and tools
       </p>
-      <p style="color: #999; font-size: 12px; margin: 20px 0 0 0;">
+      <p class="email-text-muted" style="color: #999; font-size: 12px; margin: 20px 0 0 0;">
         © ${new Date().getFullYear()} Coaching Amplifier. All rights reserved.
       </p>
     </div>
@@ -59,7 +89,7 @@ export function getButtonStyle(): string {
 }
 
 /**
- * Generate the base email wrapper
+ * Generate the base email wrapper (supports dark mode)
  */
 export function getEmailWrapper(content: string, title?: string): string {
   return `
@@ -68,10 +98,34 @@ export function getEmailWrapper(content: string, title?: string): string {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <meta name="supported-color-schemes" content="light dark">
         <title>${title || "Coaching Amplifier"}</title>
+        <style>
+          @media (prefers-color-scheme: dark) {
+            .email-body {
+              background-color: #0a0a0a !important;
+            }
+            .email-container {
+              background-color: #1a1a1a !important;
+            }
+            .email-text {
+              color: #e0e0e0 !important;
+            }
+            .email-text-muted {
+              color: #b0b0b0 !important;
+            }
+            .email-link {
+              color: #7cb342 !important;
+            }
+            .email-border {
+              border-color: #333 !important;
+            }
+          }
+        </style>
       </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f5f5f5;">
-        <div style="background-color: #ffffff; margin: 20px auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <body class="email-body" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f5f5f5;">
+        <div class="email-container" style="background-color: #ffffff; margin: 20px auto; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           ${content}
         </div>
       </body>
@@ -158,7 +212,7 @@ export function getModuleCompletionEmailTemplate(options: {
         }
       </p>
       
-      <p style="font-size: 16px; color: #333; margin: 0 0 30px 0;">
+      <p class="email-text" style="font-size: 16px; color: #333; margin: 0 0 30px 0;">
         ${hasUnlockedModule
           ? `You're making incredible progress in the Coaching Amplifier Academy! Ready to take on the next challenge?`
           : `Your dedication to learning and growth is impressive. Keep up the excellent work as you continue your coaching journey!`
@@ -189,7 +243,7 @@ export function getModuleCompletionEmailTemplate(options: {
         </p>
       </div>
       
-      <p style="font-size: 16px; color: #333; margin: 30px 0 0 0;">
+      <p class="email-text" style="font-size: 16px; color: #333; margin: 30px 0 0 0;">
         Best regards,<br>
         <strong>The Coaching Amplifier Team</strong>
       </p>
