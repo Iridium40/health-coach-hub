@@ -34,6 +34,14 @@ interface Resource {
 // Coach Tools definitions
 const COACH_TOOLS = [
   {
+    id: "health-assessment",
+    title: "Health Assessment Call Checklist",
+    description: "Comprehensive checklist and script guide for conducting health assessment calls with prospective clients.",
+    icon: ClipboardList,
+    component: HealthAssessment,
+    expandMode: "dialog" as const,
+  },
+  {
     id: "client-onboarding",
     title: "Client Onboarding Tool",
     description: "Streamline new client onboarding with templates, checklists, and quick-copy messages.",
@@ -55,14 +63,6 @@ const COACH_TOOLS = [
     description: "Calculate personalized daily water intake goals for your clients based on weight and activity level.",
     icon: Droplets,
     component: WaterCalculator,
-  },
-  {
-    id: "health-assessment",
-    title: "Health Assessment Call Checklist",
-    description: "Comprehensive checklist and script guide for conducting health assessment calls with prospective clients.",
-    icon: ClipboardList,
-    component: HealthAssessment,
-    expandMode: "dialog" as const,
   },
   {
     id: "exercise-guide",
