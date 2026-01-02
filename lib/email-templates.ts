@@ -285,3 +285,166 @@ The Coaching Amplifier Team
   return { subject, html, text }
 }
 
+/**
+ * Generate email template for Health Assessment results
+ */
+export function getHealthAssessmentEmailTemplate(options: {
+  coachName: string
+  clientName: string
+  clientPhone?: string
+  clientWhy?: string
+  clientCommitment?: string
+  callOutcome: string
+  callNotes?: string
+  checkedItems: string[]
+  notes: Record<string, string>
+  timerSeconds: number
+  progress: number
+  phaseProgress: Array<{ phase: string; checked: number; total: number }>
+}): { subject: string; html: string; text: string } {
+  const subject = `Health Assessment Call Results - ${options.clientName || "Client"}`
+
+  const header = getEmailHeader("Health Assessment Call Results")
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+  }
+
+  const outcomeLabels: Record<string, string> = {
+    enrolled: "✅ Enrolled!",
+    followup: "📅 Follow-up scheduled",
+    thinking: "🤔 Thinking about it",
+    "not-ready": "⏸️ Not ready now",
+    "not-fit": "❌ Not a good fit",
+  }
+
+  const bodyContent = `
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+      <h2 style="color: #2d5016; margin-bottom: 20px;">Health Assessment Call Summary</h2>
+      
+      <div style="background: #f0fdf4; border: 2px solid #00A651; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #00A651; margin-top: 0; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Client Information</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #166534;">Name:</td>
+            <td style="padding: 8px 0; color: #1e293b;">${options.clientName || "Not provided"}</td>
+          </tr>
+          ${options.clientPhone ? `
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #166534;">Phone:</td>
+            <td style="padding: 8px 0; color: #1e293b;">${options.clientPhone}</td>
+          </tr>
+          ` : ""}
+          ${options.clientWhy ? `
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #166534;">Their "Why":</td>
+            <td style="padding: 8px 0; color: #1e293b;">${options.clientWhy}</td>
+          </tr>
+          ` : ""}
+          ${options.clientCommitment ? `
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #166534;">Commitment Level:</td>
+            <td style="padding: 8px 0; color: #1e293b;">${options.clientCommitment}/10</td>
+          </tr>
+          ` : ""}
+        </table>
+      </div>
+
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #2d5016; margin-top: 0;">Call Summary</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #64748b;">Duration:</td>
+            <td style="padding: 8px 0; color: #1e293b;">${formatTime(options.timerSeconds)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #64748b;">Progress:</td>
+            <td style="padding: 8px 0; color: #1e293b;">${options.progress}% complete</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; color: #64748b;">Outcome:</td>
+            <td style="padding: 8px 0; color: #1e293b; font-weight: bold;">${outcomeLabels[options.callOutcome] || options.callOutcome}</td>
+          </tr>
+        </table>
+      </div>
+
+      ${options.phaseProgress && options.phaseProgress.length > 0 ? `
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #2d5016; margin-top: 0;">Phase Progress</h3>
+        ${options.phaseProgress.map((phase) => `
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-weight: 600; color: #1e293b;">${phase.phase}</span>
+              <span style="color: ${phase.checked === phase.total && phase.total > 0 ? "#00A651" : "#64748b"}; font-weight: ${phase.checked === phase.total && phase.total > 0 ? "bold" : "normal"}">
+                ${phase.checked}/${phase.total}
+              </span>
+            </div>
+            <div style="background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden;">
+              <div style="background: ${phase.checked === phase.total && phase.total > 0 ? "#00A651" : "#94a3b8"}; height: 100%; width: ${phase.total > 0 ? (phase.checked / phase.total) * 100 : 0}%; border-radius: 4px;"></div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      ` : ""}
+
+      ${Object.keys(options.notes).length > 0 ? `
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #2d5016; margin-top: 0;">Your Notes</h3>
+        ${Object.entries(options.notes).map(([key, value]) => value ? `
+          <div style="margin-bottom: 12px; padding: 12px; background: #f8fafc; border-left: 3px solid #00A651; border-radius: 4px;">
+            <p style="margin: 0; color: #1e293b; white-space: pre-wrap;">${value}</p>
+          </div>
+        ` : "").join("")}
+      </div>
+      ` : ""}
+
+      ${options.callNotes ? `
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="color: #2d5016; margin-top: 0;">Additional Notes</h3>
+        <p style="color: #1e293b; white-space: pre-wrap; line-height: 1.6;">${options.callNotes}</p>
+      </div>
+      ` : ""}
+
+      <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 16px; margin-top: 20px;">
+        <p style="margin: 0; color: #92400e; font-size: 14px;">
+          <strong>💡 Next Steps:</strong> ${options.callOutcome === "enrolled" 
+            ? "Follow up with enrollment details and welcome materials." 
+            : options.callOutcome === "followup" 
+            ? "Schedule and prepare for the follow-up call." 
+            : "Continue nurturing the relationship and provide value through resources and tips."}
+        </p>
+      </div>
+    </div>
+  `
+
+  const footer = getEmailFooter()
+  const html = getEmailWrapper(header + bodyContent + footer, "Health Assessment Results - Coaching Amplifier")
+
+  const text = `
+Health Assessment Call Results
+
+Client: ${options.clientName || "Not provided"}
+${options.clientPhone ? `Phone: ${options.clientPhone}\n` : ""}
+${options.clientWhy ? `Their "Why": ${options.clientWhy}\n` : ""}
+${options.clientCommitment ? `Commitment Level: ${options.clientCommitment}/10\n` : ""}
+
+Call Duration: ${formatTime(options.timerSeconds)}
+Progress: ${options.progress}%
+Outcome: ${outcomeLabels[options.callOutcome] || options.callOutcome}
+
+${options.callNotes ? `\nAdditional Notes:\n${options.callNotes}\n` : ""}
+
+Next Steps: ${options.callOutcome === "enrolled" 
+  ? "Follow up with enrollment details and welcome materials." 
+  : options.callOutcome === "followup" 
+  ? "Schedule and prepare for the follow-up call." 
+  : "Continue nurturing the relationship and provide value."}
+
+---
+Coaching Amplifier
+  `.trim()
+
+  return { subject, html, text }
+}

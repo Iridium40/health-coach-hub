@@ -12,11 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Pin, X, ExternalLink, Droplets, Dumbbell, Activity } from "lucide-react"
+import { Pin, X, ExternalLink, Droplets, Dumbbell, Activity, ClipboardList } from "lucide-react"
 import { ToolCard } from "@/components/coach-tools/tool-card"
 import { WaterCalculator } from "@/components/coach-tools/water-calculator"
 import { ExerciseGuide } from "@/components/coach-tools/exercise-guide"
 import { MetabolicHealthInfo } from "@/components/coach-tools/metabolic-health-info"
+import { HealthAssessment } from "@/components/coach-tools/health-assessment"
 
 interface Resource {
   id: string
@@ -36,6 +37,14 @@ const COACH_TOOLS = [
     description: "Calculate personalized daily water intake goals for your clients based on weight and activity level.",
     icon: Droplets,
     component: WaterCalculator,
+  },
+  {
+    id: "health-assessment",
+    title: "Health Assessment Call Checklist",
+    description: "Comprehensive checklist and script guide for conducting health assessment calls with prospective clients.",
+    icon: ClipboardList,
+    component: HealthAssessment,
+    expandMode: "dialog" as const,
   },
   {
     id: "exercise-guide",
@@ -395,9 +404,9 @@ export function ExternalResourcesTab() {
                 title={tool.title}
                 description={tool.description}
                 icon={tool.icon}
-                expandMode="dialog"
+                expandMode={tool.expandMode || "dialog"}
               >
-                <tool.component />
+                {tool.component && <tool.component />}
               </ToolCard>
             ))}
           </div>

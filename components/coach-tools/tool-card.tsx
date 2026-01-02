@@ -23,7 +23,7 @@ interface ToolCardProps {
 }
 
 export function ToolCard({
-  id,
+  id = "",
   title,
   description,
   icon: Icon,
@@ -114,7 +114,9 @@ export function ToolCard({
       {/* Dialog for dialog mode */}
       {expandMode === "dialog" && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className={`max-h-[90vh] overflow-y-auto ${
+            id === "health-assessment" ? "max-w-5xl" : "max-w-2xl"
+          }`}>
             <DialogHeader>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-[hsl(var(--optavia-green-light))]">
