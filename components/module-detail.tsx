@@ -188,7 +188,7 @@ export function ModuleDetail({ module, userData, setUserData, onBack }: ModuleDe
     }
 
     // If URL starts with /onboarding/, /academy/, or /training/, route to the page instead of opening in iframe
-    if (resource.url.startsWith("/onboarding/") || resource.url.startsWith("/academy/") || resource.url.startsWith("/training/health-assessment-mastery")) {
+    if (resource.url.startsWith("/onboarding/") || resource.url.startsWith("/academy/") || resource.url.startsWith("/training/")) {
       router.push(resource.url)
       return
     }

@@ -8,6 +8,8 @@ export interface Database {
           full_name: string | null
           avatar_url: string | null
           is_new_coach: boolean
+          optavia_id: string | null
+          parent_optavia_id: string | null
           created_at: string
           updated_at: string
         }
@@ -17,6 +19,8 @@ export interface Database {
           full_name?: string | null
           avatar_url?: string | null
           is_new_coach?: boolean
+          optavia_id?: string | null
+          parent_optavia_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -26,6 +30,8 @@ export interface Database {
           full_name?: string | null
           avatar_url?: string | null
           is_new_coach?: boolean
+          optavia_id?: string | null
+          parent_optavia_id?: string | null
           created_at?: string
           updated_at?: string
         }

@@ -16,6 +16,7 @@ export interface UserProfile {
   user_role: string | null
   coach_rank: string | null
   optavia_id: string | null
+  parent_optavia_id: string | null
   phone_number: string | null
   created_at: string
   updated_at: string

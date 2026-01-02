@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, LogOut, Bell, BarChart3, BellRing, UtensilsCrossed, Star, CalendarDays, BookOpen, Link2 } from "lucide-react"
+import { User, LogOut, Bell, BarChart3, BellRing, UtensilsCrossed, Star, CalendarDays, BookOpen, Link2, Users } from "lucide-react"
 import { useUserData } from "@/contexts/user-data-context"
 
 interface UserMenuProps {
@@ -155,6 +155,19 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
             <DropdownMenuSeparator className="bg-gray-200" />
           </>
         )}
+        
+        {/* Coaching Section */}
+        <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold text-optavia-gray uppercase tracking-wide">
+          Coaching
+        </DropdownMenuLabel>
+        <DropdownMenuItem 
+          onClick={() => router.push("/coach/downline")}
+          className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+        >
+          <Users className="mr-2 h-4 w-4" />
+          <span>Downline Progress</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-gray-200" />
         
         {/* Settings Section */}
         <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold text-optavia-gray uppercase tracking-wide">

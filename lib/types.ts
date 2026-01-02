@@ -17,7 +17,7 @@ export interface Module {
   id: string
   title: string
   description: string
-  category: "Getting Started" | "Client Support" | "Business Building" | "Training" | "Academy Course"
+  category: "Getting Started" | "Client Support" | "Business Building" | "Training" | "Academy Course" | "Welcome & Orientation"
   order: number
   forNewCoach: boolean
   icon: string

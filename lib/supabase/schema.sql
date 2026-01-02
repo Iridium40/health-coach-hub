@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   user_role TEXT CHECK (user_role IN ('admin', 'coach')),
   coach_rank TEXT CHECK (coach_rank IN ('Coach', 'SC', 'MG', 'AD', 'DR', 'ED', 'IED', 'FIBC', 'IGD', 'FIBL', 'IND', 'IPD')),
   optavia_id TEXT,
+  parent_optavia_id TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -138,6 +139,23 @@ CREATE POLICY "Users can view their own profile"
   ON profiles FOR SELECT
   USING (auth.uid() = id);
 
+-- Sponsors can view profiles of coaches they sponsor (via parent_optavia_id)
+CREATE POLICY "Sponsors can view their downline coaches' profiles"
+  ON profiles FOR SELECT
+  TO authenticated
+  USING (
+    -- Users can always view their own profile
+    auth.uid() = id
+    OR
+    -- Sponsors can view profiles of coaches they sponsor
+    EXISTS (
+      SELECT 1 FROM profiles sponsor_profile
+      WHERE sponsor_profile.id = auth.uid()
+      AND sponsor_profile.optavia_id IS NOT NULL
+      AND profiles.parent_optavia_id = sponsor_profile.optavia_id
+    )
+  );
+
 CREATE POLICY "Users can update their own profile"
   ON profiles FOR UPDATE
   USING (auth.uid() = id);
@@ -150,6 +168,23 @@ CREATE POLICY "Users can insert their own profile"
 CREATE POLICY "Users can view their own progress"
   ON user_progress FOR SELECT
   USING (auth.uid() = user_id);
+
+-- Sponsors can view their downline's progress (via parent_optavia_id)
+CREATE POLICY "Sponsors can view their downline's progress"
+  ON user_progress FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles sponsor_profile
+      WHERE sponsor_profile.id = auth.uid()
+      AND sponsor_profile.optavia_id IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM profiles coach_profile
+        WHERE coach_profile.id = user_progress.user_id
+        AND coach_profile.parent_optavia_id = sponsor_profile.optavia_id
+      )
+    )
+  );
 
 CREATE POLICY "Users can insert their own progress"
   ON user_progress FOR INSERT

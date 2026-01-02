@@ -2,6 +2,23 @@ import type { Module, Recipe } from "./types"
 
 export const modules: Module[] = [
   {
+    id: "welcome-orientation",
+    title: "Welcome & Orientation",
+    description: "Set expectations, understand the apprenticeship model, and get excited about your coaching journey!",
+    category: "Welcome & Orientation",
+    order: 0,
+    forNewCoach: true,
+    icon: "👋",
+    resources: [
+      {
+        id: "welcome-1",
+        title: "Welcome & Orientation Module",
+        type: "doc",
+        url: "/training/welcome-orientation",
+      },
+    ],
+  },
+  {
     id: "coach-launch",
     title: "Coach Launch Playbook",
     description: "Essential resources to kickstart your coaching journey and build a strong foundation.",
