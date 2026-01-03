@@ -1000,9 +1000,9 @@ export function SocialMediaPostingContent() {
                 ) : (
                   <Button
                     className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
-                    onClick={() => window.history.back()}
+                    onClick={() => (window.location.href = "/training/first-client-conversations")}
                   >
-                    Continue to Module 2.2
+                    Continue to Module 2.2: First Client Conversations
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 )}

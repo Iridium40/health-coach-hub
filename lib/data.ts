@@ -87,6 +87,23 @@ export const modules: Module[] = [
     ],
   },
   {
+    id: "first-client-conversations",
+    title: "First Client Conversations",
+    description: "Learn by doing WITH your mentor. Master the scripts and frameworks that turn conversations into clients.",
+    category: "Launch Week",
+    order: 5,
+    forNewCoach: true,
+    icon: "💬",
+    resources: [
+      {
+        id: "first-client-conversations-1",
+        title: "First Client Conversations Module",
+        type: "doc",
+        url: "/training/first-client-conversations",
+      },
+    ],
+  },
+  {
     id: "coach-launch",
     title: "Coach Launch Playbook",
     description: "Essential resources to kickstart your coaching journey and build a strong foundation.",
