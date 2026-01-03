@@ -5,9 +5,9 @@ import Link from "next/link"
 import { ModuleCard } from "@/components/module-card"
 import { modules } from "@/lib/data"
 import type { UserData, Module } from "@/lib/types"
+import { Button } from "@/components/ui/button"
 
 type ModuleCategory = Module["category"]
-import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
