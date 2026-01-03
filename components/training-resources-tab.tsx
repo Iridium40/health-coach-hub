@@ -66,40 +66,43 @@ export function TrainingResourcesTab() {
   return (
     <div>
       {/* Title and Description */}
-      <div className="text-center py-4 sm:py-8 mb-6">
-        <h2 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark mb-3 sm:mb-4">
+      <div className="text-center py-4 sm:py-8 mb-4 sm:mb-6">
+        <h2 className="font-heading font-bold text-xl sm:text-3xl text-optavia-dark mb-2 sm:mb-4">
           Training Resources
         </h2>
-        <p className="text-optavia-gray text-base sm:text-lg max-w-2xl mx-auto px-4">
-          Browse training materials, guides, and resources to support your coaching journey.
+        <p className="text-optavia-gray text-sm sm:text-lg max-w-2xl mx-auto px-2">
+          Browse training materials, guides, and resources.
         </p>
       </div>
 
       {/* Search and Filter */}
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
+        <div className="flex flex-col gap-3">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search resources..."
-              className="pl-10"
+              className="pl-10 h-11"
             />
           </div>
 
           {/* Category Filter - Mobile Dropdown */}
           <div className="sm:hidden">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-11">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="All">All Categories</SelectItem>
+                <SelectItem value="All">📚 All Categories</SelectItem>
                 {uniqueCategories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
-                    {getCategoryIcon(cat)} {cat}
+                    <span className="flex items-center gap-2">
+                      <span>{getCategoryIcon(cat)}</span>
+                      <span className="truncate">{cat.length > 30 ? cat.slice(0, 30) + "..." : cat}</span>
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -141,7 +144,7 @@ export function TrainingResourcesTab() {
 
       {/* Results count */}
       {searchQuery && (
-        <p className="text-sm text-optavia-gray mb-4">
+        <p className="text-sm text-optavia-gray mb-3 sm:mb-4 px-1">
           Found {filteredResources.length} result{filteredResources.length !== 1 ? "s" : ""} for "{searchQuery}"
         </p>
       )}
@@ -153,61 +156,65 @@ export function TrainingResourcesTab() {
           <p>No resources found matching your criteria.</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {Object.entries(groupedFiltered).map(([category, catResources]) => (
             <div key={category}>
               {/* Category Header */}
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">{getCategoryIcon(category)}</span>
-                <h3 className="font-heading font-bold text-lg sm:text-xl text-optavia-dark">
+              <div className="flex items-center gap-2 mb-3 sm:mb-4 px-1">
+                <span className="text-xl sm:text-2xl">{getCategoryIcon(category)}</span>
+                <h3 className="font-heading font-bold text-base sm:text-xl text-optavia-dark line-clamp-1 flex-1">
                   {category}
                 </h3>
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="secondary" className="flex-shrink-0">
                   {catResources.length}
                 </Badge>
               </div>
 
               {/* Resources List */}
-              <div className="grid gap-3">
+              <div className="grid gap-2 sm:gap-3">
                 {catResources.map((resource) => (
                   <a
                     key={resource.id}
                     href={resource.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block"
+                    className="block active:scale-[0.99] transition-transform"
                   >
                     <Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-[hsl(var(--optavia-green))]">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-start gap-3">
                           {/* Type Icon */}
-                          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                          <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gray-100 flex items-center justify-center">
                             {getTypeIcon(resource.type)}
                           </div>
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-optavia-dark truncate">
-                                {resource.title}
-                              </h4>
-                              <Badge
-                                variant="outline"
-                                className="flex-shrink-0 text-xs capitalize"
-                              >
-                                {resource.type}
-                              </Badge>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-sm sm:text-base text-optavia-dark leading-tight">
+                                  {resource.title}
+                                </h4>
+                                {/* Type badge - only on larger screens */}
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs capitalize"
+                                  >
+                                    {resource.type}
+                                  </Badge>
+                                </div>
+                              </div>
+                              {/* Open Icon */}
+                              <div className="flex-shrink-0 p-1">
+                                <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(var(--optavia-green))]" />
+                              </div>
                             </div>
                             {resource.description && (
-                              <p className="text-sm text-optavia-gray line-clamp-2">
+                              <p className="text-xs sm:text-sm text-optavia-gray line-clamp-2 mt-1.5">
                                 {resource.description}
                               </p>
                             )}
-                          </div>
-
-                          {/* Open Icon */}
-                          <div className="flex-shrink-0">
-                            <ExternalLink className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
                           </div>
                         </div>
                       </CardContent>
