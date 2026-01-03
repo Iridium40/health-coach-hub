@@ -189,6 +189,23 @@ export const modules: Module[] = [
     ],
   },
   {
+    id: "business-model",
+    title: "Understanding the Business Model",
+    description: "Know how you get paid and what drives your income in OPTAVIA.",
+    category: "Growing to Senior Coach",
+    order: 11,
+    forNewCoach: false,
+    icon: "💰",
+    resources: [
+      {
+        id: "business-model-1",
+        title: "Understanding the Business Model Module",
+        type: "doc",
+        url: "/training/business-model",
+      },
+    ],
+  },
+  {
     id: "coach-launch",
     title: "Coach Launch Playbook",
     description: "Essential resources to kickstart your coaching journey and build a strong foundation.",

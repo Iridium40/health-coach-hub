@@ -812,7 +812,7 @@ export function ClientAcquisitionContent() {
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 ) : (
-                  <Button className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" onClick={() => window.history.back()}>
+                  <Button className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" onClick={() => (window.location.href = "/training/business-model")}>
                     Continue to Module 4.3
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
