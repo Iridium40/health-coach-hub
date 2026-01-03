@@ -148,7 +148,18 @@ function ClientMealPlanContent() {
   }, [mealsByDay])
 
   const handleCopyShoppingList = async () => {
-    const listText = shoppingList
+    // Only copy items that are NOT checked (items you still need)
+    const itemsNeeded = shoppingList.filter(item => !checkedItems.has(item.ingredient))
+    
+    if (itemsNeeded.length === 0) {
+      toast({
+        title: "All items checked!",
+        description: "You've marked all items as already having them.",
+      })
+      return
+    }
+    
+    const listText = itemsNeeded
       .map(item => `- ${item.ingredient}${item.count > 1 ? ` (x${item.count})` : ''}`)
       .join('\n')
     
@@ -157,7 +168,7 @@ function ClientMealPlanContent() {
       setCopiedList(true)
       toast({
         title: "Copied!",
-        description: "Shopping list copied to clipboard",
+        description: `${itemsNeeded.length} items copied (${checkedItems.size} already-have items excluded)`,
       })
       setTimeout(() => setCopiedList(false), 2000)
     } catch (error) {
@@ -209,7 +220,7 @@ function ClientMealPlanContent() {
           </p>
           <Button
             onClick={() => router.push("/client/recipes")}
-            className="bg-[#2d5016] hover:bg-[#3d6b1e] gap-2"
+            className="bg-[#2d5016] hover:bg-[#3d6b1e] text-white gap-2"
           >
             <UtensilsCrossed className="h-4 w-4" />
             Browse Recipes
@@ -441,20 +452,32 @@ function ClientMealPlanContent() {
 
         {/* Shopping List */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-[#2d5016]" />
-              Shopping List
-            </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyShoppingList}
-              className="gap-2 border-gray-300 print:hidden"
-            >
-              {copiedList ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-              {copiedList ? "Copied!" : "Copy List"}
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5 text-[#2d5016]" />
+                Shopping List
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                ✓ Check items you already have — they won't be included when you copy
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {checkedItems.size > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {shoppingList.length - checkedItems.size} needed
+                </Badge>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyShoppingList}
+                className="gap-2 border-gray-300 print:hidden"
+              >
+                {copiedList ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                {copiedList ? "Copied!" : "Copy List"}
+              </Button>
+            </div>
           </div>
           
           <Card className="bg-white">
@@ -499,7 +522,7 @@ function ClientMealPlanContent() {
         <div className="mt-6 text-center print:hidden">
           <Button
             onClick={() => router.push("/client/recipes")}
-            className="bg-[#2d5016] hover:bg-[#3d6b1e] gap-2"
+            className="bg-[#2d5016] hover:bg-[#3d6b1e] text-white gap-2"
           >
             <UtensilsCrossed className="h-4 w-4" />
             Browse More Recipes

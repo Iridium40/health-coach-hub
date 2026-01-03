@@ -140,7 +140,7 @@ function ClientRecipeDetailContent() {
           </p>
           <Button
             onClick={() => router.push("/client/recipes")}
-            className="bg-[#2d5016] hover:bg-[#3d6b1e] gap-2"
+            className="bg-[#2d5016] hover:bg-[#3d6b1e] text-white gap-2"
           >
             <UtensilsCrossed className="h-4 w-4" />
             Browse All Recipes
