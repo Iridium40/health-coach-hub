@@ -693,23 +693,6 @@ export const modules: Module[] = [
     ],
   },
   {
-    id: "moving-to-ed",
-    title: "Moving to ED and Beyond",
-    description: "Resources for advancing your coaching practice and expanding your business reach.",
-    category: "Business Building",
-    order: 8,
-    forNewCoach: false,
-    icon: "📈",
-    resources: [
-      {
-        id: "ed-1",
-        title: "Moving to ED and Beyond",
-        type: "doc",
-        url: "https://docs.google.com/document/d/15AyF_jd0KTKYgGyiruHMiZusQ_sDOg7DWXrpkxmAg7I/edit?usp=sharing",
-      },
-    ],
-  },
-  {
     id: "connect-business",
     title: "How to Use Connect to Grow Your Business",
     description: "Learn how to leverage OPTAVIA Connect to expand your coaching business and track your growth.",
