@@ -342,11 +342,11 @@ Here's a great option to grab if you don't have one yet: https://amzn.to/47zW8xq
       {/* Tabs */}
       <div className="max-w-4xl mx-auto px-6 pt-4 bg-white border-b border-slate-200">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="welcome">Welcome Message</TabsTrigger>
-            <TabsTrigger value="tips">9 Tips Explained</TabsTrigger>
-            <TabsTrigger value="followup">First Week Follow-Up</TabsTrigger>
-            <TabsTrigger value="quick">Quick Copy</TabsTrigger>
+          <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted">
+            <TabsTrigger value="welcome" className="text-xs sm:text-sm px-3 py-2">Welcome Message</TabsTrigger>
+            <TabsTrigger value="tips" className="text-xs sm:text-sm px-3 py-2">Tips Explained</TabsTrigger>
+            <TabsTrigger value="followup" className="text-xs sm:text-sm px-3 py-2">First Week Follow-Up</TabsTrigger>
+            <TabsTrigger value="quick" className="text-xs sm:text-sm px-3 py-2">Quick Copy</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
