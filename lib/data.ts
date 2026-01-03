@@ -172,6 +172,23 @@ export const modules: Module[] = [
     ],
   },
   {
+    id: "client-acquisition",
+    title: "Client Acquisition Mastery",
+    description: "Get confident doing Health Assessments independently through mindset training and practice.",
+    category: "Growing to Senior Coach",
+    order: 10,
+    forNewCoach: false,
+    icon: "🎯",
+    resources: [
+      {
+        id: "client-acquisition-1",
+        title: "Client Acquisition Mastery Module",
+        type: "doc",
+        url: "/training/client-acquisition",
+      },
+    ],
+  },
+  {
     id: "coach-launch",
     title: "Coach Launch Playbook",
     description: "Essential resources to kickstart your coaching journey and build a strong foundation.",
