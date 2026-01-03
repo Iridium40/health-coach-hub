@@ -180,6 +180,18 @@ export async function POST(request: NextRequest) {
 
         ${personalMessageHtml}
         
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${mealPlanUrl}" style="${getButtonStyle()}">
+            View Your Meal Plan Online
+          </a>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0 30px 0;">
+          <a href="${clientRecipesUrl}" style="color: #2d5016; text-decoration: underline; font-size: 14px;">
+            Browse All Lean & Green Recipes →
+          </a>
+        </div>
+        
         <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 25px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
           <h3 style="color: #2d5016; font-size: 20px; margin: 0 0 20px 0; border-bottom: 2px solid #2d5016; padding-bottom: 10px;">
             📅 Weekly Meal Schedule
@@ -196,18 +208,6 @@ export async function POST(request: NextRequest) {
         </div>
         
         ${shoppingListHtml}
-        
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${mealPlanUrl}" style="${getButtonStyle()}">
-            View Your Meal Plan Online
-          </a>
-        </div>
-        
-        <div style="text-align: center; margin: 20px 0;">
-          <a href="${clientRecipesUrl}" style="color: #2d5016; text-decoration: underline; font-size: 14px;">
-            Browse All Lean & Green Recipes →
-          </a>
-        </div>
         
         <div style="background-color: #ecfdf5; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2d5016;">
           <p style="margin: 0; font-size: 14px; color: #065f46;">
