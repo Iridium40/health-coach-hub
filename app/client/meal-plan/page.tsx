@@ -269,15 +269,15 @@ function ClientMealPlanContent() {
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6">
         {/* Weekly Schedule */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-[#2d5016]" />
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-[#2d5016]" />
             Weekly Schedule
           </h2>
           
-          <div className="grid gap-4">
+          <div className="grid gap-2">
             {DAYS.map(day => {
               const meals = mealsByDay[day]
               const hasMeal = !!meals?.meal
@@ -288,27 +288,27 @@ function ClientMealPlanContent() {
               
               return (
                 <Card key={day} className="overflow-hidden bg-white">
-                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                    <h3 className="font-semibold text-gray-800">{day}</h3>
+                  <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                    <h3 className="font-semibold text-gray-800 text-sm">{day}</h3>
                   </div>
-                  <CardContent className="p-4">
+                  <CardContent className="p-2">
                     {/* 5&1 Plan - Single Meal */}
                     {planType === "5&1" && hasMeal && meals.meal && (
                       <div
-                        className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+                        className="flex items-center gap-2 p-2 rounded-lg bg-green-50 border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
                         onClick={() => router.push(`/client/recipes/${meals.meal!.id}?coach=${encodeURIComponent(coachName)}`)}
                       >
                         <img
                           src={meals.meal.image}
                           alt={meals.meal.title}
-                          className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
                           }}
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-[#2d5016] mb-1">Lean & Green</div>
-                          <h4 className="font-medium text-gray-800 truncate">{meals.meal.title}</h4>
+                          <div className="text-xs font-medium text-[#2d5016]">Lean & Green</div>
+                          <h4 className="font-medium text-gray-800 text-sm truncate">{meals.meal.title}</h4>
                           <p className="text-xs text-gray-500">{meals.meal.prepTime + meals.meal.cookTime}min • {meals.meal.servings} servings</p>
                         </div>
                         <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -317,31 +317,31 @@ function ClientMealPlanContent() {
 
                     {/* 4&2 Plan - Two Meals */}
                     {planType === "4&2" && (
-                      <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="grid sm:grid-cols-2 gap-2">
                         {/* L&G #1 (Lunch) */}
                         <div className={`${hasLunch ? '' : 'opacity-50'}`}>
-                          <div className="text-xs font-medium text-gray-500 uppercase mb-2">L&G #1</div>
+                          <div className="text-xs font-medium text-gray-500 uppercase mb-1">L&G #1</div>
                           {hasLunch && meals.lunch ? (
                             <div
-                              className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+                              className="flex items-center gap-2 p-2 rounded-lg bg-green-50 border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
                               onClick={() => router.push(`/client/recipes/${meals.lunch!.id}?coach=${encodeURIComponent(coachName)}`)}
                             >
                               <img
                                 src={meals.lunch.image}
                                 alt={meals.lunch.title}
-                                className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                                className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                                 onError={(e) => {
                                   (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
                                 }}
                             />
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-gray-800 truncate">{meals.lunch.title}</h4>
+                              <h4 className="font-medium text-gray-800 text-sm truncate">{meals.lunch.title}</h4>
                               <p className="text-xs text-gray-500">{meals.lunch.prepTime + meals.lunch.cookTime}min • {meals.lunch.servings} servings</p>
                             </div>
                             <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
                           </div>
                         ) : (
-                          <div className="p-3 rounded-lg bg-gray-100 text-gray-400 text-sm text-center">
+                          <div className="p-2 rounded-lg bg-gray-100 text-gray-400 text-xs text-center">
                             No meal planned
                           </div>
                         )}
@@ -349,28 +349,28 @@ function ClientMealPlanContent() {
                       
                         {/* L&G #2 (Dinner) */}
                         <div className={`${hasDinner ? '' : 'opacity-50'}`}>
-                          <div className="text-xs font-medium text-gray-500 uppercase mb-2">L&G #2</div>
+                          <div className="text-xs font-medium text-gray-500 uppercase mb-1">L&G #2</div>
                           {hasDinner && meals.dinner ? (
                             <div
-                              className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors"
+                              className="flex items-center gap-2 p-2 rounded-lg bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors"
                               onClick={() => router.push(`/client/recipes/${meals.dinner!.id}?coach=${encodeURIComponent(coachName)}`)}
                             >
                               <img
                                 src={meals.dinner.image}
                                 alt={meals.dinner.title}
-                                className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                                className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                                 onError={(e) => {
                                   (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
                                 }}
                               />
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-gray-800 truncate">{meals.dinner.title}</h4>
+                                <h4 className="font-medium text-gray-800 text-sm truncate">{meals.dinner.title}</h4>
                                 <p className="text-xs text-gray-500">{meals.dinner.prepTime + meals.dinner.cookTime}min • {meals.dinner.servings} servings</p>
                               </div>
                               <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
                             </div>
                           ) : (
-                            <div className="p-3 rounded-lg bg-gray-100 text-gray-400 text-sm text-center">
+                            <div className="p-2 rounded-lg bg-gray-100 text-gray-400 text-xs text-center">
                               No meal planned
                             </div>
                           )}
@@ -386,9 +386,9 @@ function ClientMealPlanContent() {
 
         {/* Shopping List */}
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <ShoppingCart className="h-6 w-6 text-[#2d5016]" />
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-[#2d5016]" />
               Shopping List
             </h2>
             <Button
@@ -403,8 +403,8 @@ function ClientMealPlanContent() {
           </div>
           
           <Card className="bg-white">
-            <CardContent className="p-6">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
+            <CardContent className="p-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
                 {shoppingList.map((item, index) => {
                   const isChecked = checkedItems.has(item.ingredient)
                   return (
@@ -441,7 +441,7 @@ function ClientMealPlanContent() {
         </section>
 
         {/* Browse More Recipes - hidden in print */}
-        <div className="mt-10 text-center print:hidden">
+        <div className="mt-6 text-center print:hidden">
           <Button
             onClick={() => router.push("/client/recipes")}
             className="bg-[#2d5016] hover:bg-[#3d6b1e] gap-2"
@@ -453,7 +453,7 @@ function ClientMealPlanContent() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-8 mt-16 print:hidden">
+      <footer className="bg-gray-800 text-white py-6 mt-10 print:hidden">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
             <picture>
