@@ -600,7 +600,14 @@ export default function HealthAssessmentPage({ params }: { params: Promise<{ key
               />
             </label>
 
-            <div className="md:col-span-2 mt-2 flex flex-col items-start gap-2">
+            <div className="md:col-span-2 mt-4 space-y-4">
+              {/* Privacy Disclaimer */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-xs text-optavia-gray leading-relaxed">
+                  <strong className="text-optavia-dark">Privacy Notice:</strong> The information you provide in this Health Assessment is sent directly to your health coach's email inbox—and nowhere else. Coaching Amplifier does not store your responses on our servers, and no one other than your health coach will ever have access to this information. By submitting this assessment, you agree to share your responses with your health coach.
+                </p>
+              </div>
+              
               <Button 
                 type="submit" 
                 size="lg" 
@@ -609,13 +616,6 @@ export default function HealthAssessmentPage({ params }: { params: Promise<{ key
               >
                 {submitting ? "Submitting…" : "Submit Health Assessment"}
               </Button>
-              <p className="text-xs text-optavia-gray">
-                Read our{" "}
-                <a href="/privacy" className="text-[hsl(var(--optavia-green))] hover:underline">
-                  Privacy Policy
-                </a>
-                .
-              </p>
             </div>
           </form>
         </div>
