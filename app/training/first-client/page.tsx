@@ -1,17 +1,20 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { TrainingModuleWrapper } from "@/components/training/training-module-wrapper"
 import { FirstClientContent } from "@/components/training/first-client-content"
 
 export default function FirstClientPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-200">
-      <Header activeTab="training" />
-      <main className="flex-1">
-        <FirstClientContent />
-      </main>
-      <Footer />
-    </div>
+    <TrainingModuleWrapper
+      moduleId="first-client"
+      moduleTitle="When You Get Your First Client"
+      moduleDescription="Know exactly how to launch and support a new client for success. Checklists, schedules, and scripts ready to use!"
+      phase="Phase 2: First 30 Days"
+      moduleNumber="Module 2.1"
+      nextModuleHref="/training/client-resources"
+      nextModuleTitle="Next: Client Resources"
+    >
+      <FirstClientContent />
+    </TrainingModuleWrapper>
   )
 }

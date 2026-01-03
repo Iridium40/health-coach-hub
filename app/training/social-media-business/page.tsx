@@ -1,17 +1,20 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { TrainingModuleWrapper } from "@/components/training/training-module-wrapper"
 import { SocialMediaBusinessContent } from "@/components/training/social-media-business-content"
 
 export default function SocialMediaBusinessPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-200">
-      <Header activeTab="training" />
-      <main className="flex-1">
-        <SocialMediaBusinessContent />
-      </main>
-      <Footer />
-    </div>
+    <TrainingModuleWrapper
+      moduleId="social-media-business"
+      moduleTitle="Social Media for Business Growth"
+      moduleDescription="Use social media consistently to attract clients and grow your coaching business."
+      phase="Phase 3: Growing to Senior Coach"
+      moduleNumber="Module 3.1"
+      nextModuleHref="/training/client-acquisition"
+      nextModuleTitle="Next: Client Acquisition Mastery"
+    >
+      <SocialMediaBusinessContent />
+    </TrainingModuleWrapper>
   )
 }

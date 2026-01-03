@@ -1,17 +1,20 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { TrainingModuleWrapper } from "@/components/training/training-module-wrapper"
 import { ConnectBusinessContent } from "@/components/training/connect-business-content"
 
 export default function ConnectBusinessPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-200">
-      <Header activeTab="training" />
-      <main className="flex-1">
-        <ConnectBusinessContent />
-      </main>
-      <Footer />
-    </div>
+    <TrainingModuleWrapper
+      moduleId="connect-business"
+      moduleTitle="Using Connect for Business Intelligence"
+      moduleDescription="Master OPTAVIA Connect to manage, track, and grow your business strategically."
+      phase="Phase 4: Using Connect"
+      moduleNumber="Module 4.1"
+      nextModuleHref="/training/business-planning"
+      nextModuleTitle="Next: Business Planning"
+    >
+      <ConnectBusinessContent />
+    </TrainingModuleWrapper>
   )
 }

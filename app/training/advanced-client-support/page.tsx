@@ -1,17 +1,20 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { TrainingModuleWrapper } from "@/components/training/training-module-wrapper"
 import { AdvancedClientSupportContent } from "@/components/training/advanced-client-support-content"
 
 export default function AdvancedClientSupportPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-200">
-      <Header activeTab="training" />
-      <main className="flex-1">
-        <AdvancedClientSupportContent />
-      </main>
-      <Footer />
-    </div>
+    <TrainingModuleWrapper
+      moduleId="advanced-client-support"
+      moduleTitle="Advanced Client Support"
+      moduleDescription="Master client retention and results through VIP experiences and metabolic coaching expertise."
+      phase="Phase 4: Using Connect"
+      moduleNumber="Module 4.3"
+      nextModuleHref="/training/team-building"
+      nextModuleTitle="Next: Team Building Fundamentals"
+    >
+      <AdvancedClientSupportContent />
+    </TrainingModuleWrapper>
   )
 }

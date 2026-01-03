@@ -1,17 +1,20 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { TrainingModuleWrapper } from "@/components/training/training-module-wrapper"
 import { UnderstandingHealthAssessmentContent } from "@/components/training/understanding-health-assessment-content"
 
 export default function UnderstandingHealthAssessmentPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-200">
-      <Header activeTab="training" />
-      <main className="flex-1">
-        <UnderstandingHealthAssessmentContent />
-      </main>
-      <Footer />
-    </div>
+    <TrainingModuleWrapper
+      moduleId="understanding-health-assessment"
+      moduleTitle="Understanding the Health Assessment"
+      moduleDescription="Learn before you observe - understand what you'll see your mentors doing so you can learn effectively."
+      phase="Phase 1: Pre-Launch"
+      moduleNumber="Module 1.4"
+      nextModuleHref="/training/social-media-posting"
+      nextModuleTitle="Next: Social Media Posting"
+    >
+      <UnderstandingHealthAssessmentContent />
+    </TrainingModuleWrapper>
   )
 }

@@ -1,18 +1,20 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { TrainingModuleWrapper } from "@/components/training/training-module-wrapper"
 import { BusinessSetupContent } from "@/components/training/business-setup-content"
-import { ChevronRight } from "lucide-react"
 
 export default function BusinessSetupPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-200">
-      <Header activeTab="training" />
-      <main className="flex-1">
-        <BusinessSetupContent />
-      </main>
-      <Footer />
-    </div>
+    <TrainingModuleWrapper
+      moduleId="business-setup"
+      moduleTitle="Business Setup"
+      moduleDescription="Get your coaching business officially set up with payment, website, and professional branding."
+      phase="Phase 1: Pre-Launch"
+      moduleNumber="Module 1.2"
+      nextModuleHref="/training/social-media-preparation"
+      nextModuleTitle="Next: Social Media Preparation"
+    >
+      <BusinessSetupContent />
+    </TrainingModuleWrapper>
   )
 }

@@ -1,17 +1,20 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { TrainingModuleWrapper } from "@/components/training/training-module-wrapper"
 import { SocialMediaPreparationContent } from "@/components/training/social-media-preparation-content"
 
 export default function SocialMediaPreparationPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-200">
-      <Header activeTab="training" />
-      <main className="flex-1">
-        <SocialMediaPreparationContent />
-      </main>
-      <Footer />
-    </div>
+    <TrainingModuleWrapper
+      moduleId="social-media-preparation"
+      moduleTitle="Social Media Preparation"
+      moduleDescription="Prepare everything you need for a successful, compliant social media launch announcement."
+      phase="Phase 1: Pre-Launch"
+      moduleNumber="Module 1.3"
+      nextModuleHref="/training/understanding-health-assessment"
+      nextModuleTitle="Next: Understanding Health Assessment"
+    >
+      <SocialMediaPreparationContent />
+    </TrainingModuleWrapper>
   )
 }
