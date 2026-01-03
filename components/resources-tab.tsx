@@ -39,7 +39,7 @@ export function ResourcesTab({ userData, setUserData, onSelectModule }: Resource
   ) as ModuleCategory[]
 
   // Define the desired order for categories
-  const categoryOrder: ModuleCategory[] = ["Pre Launch (New Coaches)", "Launch Week", "First 30 Days", "Growing to Senior Coach", "Getting Started", "Business Building", "Client Support", "Training"]
+  const categoryOrder: ModuleCategory[] = ["Pre Launch (New Coaches)", "Launch Week", "First 30 Days", "Growing to Senior Coach", "Using Connect for Business Success", "Getting Started", "Business Building", "Client Support", "Training"]
   
   // Sort categories according to the desired order, then add any remaining categories
   const orderedCategories = categoryOrder.filter((cat) => availableCategories.includes(cat))

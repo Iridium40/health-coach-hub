@@ -17,7 +17,7 @@ export interface Module {
   id: string
   title: string
   description: string
-  category: "Getting Started" | "Client Support" | "Business Building" | "Training" | "Academy Course" | "Pre Launch (New Coaches)" | "Launch Week" | "First 30 Days" | "Growing to Senior Coach"
+  category: "Getting Started" | "Client Support" | "Business Building" | "Training" | "Academy Course" | "Pre Launch (New Coaches)" | "Launch Week" | "First 30 Days" | "Growing to Senior Coach" | "Using Connect for Business Success"
   order: number
   forNewCoach: boolean
   icon: string
