@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ClientTextTemplates } from "@/components/client-text-templates"
+import { RankCalculator } from "@/components/rank-calculator"
 import {
   CheckCircle,
   Circle,
@@ -23,6 +24,8 @@ import {
   Trophy,
   Plus,
   Sparkles,
+  TrendingUp,
+  ChevronDown,
 } from "lucide-react"
 
 export default function WeeklyActionsDashboard() {
@@ -33,6 +36,7 @@ export default function WeeklyActionsDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showTextModal, setShowTextModal] = useState(false)
   const [selectedClient, setSelectedClient] = useState<any>(null)
+  const [showRankCalculator, setShowRankCalculator] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
@@ -151,6 +155,31 @@ export default function WeeklyActionsDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Rank Calculator Section */}
+        <Card className="mb-6">
+          <button
+            onClick={() => setShowRankCalculator(!showRankCalculator)}
+            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-white" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-gray-900">Rank Calculator</h3>
+                <p className="text-sm text-gray-500">Track your progress to the next level</p>
+              </div>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${showRankCalculator ? "rotate-180" : ""}`} />
+          </button>
+          
+          {showRankCalculator && (
+            <div className="border-t p-4">
+              <RankCalculator />
+            </div>
+          )}
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content - 2 columns */}
