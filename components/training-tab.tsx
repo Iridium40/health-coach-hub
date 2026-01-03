@@ -74,7 +74,7 @@ export const TrainingTab = memo(function TrainingTab({ userData, setUserData, on
     )
 
     // Define the desired order for categories (no Academy Course)
-    const categoryOrder: string[] = ["Pre Launch (New Coaches)", "Launch Week", "Getting Started", "Client Support", "Business Building"]
+    const categoryOrder: string[] = ["Pre Launch (New Coaches)", "Launch Week", "First 30 Days", "Getting Started", "Client Support", "Business Building"]
     
     // Sort categories according to the desired order, then add any remaining categories
     const orderedCategories = categoryOrder.filter((cat: string) => availableCategories.includes(cat))

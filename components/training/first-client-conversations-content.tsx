@@ -1072,9 +1072,9 @@ export function FirstClientConversationsContent() {
                 ) : (
                   <Button
                     className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
-                    onClick={() => window.history.back()}
+                    onClick={() => (window.location.href = "/training/first-client")}
                   >
-                    🎉 Complete Phase 2 - Continue to Phase 3
+                    🎉 Continue to Phase 3: First Client
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 )}

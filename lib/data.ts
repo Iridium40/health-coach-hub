@@ -104,6 +104,23 @@ export const modules: Module[] = [
     ],
   },
   {
+    id: "first-client",
+    title: "When You Get Your First Client",
+    description: "Know exactly how to launch and support a new client for success. Checklists, schedules, and scripts ready to use!",
+    category: "First 30 Days",
+    order: 6,
+    forNewCoach: true,
+    icon: "✨",
+    resources: [
+      {
+        id: "first-client-1",
+        title: "First Client Module",
+        type: "doc",
+        url: "/training/first-client",
+      },
+    ],
+  },
+  {
     id: "coach-launch",
     title: "Coach Launch Playbook",
     description: "Essential resources to kickstart your coaching journey and build a strong foundation.",
