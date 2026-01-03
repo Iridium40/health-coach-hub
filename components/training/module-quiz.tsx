@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, XCircle, Clock, Award, RotateCcw, ChevronRight } from "lucide-react"
+import { CheckCircle2, XCircle, Clock, Award, RotateCcw, ChevronRight, Mail } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useUserData } from "@/contexts/user-data-context"
+import { useToast } from "@/hooks/use-toast"
 
 export interface QuizQuestion {
   id: string
@@ -22,6 +24,8 @@ interface ModuleQuizProps {
 }
 
 export function ModuleQuiz({ moduleId, moduleTitle, questions, onComplete }: ModuleQuizProps) {
+  const { user } = useUserData()
+  const { toast } = useToast()
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [showResult, setShowResult] = useState(false)
@@ -29,6 +33,7 @@ export function ModuleQuiz({ moduleId, moduleTitle, questions, onComplete }: Mod
   const [isComplete, setIsComplete] = useState(false)
   const [startTime] = useState(Date.now())
   const [elapsedTime, setElapsedTime] = useState(0)
+  const [emailSent, setEmailSent] = useState(false)
 
   // Timer effect
   useEffect(() => {
@@ -77,7 +82,7 @@ export function ModuleQuiz({ moduleId, moduleTitle, questions, onComplete }: Mod
     setShowResult(true)
   }
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1)
       setSelectedAnswer(null)
@@ -86,6 +91,8 @@ export function ModuleQuiz({ moduleId, moduleTitle, questions, onComplete }: Mod
       // Quiz complete
       setIsComplete(true)
       const score = calculateScore()
+      const percentage = Math.round((score / questions.length) * 100)
+      const passed = percentage >= 70
       
       // Save to localStorage
       localStorage.setItem(`quiz-${moduleId}`, JSON.stringify({
@@ -97,6 +104,38 @@ export function ModuleQuiz({ moduleId, moduleTitle, questions, onComplete }: Mod
       }))
 
       onComplete?.(score, questions.length)
+
+      // Call API to save completion and send celebration email
+      if (user?.id) {
+        try {
+          const response = await fetch("/api/complete-quiz", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: user.id,
+              moduleId,
+              moduleTitle,
+              score,
+              totalQuestions: questions.length,
+              percentage,
+              passed,
+              elapsedSeconds: elapsedTime
+            })
+          })
+
+          const result = await response.json()
+          
+          if (result.success && result.emailSent && passed) {
+            setEmailSent(true)
+            toast({
+              title: "🎉 Congratulations!",
+              description: "A celebration email has been sent to you!",
+            })
+          }
+        } catch (error) {
+          console.error("Failed to save quiz completion:", error)
+        }
+      }
     }
   }
 
@@ -152,9 +191,17 @@ export function ModuleQuiz({ moduleId, moduleTitle, questions, onComplete }: Mod
           </div>
 
           {passed ? (
-            <p className="text-green-700 bg-green-100 p-4 rounded-lg">
-              Great job! You've demonstrated a solid understanding of <strong>{moduleTitle}</strong>.
-            </p>
+            <div className="space-y-3">
+              <p className="text-green-700 bg-green-100 p-4 rounded-lg">
+                Great job! You've demonstrated a solid understanding of <strong>{moduleTitle}</strong>.
+              </p>
+              {emailSent && (
+                <div className="flex items-center justify-center gap-2 text-sm text-blue-700 bg-blue-50 p-3 rounded-lg">
+                  <Mail className="h-4 w-4" />
+                  <span>A celebration email has been sent to you!</span>
+                </div>
+              )}
+            </div>
           ) : (
             <p className="text-amber-700 bg-amber-100 p-4 rounded-lg">
               You need 70% to pass. Review the module and try again!
