@@ -27,6 +27,8 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
   const [loading, setLoading] = useState(false)
 
   const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const orgId = profile?.org_id ?? 1 // Default to full access
+  const isTrainingOnly = orgId === 2
 
   const handleSignOut = async () => {
     setLoading(true)
@@ -110,71 +112,88 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
             <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold text-optavia-gray uppercase tracking-wide">
               Manage
             </DropdownMenuLabel>
-            <DropdownMenuItem 
-              onClick={handleAnnouncementsClick}
-              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-            >
-              <Bell className="mr-2 h-4 w-4" />
-              <span>Announcements</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={handleReportsClick}
-              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-            >
-              <BarChart3 className="mr-2 h-4 w-4" />
-              <span>Reports</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => router.push("/admin/recipes")}
-              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-            >
-              <UtensilsCrossed className="mr-2 h-4 w-4" />
-              <span>Recipes</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => router.push("/admin/zoom-calls")}
-              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-            >
-              <CalendarDays className="mr-2 h-4 w-4" />
-              <span>Events</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => router.push("/admin/training")}
-              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-            >
-              <BookOpen className="mr-2 h-4 w-4" />
-              <span>Training</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => router.push("/admin/resources")}
-              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-            >
-              <Link2 className="mr-2 h-4 w-4" />
-              <span>Resources</span>
-            </DropdownMenuItem>
+            {/* Training-only orgs only see Training management */}
+            {isTrainingOnly ? (
+              <DropdownMenuItem 
+                onClick={() => router.push("/admin/training")}
+                className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+              >
+                <BookOpen className="mr-2 h-4 w-4" />
+                <span>Training</span>
+              </DropdownMenuItem>
+            ) : (
+              <>
+                <DropdownMenuItem 
+                  onClick={handleAnnouncementsClick}
+                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+                >
+                  <Bell className="mr-2 h-4 w-4" />
+                  <span>Announcements</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleReportsClick}
+                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  <span>Reports</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => router.push("/admin/recipes")}
+                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+                >
+                  <UtensilsCrossed className="mr-2 h-4 w-4" />
+                  <span>Recipes</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => router.push("/admin/zoom-calls")}
+                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+                >
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  <span>Events</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => router.push("/admin/training")}
+                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  <span>Training</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => router.push("/admin/resources")}
+                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+                >
+                  <Link2 className="mr-2 h-4 w-4" />
+                  <span>Resources</span>
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator className="bg-gray-200" />
           </>
         )}
         
-        {/* Coaching Section */}
-        <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold text-optavia-gray uppercase tracking-wide">
-          Coaching
-        </DropdownMenuLabel>
-        <DropdownMenuItem 
-          onClick={() => router.push("/coach/downline")}
-          className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-        >
-          <Users className="mr-2 h-4 w-4" />
-          <span>Downline Progress</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => router.push("/coach/assessments")}
-          className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-        >
-          <FileText className="mr-2 h-4 w-4" />
-          <span>Health Assessments</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-gray-200" />
+        {/* Coaching Section - Hidden for training-only orgs */}
+        {!isTrainingOnly && (
+          <>
+            <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold text-optavia-gray uppercase tracking-wide">
+              Coaching
+            </DropdownMenuLabel>
+            <DropdownMenuItem 
+              onClick={() => router.push("/coach/downline")}
+              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+            >
+              <Users className="mr-2 h-4 w-4" />
+              <span>Downline Progress</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => router.push("/coach/assessments")}
+              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Health Assessments</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-gray-200" />
+          </>
+        )}
         
         {/* Settings Section */}
         <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold text-optavia-gray uppercase tracking-wide">
@@ -187,13 +206,16 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => router.push("/favorites")}
-          className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-        >
-          <Star className="mr-2 h-4 w-4" />
-          <span>Favorites</span>
-        </DropdownMenuItem>
+        {/* Favorites - Hidden for training-only orgs */}
+        {!isTrainingOnly && (
+          <DropdownMenuItem 
+            onClick={() => router.push("/favorites")}
+            className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+          >
+            <Star className="mr-2 h-4 w-4" />
+            <span>Favorites</span>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem 
           onClick={handleNotificationsClick}
           className="text-optavia-dark hover:bg-gray-100 cursor-pointer"

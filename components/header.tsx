@@ -35,6 +35,8 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const orgId = profile?.org_id ?? 1 // Default to full access
+  const isTrainingOnly = orgId === 2
 
   const handleInviteClick = () => {
     if (onInviteClick) {
@@ -57,13 +59,19 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
 
   const currentActiveTab = getActiveTab()
 
-  const navItems = [
-    { id: "dashboard" as const, label: "Dashboard", href: "/dashboard" },
-    { id: "training" as const, label: "Training", href: "/training" },
-    { id: "calendar" as const, label: "Calendar", href: "/calendar" },
-    { id: "resources" as const, label: "Resources", href: "/resources" },
-    { id: "recipes" as const, label: "Recipes", href: "/recipes" },
+  // Full nav items - filtered based on org_id
+  const allNavItems = [
+    { id: "dashboard" as const, label: "Dashboard", href: "/dashboard", fullAccessOnly: true },
+    { id: "training" as const, label: "Training", href: "/training", fullAccessOnly: false },
+    { id: "calendar" as const, label: "Calendar", href: "/calendar", fullAccessOnly: true },
+    { id: "resources" as const, label: "Resources", href: "/resources", fullAccessOnly: true },
+    { id: "recipes" as const, label: "Recipes", href: "/recipes", fullAccessOnly: true },
   ]
+  
+  // Filter nav items based on org access
+  const navItems = isTrainingOnly 
+    ? allNavItems.filter(item => !item.fullAccessOnly)
+    : allNavItems
 
   const businessItems = [
     { label: "Weekly Actions", href: "/daily-actions", description: "Your weekly overview" },
@@ -177,35 +185,37 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
               )
             })}
             
-            {/* My Business Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={`pb-3 lg:pb-4 px-4 lg:px-6 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 flex items-center gap-1 ${
-                    isBusinessPage
-                      ? "text-[hsl(var(--optavia-green))]"
-                      : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
-                  }`}
-                >
-                  <Users className="h-4 w-4" />
-                  My Business
-                  <ChevronDown className="h-3 w-3" />
-                  {isBusinessPage && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[hsl(var(--optavia-green))]" />
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56 bg-white border shadow-lg">
-                {businessItems.map((item) => (
-                  <DropdownMenuItem key={item.href} asChild>
-                    <Link href={item.href} className="flex flex-col items-start py-2">
-                      <span className="font-medium">{item.label}</span>
-                      <span className="text-xs text-gray-500">{item.description}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* My Business Dropdown - Hidden for training-only orgs */}
+            {!isTrainingOnly && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`pb-3 lg:pb-4 px-4 lg:px-6 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 flex items-center gap-1 ${
+                      isBusinessPage
+                        ? "text-[hsl(var(--optavia-green))]"
+                        : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
+                    }`}
+                  >
+                    <Users className="h-4 w-4" />
+                    My Business
+                    <ChevronDown className="h-3 w-3" />
+                    {isBusinessPage && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[hsl(var(--optavia-green))]" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56 bg-white border shadow-lg">
+                  {businessItems.map((item) => (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link href={item.href} className="flex flex-col items-start py-2">
+                        <span className="font-medium">{item.label}</span>
+                        <span className="text-xs text-gray-500">{item.description}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
         )}
 
@@ -234,28 +244,32 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                 )
               })}
               
-              {/* My Business Section */}
-              <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
-                My Business
-              </div>
-              {businessItems.map((item) => {
-                const isActive = pathname === item.href
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 flex items-center gap-2 ${
-                      isActive
-                        ? "text-[hsl(var(--optavia-green))] bg-green-50"
-                        : "text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
-                    }`}
-                  >
-                    <Users className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                )
-              })}
+              {/* My Business Section - Hidden for training-only orgs */}
+              {!isTrainingOnly && (
+                <>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
+                    My Business
+                  </div>
+                  {businessItems.map((item) => {
+                    const isActive = pathname === item.href
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 flex items-center gap-2 ${
+                          isActive
+                            ? "text-[hsl(var(--optavia-green))] bg-green-50"
+                            : "text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
+                        }`}
+                      >
+                        <Users className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </>
+              )}
             </div>
           </nav>
         )}
