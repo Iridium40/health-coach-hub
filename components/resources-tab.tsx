@@ -5,6 +5,8 @@ import Link from "next/link"
 import { ModuleCard } from "@/components/module-card"
 import { modules } from "@/lib/data"
 import type { UserData, Module } from "@/lib/types"
+
+type ModuleCategory = Module["category"]
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -34,19 +36,19 @@ export function ResourcesTab({ userData, setUserData, onSelectModule }: Resource
   // Get unique categories from available modules
   const availableCategories = Array.from(
     new Set(availableModules.map((module) => module.category))
-  )
+  ) as ModuleCategory[]
 
   // Define the desired order for categories
-  const categoryOrder = ["Welcome & Orientation", "Business Setup", "Social Media Preparation", "Getting Started", "Business Building", "Client Support", "Training"]
+  const categoryOrder: ModuleCategory[] = ["Pre Launch (New Coaches)", "Launch Week", "Getting Started", "Business Building", "Client Support", "Training"]
   
   // Sort categories according to the desired order, then add any remaining categories
-  const orderedCategories = categoryOrder.filter(cat => availableCategories.includes(cat))
+  const orderedCategories = categoryOrder.filter((cat) => availableCategories.includes(cat))
   const remainingCategories = availableCategories
-    .filter(cat => !categoryOrder.includes(cat))
+    .filter((cat) => !categoryOrder.includes(cat))
     .sort()
   
   // Build categories list: always include "All" first, then ordered categories
-  const categories = ["All", ...orderedCategories, ...remainingCategories]
+  const categories: (string | ModuleCategory)[] = ["All", ...orderedCategories, ...remainingCategories]
 
   const filteredModules = availableModules.filter((module) => {
     if (selectedCategory === "All") return true
