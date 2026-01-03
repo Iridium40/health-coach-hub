@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, ExternalLink, FileText, Video, Palette, Link2 } from "lucide-react"
+import { Search, ExternalLink, FileText, Video, Palette, Link2, ChevronDown, ChevronRight } from "lucide-react"
 
 export function TrainingResourcesTab() {
   const {
@@ -26,6 +26,30 @@ export function TrainingResourcesTab() {
 
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+
+  // Toggle category expansion
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(category)) {
+        newSet.delete(category)
+      } else {
+        newSet.add(category)
+      }
+      return newSet
+    })
+  }
+
+  // Expand all categories
+  const expandAll = () => {
+    setExpandedCategories(new Set(uniqueCategories))
+  }
+
+  // Collapse all categories
+  const collapseAll = () => {
+    setExpandedCategories(new Set())
+  }
 
   // Filter resources based on category and search
   const filteredResources = useMemo(() => {
@@ -156,74 +180,112 @@ export function TrainingResourcesTab() {
           <p>No resources found matching your criteria.</p>
         </div>
       ) : (
-        <div className="space-y-6 sm:space-y-8">
-          {Object.entries(groupedFiltered).map(([category, catResources]) => (
-            <div key={category}>
-              {/* Category Header */}
-              <div className="flex items-center gap-2 mb-3 sm:mb-4 px-1">
-                <span className="text-xl sm:text-2xl">{getCategoryIcon(category)}</span>
-                <h3 className="font-heading font-bold text-base sm:text-xl text-optavia-dark line-clamp-1 flex-1">
-                  {category}
-                </h3>
-                <Badge variant="secondary" className="flex-shrink-0">
-                  {catResources.length}
-                </Badge>
-              </div>
+        <div className="space-y-3 sm:space-y-4">
+          {/* Expand/Collapse All buttons */}
+          <div className="flex justify-end gap-2 px-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={expandAll}
+              className="text-xs text-optavia-gray hover:text-optavia-dark"
+            >
+              Expand All
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={collapseAll}
+              className="text-xs text-optavia-gray hover:text-optavia-dark"
+            >
+              Collapse All
+            </Button>
+          </div>
 
-              {/* Resources List */}
-              <div className="grid gap-2 sm:gap-3">
-                {catResources.map((resource) => (
-                  <a
-                    key={resource.id}
-                    href={resource.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block active:scale-[0.99] transition-transform"
-                  >
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-[hsl(var(--optavia-green))]">
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex items-start gap-3">
-                          {/* Type Icon */}
-                          <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                            {getTypeIcon(resource.type)}
-                          </div>
+          {Object.entries(groupedFiltered).map(([category, catResources]) => {
+            const isExpanded = expandedCategories.has(category)
+            
+            return (
+              <div key={category} className="border rounded-lg overflow-hidden bg-white">
+                {/* Category Header - Clickable */}
+                <button
+                  onClick={() => toggleCategory(category)}
+                  className="w-full flex items-center gap-2 p-3 sm:p-4 hover:bg-gray-50 transition-colors text-left"
+                >
+                  {/* Expand/Collapse Icon */}
+                  <div className="flex-shrink-0 text-gray-400">
+                    {isExpanded ? (
+                      <ChevronDown className="h-5 w-5" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5" />
+                    )}
+                  </div>
+                  
+                  <span className="text-xl sm:text-2xl">{getCategoryIcon(category)}</span>
+                  <h3 className="font-heading font-bold text-sm sm:text-lg text-optavia-dark line-clamp-1 flex-1">
+                    {category}
+                  </h3>
+                  <Badge variant="secondary" className="flex-shrink-0">
+                    {catResources.length}
+                  </Badge>
+                </button>
 
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-sm sm:text-base text-optavia-dark leading-tight">
-                                  {resource.title}
-                                </h4>
-                                {/* Type badge - only on larger screens */}
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs capitalize"
-                                  >
-                                    {resource.type}
-                                  </Badge>
-                                </div>
+                {/* Resources List - Collapsible */}
+                {isExpanded && (
+                  <div className="border-t bg-gray-50/50 p-2 sm:p-3 space-y-2 sm:space-y-3">
+                    {catResources.map((resource) => (
+                      <a
+                        key={resource.id}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block active:scale-[0.99] transition-transform"
+                      >
+                        <Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-[hsl(var(--optavia-green))]">
+                          <CardContent className="p-3 sm:p-4">
+                            <div className="flex items-start gap-3">
+                              {/* Type Icon */}
+                              <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                                {getTypeIcon(resource.type)}
                               </div>
-                              {/* Open Icon */}
-                              <div className="flex-shrink-0 p-1">
-                                <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(var(--optavia-green))]" />
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-semibold text-sm sm:text-base text-optavia-dark leading-tight">
+                                      {resource.title}
+                                    </h4>
+                                    {/* Type badge */}
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs capitalize"
+                                      >
+                                        {resource.type}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  {/* Open Icon */}
+                                  <div className="flex-shrink-0 p-1">
+                                    <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 text-[hsl(var(--optavia-green))]" />
+                                  </div>
+                                </div>
+                                {resource.description && (
+                                  <p className="text-xs sm:text-sm text-optavia-gray line-clamp-2 mt-1.5">
+                                    {resource.description}
+                                  </p>
+                                )}
                               </div>
                             </div>
-                            {resource.description && (
-                              <p className="text-xs sm:text-sm text-optavia-gray line-clamp-2 mt-1.5">
-                                {resource.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </a>
-                ))}
+                          </CardContent>
+                        </Card>
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
