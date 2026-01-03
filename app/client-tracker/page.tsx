@@ -134,11 +134,19 @@ export default function ClientTrackerPage() {
       {/* Privacy Notice */}
       <div className="bg-blue-50 border-b border-blue-200">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center gap-2 text-sm text-blue-700">
-            <AlertCircle className="h-4 w-4 flex-shrink-0" />
-            <span>
-              <strong>Privacy:</strong> Use nicknames. Client health data and contact info should be managed in OPTAVIA's coach portal.
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-blue-700">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>
+                <strong>Privacy:</strong> Use nicknames only. Contact info stays in OPTAVIA's portal.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Clock className="h-4 w-4 flex-shrink-0" />
+              <span>
+                <strong>AM/PM:</strong> Track your morning & evening check-ins with each client.
+              </span>
+            </div>
           </div>
         </div>
       </div>

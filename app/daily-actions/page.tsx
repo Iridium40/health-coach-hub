@@ -159,10 +159,13 @@ export default function WeeklyActionsDashboard() {
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Heart className="h-5 w-5 text-green-500" />
-                    Client Check-ins
-                  </CardTitle>
+                  <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Heart className="h-5 w-5 text-green-500" />
+                      Client Check-ins
+                    </CardTitle>
+                    <p className="text-xs text-gray-500 mt-1">AM/PM = Morning & evening touchpoints</p>
+                  </div>
                   <Link href="/client-tracker">
                     <Button variant="ghost" size="sm" className="text-[hsl(var(--optavia-green))]">
                       View All <ChevronRight className="h-4 w-4 ml-1" />
