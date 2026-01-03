@@ -144,6 +144,9 @@ export default function HealthAssessmentPage({ params }: { params: Promise<{ key
     const clientFirstName = s("firstName") || ""
     const clientLastName = s("lastName") || ""
     const clientEmail = s("email") || ""
+    
+    // Store form reference before async operations
+    const formElement = e.currentTarget
 
     setSubmitting(true)
     setResult(null)
@@ -190,7 +193,7 @@ export default function HealthAssessmentPage({ params }: { params: Promise<{ key
       }
 
       setResult("success")
-      e.currentTarget.reset()
+      formElement.reset()
       toast({
         title: "Success",
         description: "Your health assessment has been submitted successfully!",
