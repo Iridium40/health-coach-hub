@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client"
 import { 
   Video, Calendar, Clock, Users, UserCircle, ChevronRight,
   BookOpen, UtensilsCrossed, Wrench, ExternalLink, Award,
-  CheckCircle, PlayCircle, Sparkles, Star, Rocket, Building2, GraduationCap, Link2, Facebook, Lightbulb, X
+  CheckCircle, CheckCircle2, PlayCircle, Sparkles, Star, Rocket, Building2, GraduationCap, Link2, Facebook, Lightbulb, X, ClipboardList
 } from "lucide-react"
 import { badgeConfig } from "@/lib/badge-config"
 import type { ZoomCall } from "@/lib/types"
@@ -403,6 +403,47 @@ export function DashboardOverview() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-2">
+              {/* Send Health Assessment */}
+              {profile?.email && (
+                <Link 
+                  href="/coach/assessments"
+                  className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
+                >
+                  <ClipboardList className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
+                  <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
+                    Send Health Assessment
+                  </span>
+                  <ChevronRight className="h-3 w-3 text-optavia-gray flex-shrink-0" />
+                </Link>
+              )}
+
+              {/* Health Assessment Call Checklist */}
+              <Link 
+                href="/resources?tool=health-assessment"
+                className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
+              >
+                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
+                <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
+                  Health Assessment Call Checklist
+                </span>
+                <ChevronRight className="h-3 w-3 text-optavia-gray flex-shrink-0" />
+              </Link>
+
+              {/* OPTAVIA Connect */}
+              <a 
+                href="https://connect.optavia.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
+              >
+                <img src="/media/optavia_logo.svg" alt="" className="h-4 w-4 flex-shrink-0" />
+                <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
+                  OPTAVIA Connect
+                </span>
+                <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
+              </a>
+
+              {/* Optavia Strong Facebook Group */}
               <a 
                 href="https://www.facebook.com/groups/optaviastrong" 
                 target="_blank" 
@@ -416,19 +457,7 @@ export function DashboardOverview() {
                 <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
               </a>
               
-              <a 
-                href="https://connect.optavia.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
-              >
-                <img src="/media/optavia_logo.svg" alt="" className="h-4 w-4 flex-shrink-0" />
-                <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
-                  OPTAVIA Connect
-                </span>
-                <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
-              </a>
-              
+              {/* OPTAVIA Profile */}
               {profile?.optavia_id && (
                 <a 
                   href={`https://www.optavia.com/us/en/coach/${profile.optavia_id}`} 
