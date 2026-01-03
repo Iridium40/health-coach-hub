@@ -231,9 +231,9 @@ export function DashboardOverview() {
               <p className="text-sm font-medium text-amber-800 mb-1">Coach Tip of the Day</p>
               <p className="text-sm text-amber-700">{todaysTip}</p>
             </div>
-            <Link href="/resources" className="shrink-0">
+            <Link href="/resources?category=Habits%20of%20Health" className="shrink-0">
               <Button variant="ghost" size="sm" className="text-amber-700 hover:bg-amber-100 hover:text-amber-800 text-xs">
-                Learn More
+                Healthy Habits
               </Button>
             </Link>
             <Button

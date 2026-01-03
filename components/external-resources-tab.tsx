@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { ResourceCard } from "@/components/resource-card"
 import { useUserData } from "@/contexts/user-data-context"
 import { Button } from "@/components/ui/button"
@@ -82,7 +83,9 @@ const COACH_TOOLS = [
 
 export function ExternalResourcesTab() {
   const { profile } = useUserData()
-  const [selectedCategory, setSelectedCategory] = useState<string>("All")
+  const searchParams = useSearchParams()
+  const categoryParam = searchParams.get("category")
+  const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam || "All")
   const [pinnedIds, setPinnedIds] = useState<string[]>([])
 
   // Load pinned resources from localStorage on mount
