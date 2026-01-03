@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { AdminTraining } from "@/components/admin-training"
+import { AdminTrainingResources } from "@/components/admin-training-resources"
 import { useUserData } from "@/contexts/user-data-context"
 
 export default function AdminTrainingPage() {
@@ -48,7 +48,7 @@ export default function AdminTrainingPage() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header activeTab="training" />
       <main className="flex-1 bg-white">
-        <AdminTraining onClose={() => router.push("/training")} />
+        <AdminTrainingResources onClose={() => router.push("/training")} />
       </main>
       <Footer />
     </div>
