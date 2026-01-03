@@ -206,6 +206,57 @@ export const modules: Module[] = [
     ],
   },
   {
+    id: "connect-business",
+    title: "Using Connect for Business Intelligence",
+    description: "Master OPTAVIA Connect to manage, track, and grow your business strategically.",
+    category: "Using Connect for Business Success",
+    order: 12,
+    forNewCoach: false,
+    icon: "🚀",
+    resources: [
+      {
+        id: "connect-business-1",
+        title: "Using Connect for Business Intelligence Module",
+        type: "doc",
+        url: "/training/connect-business",
+      },
+    ],
+  },
+  {
+    id: "business-planning",
+    title: "Business Planning",
+    description: "Create intentional plans for rank advancement with proven tools and frameworks.",
+    category: "Using Connect for Business Success",
+    order: 13,
+    forNewCoach: false,
+    icon: "📋",
+    resources: [
+      {
+        id: "business-planning-1",
+        title: "Business Planning Module",
+        type: "doc",
+        url: "/training/business-planning",
+      },
+    ],
+  },
+  {
+    id: "advanced-client-support",
+    title: "Advanced Client Support",
+    description: "Master client retention and results through VIP experiences and metabolic coaching expertise.",
+    category: "Using Connect for Business Success",
+    order: 14,
+    forNewCoach: false,
+    icon: "💎",
+    resources: [
+      {
+        id: "advanced-client-support-1",
+        title: "Advanced Client Support Module",
+        type: "doc",
+        url: "/training/advanced-client-support",
+      },
+    ],
+  },
+  {
     id: "coach-launch",
     title: "Coach Launch Playbook",
     description: "Essential resources to kickstart your coaching journey and build a strong foundation.",
