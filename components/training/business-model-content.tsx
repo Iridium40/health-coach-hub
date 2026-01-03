@@ -157,14 +157,6 @@ const lessons: Lesson[] = [
       intro: "Understanding how you get paid is essential to building a sustainable business. This training breaks down the OPTAVIA compensation structure so you know exactly what drives your income and how to maximize it.",
       sections: [
         {
-          title: "Compensation Training",
-          contactCoach: {
-            icon: "💬",
-            title: "Contact Your Sponsoring Coach",
-            message: "For detailed training on the OPTAVIA compensation structure and how coaches get paid, please contact your Sponsoring Coach. They can provide personalized guidance based on your specific situation, answer questions about income potential, and share their personal experience with the compensation plan.",
-          },
-        },
-        {
           title: "The Two Types of Income",
           incomeTypes: [
             { type: "Front-End Income", icon: "💵", color: "#e8f5e9", borderColor: "#4caf50", description: "Money you earn immediately from client orders", sources: ["Client acquisition bonuses", "Commissions on client orders", "First order bonuses"], tip: "This is your 'right now' money – great for getting started!" },

@@ -270,14 +270,6 @@ const lessons: Lesson[] = [
           ],
         },
         {
-          title: "Understanding How You Get Paid",
-          contactCoach: {
-            title: "Compensation Training",
-            message: "For detailed training on how coaches get paid and the OPTAVIA compensation structure, please contact your Sponsoring Coach. They can provide personalized guidance based on your specific situation and goals.",
-            icon: "💬",
-          },
-        },
-        {
           title: "Business Structure Options",
           content: "As your business grows, you'll want to consider your business structure. Options include:",
           bullets: [

@@ -302,7 +302,6 @@ const lessons: Lesson[] = [
             { title: "How to Use OPTAVIA Connect App", description: "Show clients how to track their daily habits", whenToSend: "After Kickoff Call" },
             { title: "Fueling Hacks & Recipes", description: "Creative ways to enjoy Fuelings", whenToSend: "Week 2 or when they need variety" },
             { title: "Staying On Track While Traveling", description: "Tips for maintaining the program on-the-go", whenToSend: "When they have travel planned" },
-            { title: "Transition & Maintenance Overview", description: "What happens after reaching goal weight", whenToSend: "When approaching goal (last 10-20 lbs)", comingSoon: true },
           ],
         },
         {
