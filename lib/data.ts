@@ -308,6 +308,23 @@ export const modules: Module[] = [
     ],
   },
   {
+    id: "leadership-development",
+    title: "Leadership Development",
+    description: "Develop leaders on your team who can develop leaders.",
+    category: "Leadership Development",
+    order: 18,
+    forNewCoach: false,
+    icon: "👑",
+    resources: [
+      {
+        id: "leadership-development-1",
+        title: "Leadership Development Module",
+        type: "doc",
+        url: "/training/leadership-development",
+      },
+    ],
+  },
+  {
     id: "coach-launch",
     title: "Coach Launch Playbook",
     description: "Essential resources to kickstart your coaching journey and build a strong foundation.",
