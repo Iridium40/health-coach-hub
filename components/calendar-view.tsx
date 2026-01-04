@@ -325,107 +325,113 @@ export function CalendarView() {
         </div>
       )}
 
-      {/* Week View */}
+      {/* Week View - Vertical Calendar with Day Columns */}
       {viewMode === "week" && (
-        <div className="space-y-2">
-          {getWeekDays.map((date, index) => {
-            const events = getEventsForDate(date)
-            const dayIsToday = isToday(date)
-            
-            return (
-              <div
-                key={index}
-                className={`bg-white rounded-lg border p-3 sm:p-4 ${
-                  dayIsToday ? "border-[hsl(var(--optavia-green))] border-2" : "border-gray-200"
-                }`}
-              >
-                <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                  <div className={`text-center min-w-[40px] sm:min-w-[50px] ${dayIsToday ? "text-[hsl(var(--optavia-green))]" : "text-optavia-dark"}`}>
-                    <div className="text-xs sm:text-sm font-medium">{dayNames[date.getDay()]}</div>
-                    <div className={`text-lg sm:text-2xl font-bold ${
-                      dayIsToday 
-                        ? "bg-[hsl(var(--optavia-green))] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mx-auto"
-                        : ""
-                    }`}>
-                      {date.getDate()}
-                    </div>
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden overflow-x-auto">
+          {/* Day Headers */}
+          <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50 min-w-[700px]">
+            {getWeekDays.map((date, index) => {
+              const dayIsToday = isToday(date)
+              return (
+                <div
+                  key={index}
+                  className={`py-3 text-center border-r last:border-r-0 ${
+                    dayIsToday ? "bg-[hsl(var(--optavia-green))] text-white" : ""
+                  }`}
+                >
+                  <div className="text-xs font-medium uppercase tracking-wide">
+                    {dayNames[date.getDay()]}
                   </div>
-                  <div className="flex-1">
-                    <div className="text-xs sm:text-sm text-optavia-gray">
-                      {date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                    </div>
-                    {dayIsToday && (
-                      <Badge className="bg-[hsl(var(--optavia-green))] text-xs mt-0.5">Today</Badge>
-                    )}
+                  <div className={`text-xl font-bold mt-1 ${
+                    dayIsToday ? "" : "text-gray-700"
+                  }`}>
+                    {date.getDate()}
                   </div>
+                  {dayIsToday && (
+                    <Badge className="bg-white/20 text-white text-[10px] mt-1">Today</Badge>
+                  )}
                 </div>
-                
-                {events.length === 0 ? (
-                  <div className="text-xs sm:text-sm text-gray-400 italic ml-[48px] sm:ml-[62px]">No calls scheduled</div>
-                ) : (
-                  <div className="space-y-2 ml-[48px] sm:ml-[62px]">
-                    {events.map(event => (
-                      <Card 
-                        key={event.id}
-                        className={`cursor-pointer transition-shadow hover:shadow-md ${
-                          event.status === "live" ? "ring-2 ring-red-300" : ""
-                        }`}
-                        onClick={() => setSelectedEvent(event)}
-                      >
-                        <CardContent className="p-2 sm:p-3">
-                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
-                                <span className="font-medium text-sm sm:text-base text-optavia-dark truncate">{event.title}</span>
-                                {event.status === "live" && (
-                                  <Badge className="bg-red-500 animate-pulse text-xs">Live</Badge>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
-                                <Badge 
-                                  variant="secondary" 
-                                  className={`text-xs ${event.call_type === "coach_only" 
-                                    ? "bg-purple-100 text-purple-700" 
-                                    : "bg-teal-100 text-teal-700"
-                                  }`}
-                                >
-                                  {event.call_type === "coach_only" ? (
-                                    <><UserCircle className="h-3 w-3 mr-0.5" /><span className="hidden sm:inline">Coach Only</span><span className="sm:hidden">Coach</span></>
-                                  ) : (
-                                    <><Users className="h-3 w-3 mr-0.5" /><span className="hidden sm:inline">With Clients</span><span className="sm:hidden">Clients</span></>
-                                  )}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs sm:text-sm text-optavia-gray">
-                                <Clock className="h-3 w-3 flex-shrink-0" />
-                                <span>{formatTime(event.scheduled_at)} ({event.duration_minutes} min)</span>
-                              </div>
-                            </div>
-                            {event.zoom_link && (
-                              <Button
-                                size="sm"
-                                className={`text-white text-xs sm:text-sm w-full sm:w-auto ${event.status === "live" 
-                                  ? "bg-red-500 hover:bg-red-600" 
-                                  : "bg-blue-600 hover:bg-blue-700"
-                                }`}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  window.open(event.zoom_link!, '_blank')
-                                }}
-                              >
-                                <Video className="h-4 w-4 mr-1 text-white" />
-                                {event.status === "live" ? "Join Now" : "Join"}
-                              </Button>
-                            )}
+              )
+            })}
+          </div>
+
+          {/* Time Slots / Events Grid */}
+          <div className="grid grid-cols-7 min-w-[700px]" style={{ minHeight: "400px" }}>
+            {getWeekDays.map((date, index) => {
+              const events = getEventsForDate(date)
+              const dayIsToday = isToday(date)
+
+              return (
+                <div
+                  key={index}
+                  className={`border-r last:border-r-0 p-2 ${
+                    dayIsToday ? "bg-green-50" : "bg-white"
+                  }`}
+                >
+                  {events.length === 0 ? (
+                    <div className="text-xs text-gray-400 text-center py-4">
+                      No events
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {events.map(event => (
+                        <button
+                          key={event.id}
+                          onClick={() => setSelectedEvent(event)}
+                          className={`w-full text-left p-2 rounded-lg border transition-shadow hover:shadow-md cursor-pointer ${
+                            event.status === "live" 
+                              ? "border-red-300 bg-red-50 ring-2 ring-red-200" 
+                              : event.call_type === "coach_only"
+                              ? "border-purple-200 bg-purple-50 hover:bg-purple-100"
+                              : "border-teal-200 bg-teal-50 hover:bg-teal-100"
+                          }`}
+                        >
+                          {/* Time */}
+                          <div className="flex items-center gap-1 text-xs font-medium text-gray-600 mb-1">
+                            <Clock className="h-3 w-3" />
+                            {formatTime(event.scheduled_at)}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                          
+                          {/* Title */}
+                          <div className="text-sm font-semibold text-gray-900 truncate mb-1">
+                            {event.title}
+                          </div>
+                          
+                          {/* Badges */}
+                          <div className="flex flex-wrap gap-1">
+                            {event.status === "live" && (
+                              <Badge className="bg-red-500 text-[10px] px-1.5 py-0 animate-pulse">
+                                LIVE
+                              </Badge>
+                            )}
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-[10px] px-1.5 py-0 ${
+                                event.call_type === "coach_only" 
+                                  ? "bg-purple-100 text-purple-700" 
+                                  : "bg-teal-100 text-teal-700"
+                              }`}
+                            >
+                              {event.call_type === "coach_only" ? (
+                                <><UserCircle className="h-2.5 w-2.5 mr-0.5" />Coach</>
+                              ) : (
+                                <><Users className="h-2.5 w-2.5 mr-0.5" />Clients</>
+                              )}
+                            </Badge>
+                          </div>
+                          
+                          {/* Duration */}
+                          <div className="text-[10px] text-gray-500 mt-1">
+                            {event.duration_minutes} min
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
