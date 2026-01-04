@@ -20,6 +20,7 @@ import { badgeConfig } from "@/lib/badge-config"
 import { useProspects } from "@/hooks/use-prospects"
 import { useClients, getProgramDay, getDayPhase } from "@/hooks/use-clients"
 import { useTrainingResources } from "@/hooks/use-training-resources"
+import { useRankCalculator, RANK_REQUIREMENTS, RANK_ORDER, type RankType } from "@/hooks/use-rank-calculator"
 import type { ZoomCall } from "@/lib/types"
 import { getOnboardingProgress } from "@/lib/onboarding-utils"
 import {
@@ -103,9 +104,12 @@ export function DashboardOverview() {
   // CRM hooks for Priority Actions
   const { prospects, stats: prospectStats } = useProspects()
   const { clients, stats: clientStats, toggleTouchpoint, needsAttention } = useClients()
-  
+
   // Training resources progress
   const { progress: trainingProgress, uniqueCategories } = useTrainingResources(user)
+  
+  // Rank calculator for business growth
+  const { rankData, frontlineCoaches, qualifyingLegsCount, calculateGaps, getNextRank } = useRankCalculator(user)
   
   const [upcomingMeetings, setUpcomingMeetings] = useState<ZoomCall[]>([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
@@ -519,10 +523,10 @@ export function DashboardOverview() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Today's Touchpoints */}
             <Link href="/client-tracker" className="block">
-              <div className="p-4 rounded-lg bg-white border border-green-200 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="p-4 rounded-lg bg-white border border-green-200 hover:shadow-md transition-shadow cursor-pointer h-full">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-600">Client Touchpoints</span>
                   <Badge variant="secondary" className={clientStats.needsAttention > 0 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}>
@@ -546,7 +550,7 @@ export function DashboardOverview() {
 
             {/* Today's Scheduled Meetings (HA + Client) */}
             <Link href="/calendar" className="block">
-              <div className="p-4 rounded-lg bg-white border border-blue-200 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="p-4 rounded-lg bg-white border border-blue-200 hover:shadow-md transition-shadow cursor-pointer h-full">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-600">Today's Meetings</span>
                   <Badge variant="secondary" className={upcomingMeetings.length > 0 || prospects.filter(p => p.status === 'ha_scheduled' && p.next_action === new Date().toISOString().split('T')[0]).length > 0 ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}>
@@ -577,6 +581,70 @@ export function DashboardOverview() {
                     <div className="text-sm text-gray-500">No meetings scheduled for today</div>
                   )}
                 </div>
+              </div>
+            </Link>
+
+            {/* Rank Progression */}
+            <Link href="/my-business" className="block sm:col-span-2 lg:col-span-1">
+              <div className="p-4 rounded-lg bg-white border border-yellow-200 hover:shadow-md transition-shadow cursor-pointer h-full">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">Next Rank</span>
+                  {rankData && (
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+                      {RANK_REQUIREMENTS[rankData.current_rank as RankType]?.icon} {rankData.current_rank}
+                    </Badge>
+                  )}
+                </div>
+                {rankData && getNextRank(rankData.current_rank as RankType) ? (
+                  <>
+                    <div className="text-sm font-semibold text-yellow-700 mb-2">
+                      → {getNextRank(rankData.current_rank as RankType)}
+                    </div>
+                    {(() => {
+                      const nextRank = getNextRank(rankData.current_rank as RankType)
+                      if (!nextRank) return null
+                      const gaps = calculateGaps(rankData.current_rank as RankType, clientStats.active)
+                      if (!gaps) return null
+                      
+                      const items: JSX.Element[] = []
+                      if (gaps.clients > 0) {
+                        items.push(
+                          <div key="clients" className="flex items-center gap-1 text-xs text-gray-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                            Need {gaps.clients} more client{gaps.clients > 1 ? 's' : ''}
+                          </div>
+                        )
+                      }
+                      if (gaps.coaches > 0) {
+                        items.push(
+                          <div key="coaches" className="flex items-center gap-1 text-xs text-gray-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                            Need {gaps.coaches} more coach{gaps.coaches > 1 ? 'es' : ''}
+                          </div>
+                        )
+                      }
+                      if (gaps.qualifyingLegs > 0) {
+                        items.push(
+                          <div key="legs" className="flex items-center gap-1 text-xs text-gray-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                            Need {gaps.qualifyingLegs} qualifying leg{gaps.qualifyingLegs > 1 ? 's' : ''} (Senior Coach+)
+                          </div>
+                        )
+                      }
+                      if (items.length === 0) {
+                        items.push(
+                          <div key="ready" className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                            <Trophy className="h-3 w-3" />
+                            Ready for promotion!
+                          </div>
+                        )
+                      }
+                      return <div className="space-y-1">{items}</div>
+                    })()}
+                  </>
+                ) : (
+                  <div className="text-sm text-gray-500">You've reached the top rank! 🎉</div>
+                )}
               </div>
             </Link>
           </div>
