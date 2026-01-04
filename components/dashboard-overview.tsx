@@ -30,7 +30,7 @@ import {
 import { Progress } from "@/components/ui/progress"
 
 // Dashboard Components
-import { CoachTip, PipelineSnapshot, TodaysPriorities, TrainingProgressCard, RankProgressCard, QuickActions } from "@/components/dashboard"
+import { CoachTip, PipelineSnapshot, TodaysPriorities, TrainingProgressCard, RankProgressCard, QuickActions } from "@/components/dashboard/index"
 
 // Coach Tools imports
 import { WaterCalculator } from "@/components/coach-tools/water-calculator"
