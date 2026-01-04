@@ -20,6 +20,7 @@ export interface UserProfile {
   sponsor_id: string | null
   phone_number: string | null
   notification_email: string | null
+  notification_phone: string | null
   created_at: string
   updated_at: string
 }

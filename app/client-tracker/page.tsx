@@ -87,6 +87,7 @@ export default function ClientTrackerPage() {
   const [scheduleAmPm, setScheduleAmPm] = useState<"AM" | "PM">("AM")
   const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>("none")
   const [clientEmail, setClientEmail] = useState<string>("")
+  const [clientPhone, setClientPhone] = useState<string>("")
 
   // Recurring frequency options
   const RECURRING_OPTIONS: { value: RecurringFrequency; label: string }[] = [
@@ -205,6 +206,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     }
     setRecurringFrequency(client.recurring_frequency || "none")
     setClientEmail(client.email || "")
+    setClientPhone(client.phone || "")
     setShowScheduleModal(true)
   }
 
@@ -258,6 +260,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       recurring_day: recurringFrequency !== "none" ? scheduleDay : null,
       recurring_time: recurringFrequency !== "none" ? timeStr : null,
       email: clientEmail || null,
+      phone: clientPhone || null,
     })
     
     setShowScheduleModal(false)
@@ -1005,13 +1008,15 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 )}
               </div>
 
-              {/* Calendar Options with Email */}
+              {/* Calendar Options with Email/SMS */}
               {generateCalendarEvent() && (
                 <ScheduleCalendarOptions
                   event={generateCalendarEvent()!}
                   recipientName={selectedClient.label}
                   recipientEmail={clientEmail}
+                  recipientPhone={clientPhone}
                   onEmailChange={setClientEmail}
+                  onPhoneChange={setClientPhone}
                   onScheduleComplete={handleSaveSchedule}
                   eventType="check-in"
                 />

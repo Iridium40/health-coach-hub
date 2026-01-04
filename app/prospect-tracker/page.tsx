@@ -98,6 +98,7 @@ export default function ProspectTrackerPage() {
   const [haMinute, setHaMinute] = useState("00")
   const [haAmPm, setHaAmPm] = useState<"AM" | "PM">("AM")
   const [prospectEmail, setProspectEmail] = useState("")
+  const [prospectPhone, setProspectPhone] = useState("")
 
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -223,6 +224,7 @@ Talking Points:
       next_action: haDate,
       ha_scheduled_at: targetDate.toISOString(),
       email: prospectEmail || null,
+      phone: prospectPhone || null,
     })
     
     toast({
@@ -268,6 +270,7 @@ Talking Points:
         setHaMinute("00")
         setHaAmPm("AM")
         setProspectEmail((prospect as any).email || "")
+        setProspectPhone((prospect as any).phone || "")
         setShowHAScheduleModal(true)
       }
       return
@@ -955,13 +958,15 @@ Talking Points:
                 <p className="text-xs text-gray-500 text-center mt-2">45 minute health assessment</p>
               </div>
 
-              {/* Calendar Options with Email */}
+              {/* Calendar Options with Email/SMS */}
               {haDate && generateHACalendarEvent() && (
                 <ScheduleCalendarOptions
                   event={generateHACalendarEvent()!}
                   recipientName={schedulingProspect.label}
                   recipientEmail={prospectEmail}
+                  recipientPhone={prospectPhone}
                   onEmailChange={setProspectEmail}
+                  onPhoneChange={setProspectPhone}
                   onScheduleComplete={handleSaveHASchedule}
                   eventType="ha"
                 />
