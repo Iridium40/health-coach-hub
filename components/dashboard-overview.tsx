@@ -928,11 +928,10 @@ export function DashboardOverview() {
       {COACH_TOOLS.map((tool) => {
         const ToolComponent = tool.component
         const IconComponent = tool.icon
-        const isWideDialog = ["health-assessment", "client-onboarding", "client-troubleshooting", "social-media-generator"].includes(tool.id)
         
         return (
           <Dialog key={tool.id} open={openToolId === tool.id} onOpenChange={(open) => !open && setOpenToolId(null)}>
-            <DialogContent className={`max-h-[90vh] overflow-y-auto ${isWideDialog ? "max-w-5xl" : "max-w-2xl"}`}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto max-w-[95vw] md:max-w-5xl lg:max-w-6xl">
               <DialogHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-[hsl(var(--optavia-green-light))]">
