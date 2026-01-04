@@ -7,6 +7,16 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useUserData } from "@/contexts/user-data-context"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
@@ -39,6 +49,8 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
   const [showForm, setShowForm] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [resendingId, setResendingId] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [announcementToDelete, setAnnouncementToDelete] = useState<string | null>(null)
 
   // Form state
   const [title, setTitle] = useState("")
@@ -106,13 +118,18 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
     setShowForm(true)
   }
 
-  const handleDelete = async (id: string, e?: React.MouseEvent) => {
+  const handleDelete = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation()
     e?.preventDefault()
     
-    if (!confirm("Are you sure you want to delete this announcement?")) return
+    setAnnouncementToDelete(id)
+    setDeleteDialogOpen(true)
+  }
 
-    const { error } = await supabase.from("announcements").delete().eq("id", id)
+  const confirmDelete = async () => {
+    if (!announcementToDelete) return
+
+    const { error } = await supabase.from("announcements").delete().eq("id", announcementToDelete)
 
     if (error) {
       toast({
@@ -127,6 +144,9 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
       })
       loadAnnouncements()
     }
+    
+    setDeleteDialogOpen(false)
+    setAnnouncementToDelete(null)
   }
 
   const handleResend = async (announcement: Announcement, e?: React.MouseEvent) => {
@@ -640,6 +660,29 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
           ))
         })()}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Announcement</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this announcement? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setAnnouncementToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
