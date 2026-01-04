@@ -13,8 +13,9 @@ import {
   Video, Calendar, Clock, Users, UserCircle, ChevronRight,
   BookOpen, UtensilsCrossed, Wrench, ExternalLink, Award,
   CheckCircle, CheckCircle2, PlayCircle, Sparkles, Star, Rocket, Building2, GraduationCap, Link2, Facebook, Lightbulb, X, ClipboardList,
-  AlertCircle, Circle, MessageSquare, Trophy
+  AlertCircle, Circle, MessageSquare, Trophy, Pin, Droplets, Dumbbell, Activity, Share2
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { badgeConfig } from "@/lib/badge-config"
 import { useProspects } from "@/hooks/use-prospects"
 import { useClients, getProgramDay, getDayPhase } from "@/hooks/use-clients"
@@ -57,6 +58,31 @@ const coachTips = [
   "Celebrate micro-wins with clients! Each small habit they build is a step toward lasting transformation.",
 ]
 
+// Coach Tools definitions (matching external-resources-tab.tsx)
+const COACH_TOOLS: { id: string; title: string; icon: LucideIcon }[] = [
+  { id: "health-assessment", title: "Health Assessment Call Checklist", icon: ClipboardList },
+  { id: "client-onboarding", title: "Client Onboarding Tool", icon: Users },
+  { id: "client-troubleshooting", title: "Client Troubleshooting Guide", icon: Wrench },
+  { id: "water-calculator", title: "Water Intake Calculator", icon: Droplets },
+  { id: "exercise-guide", title: "Exercise & Motion Guide", icon: Dumbbell },
+  { id: "metabolic-health", title: "Metabolic Health Education", icon: Activity },
+  { id: "social-media-generator", title: "Social Media Post Generator", icon: Share2 },
+]
+
+// External Resources definitions (matching external-resources-tab.tsx)
+const EXTERNAL_RESOURCES: { id: string; title: string; url: string }[] = [
+  { id: "optavia-strong-fb", title: "Optavia Strong Facebook Group", url: "https://www.facebook.com/groups/810104670912639" },
+  { id: "healthy-edge-team", title: "Healthy Edge 3.0 Team Page", url: "https://www.facebook.com/groups/2156291101444241" },
+  { id: "healthy-edge-client", title: "Healthy Edge 3.0 Client Page", url: "https://www.facebook.com/groups/778947831962215" },
+  { id: "optavia-connect", title: "OPTAVIA Connect", url: "https://optaviaconnect.com/login" },
+  { id: "optavia-blog", title: "OPTAVIA Blog", url: "https://www.optaviablog.com" },
+  { id: "habits-of-health", title: "Habits of Health", url: "https://www.habitsofhealth.com/" },
+  { id: "optavia-habits-of-health", title: "OPTAVIA Habits of Health System", url: "https://www.optavia.com/us/en/habits-of-health" },
+  { id: "optavia-fb", title: "OPTAVIA Facebook", url: "https://www.facebook.com/optavia" },
+  { id: "optavia-ig", title: "OPTAVIA Instagram", url: "https://www.instagram.com/optavia" },
+  { id: "optavia-yt", title: "OPTAVIA YouTube", url: "https://www.youtube.com/optavia" },
+]
+
 export function DashboardOverview() {
   const { user, profile, badges, recipes, favoriteRecipes } = useUserData()
   const supabase = createClient()
@@ -72,6 +98,40 @@ export function DashboardOverview() {
   const [loadingMeetings, setLoadingMeetings] = useState(true)
   const [onboardingProgress, setOnboardingProgress] = useState<{ completed: number; total: number; percentage: number }>({ completed: 0, total: 3, percentage: 0 })
   const [coachTipDismissed, setCoachTipDismissed] = useState(false)
+  const [pinnedToolIds, setPinnedToolIds] = useState<string[]>([])
+  const [pinnedResourceIds, setPinnedResourceIds] = useState<string[]>([])
+
+  // Load pinned items from localStorage
+  useEffect(() => {
+    const savedTools = localStorage.getItem("pinnedTools")
+    if (savedTools) {
+      try {
+        setPinnedToolIds(JSON.parse(savedTools))
+      } catch (e) {
+        console.error("Failed to parse pinned tools:", e)
+      }
+    }
+    
+    const savedResources = localStorage.getItem("pinnedResources")
+    if (savedResources) {
+      try {
+        setPinnedResourceIds(JSON.parse(savedResources))
+      } catch (e) {
+        console.error("Failed to parse pinned resources:", e)
+      }
+    }
+  }, [])
+
+  // Get pinned tools and resources
+  const pinnedTools = useMemo(() => {
+    return COACH_TOOLS.filter(t => pinnedToolIds.includes(t.id))
+  }, [pinnedToolIds])
+
+  const pinnedResources = useMemo(() => {
+    return EXTERNAL_RESOURCES.filter(r => pinnedResourceIds.includes(r.id))
+  }, [pinnedResourceIds])
+
+  const hasPinnedItems = pinnedTools.length > 0 || pinnedResources.length > 0
 
   // Load today's meetings only
   useEffect(() => {
@@ -605,83 +665,77 @@ export function DashboardOverview() {
         {/* Quick Links Card */}
         <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2 text-optavia-dark">
-              <Link2 className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
-              Quick Links
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2 text-optavia-dark">
+                <Pin className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+                Quick Links
+              </CardTitle>
+              <Link href="/resources">
+                <Button variant="ghost" size="sm" className="text-[hsl(var(--optavia-green))] hover:bg-green-50 -mr-2 text-xs">
+                  Manage
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-2">
-              {/* Send Health Assessment */}
-              {profile?.email && (
-                <Link 
-                  href="/coach/assessments"
-                  className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
-                >
-                  <ClipboardList className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
-                  <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
-                    Send Health Assessment
-                  </span>
-                  <ChevronRight className="h-3 w-3 text-optavia-gray flex-shrink-0" />
+            {hasPinnedItems ? (
+              <div className="space-y-2">
+                {/* Pinned Tools */}
+                {pinnedTools.map((tool) => {
+                  const IconComponent = tool.icon
+                  return (
+                    <Link 
+                      key={tool.id}
+                      href={`/resources?category=Coach+Tools`}
+                      className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] bg-[hsl(var(--optavia-green-light))] hover:bg-green-100 transition-colors cursor-pointer group"
+                    >
+                      <IconComponent className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
+                      <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1 truncate">
+                        {tool.title}
+                      </span>
+                      <ChevronRight className="h-3 w-3 text-optavia-gray flex-shrink-0" />
+                    </Link>
+                  )
+                })}
+                
+                {/* Pinned Resources */}
+                {pinnedResources.map((resource) => (
+                  <a 
+                    key={resource.id}
+                    href={resource.url}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] bg-[hsl(var(--optavia-green-light))] hover:bg-green-100 transition-colors cursor-pointer group"
+                  >
+                    <Link2 className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
+                    <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1 truncate">
+                      {resource.title}
+                    </span>
+                    <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <Pin className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-optavia-gray mb-3">
+                  No quick links yet
+                </p>
+                <p className="text-xs text-gray-400 mb-3">
+                  Pin your favorite tools and resources for easy access
+                </p>
+                <Link href="/resources">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))]"
+                  >
+                    <Pin className="h-3 w-3 mr-1" />
+                    Browse Resources
+                  </Button>
                 </Link>
-              )}
-
-              {/* Health Assessment Call Checklist */}
-              <Link 
-                href="/resources?tool=health-assessment"
-                className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
-              >
-                <CheckCircle2 className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
-                <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
-                  Health Assessment Call Checklist
-                </span>
-                <ChevronRight className="h-3 w-3 text-optavia-gray flex-shrink-0" />
-              </Link>
-
-              {/* OPTAVIA Connect */}
-              <a 
-                href="https://connect.optavia.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
-              >
-                <img src="/media/optavia_logo.svg" alt="" className="h-4 w-4 flex-shrink-0" />
-                <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
-                  OPTAVIA Connect
-                </span>
-                <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
-              </a>
-
-              {/* Optavia Strong Facebook Group */}
-              <a 
-                href="https://www.facebook.com/groups/optaviastrong" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
-              >
-                <Facebook className="h-4 w-4 text-[#1877F2] flex-shrink-0" />
-                <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1 truncate">
-                  Optavia Strong Facebook Group
-                </span>
-                <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
-              </a>
-              
-              {/* OPTAVIA Profile */}
-              {profile?.optavia_id && (
-                <a 
-                  href={`https://www.optavia.com/us/en/coach/${profile.optavia_id}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] transition-colors cursor-pointer group"
-                >
-                  <img src="/media/optavia_logo.svg" alt="" className="h-4 w-4 flex-shrink-0" />
-                  <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1">
-                    OPTAVIA Profile
-                  </span>
-                  <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
-                </a>
-              )}
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
