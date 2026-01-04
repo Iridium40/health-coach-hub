@@ -70,14 +70,29 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
     updateResource,
     deleteResource,
     moveResource,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    moveCategory,
   } = useTrainingResourcesAdmin()
   const { toast } = useToast()
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false)
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false)
   const [editingResource, setEditingResource] = useState<TrainingResource | null>(null)
+  const [editingCategory, setEditingCategory] = useState<TrainingCategory | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [deleteCategoryDialogOpen, setDeleteCategoryDialogOpen] = useState(false)
+  const [categoryToDelete, setCategoryToDelete] = useState<TrainingCategory | null>(null)
+
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    description: "",
+    icon: "📚",
+  })
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [resourceToDelete, setResourceToDelete] = useState<string | null>(null)
 
@@ -258,6 +273,85 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
     }
   }
 
+  // Category handlers
+  const handleAddCategory = async () => {
+    if (!newCategory.name) {
+      toast({ title: "Error", description: "Please enter a category name", variant: "destructive" })
+      return
+    }
+
+    try {
+      await addCategory({
+        name: newCategory.name,
+        description: newCategory.description || null,
+        icon: newCategory.icon || "📚",
+        sort_order: 0,
+      })
+      toast({ title: "Success", description: "Category added successfully" })
+      setShowAddCategoryModal(false)
+      setNewCategory({ name: "", description: "", icon: "📚" })
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    }
+  }
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory) return
+
+    try {
+      await updateCategory(editingCategory.id, {
+        name: editingCategory.name,
+        description: editingCategory.description,
+        icon: editingCategory.icon,
+      })
+      toast({ title: "Success", description: "Category updated successfully" })
+      setShowEditCategoryModal(false)
+      setEditingCategory(null)
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    }
+  }
+
+  const handleDeleteCategoryClick = (category: TrainingCategory) => {
+    setCategoryToDelete(category)
+    setDeleteCategoryDialogOpen(true)
+  }
+
+  const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return
+
+    // Check if category has modules
+    const categoryResources = resources.filter(r => r.category === categoryToDelete.name)
+    if (categoryResources.length > 0) {
+      toast({ 
+        title: "Cannot delete", 
+        description: `This category has ${categoryResources.length} modules. Remove or move them first.`,
+        variant: "destructive" 
+      })
+      setDeleteCategoryDialogOpen(false)
+      setCategoryToDelete(null)
+      return
+    }
+
+    try {
+      await deleteCategory(categoryToDelete.id)
+      toast({ title: "Success", description: "Category deleted successfully" })
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" })
+    } finally {
+      setDeleteCategoryDialogOpen(false)
+      setCategoryToDelete(null)
+    }
+  }
+
+  const handleMoveCategory = async (categoryId: string, direction: "up" | "down") => {
+    try {
+      await moveCategory(categoryId, direction)
+    } catch (err: any) {
+      toast({ title: "Error", description: "Failed to reorder category", variant: "destructive" })
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -281,10 +375,16 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
             <p className="text-optavia-gray">Organize categories and modules</p>
           </div>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="bg-[hsl(var(--optavia-green))]">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Module
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowAddCategoryModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Category
+          </Button>
+          <Button onClick={() => setShowAddModal(true)} className="bg-[hsl(var(--optavia-green))]">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Module
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -346,7 +446,7 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
 
       {/* Categories with Modules */}
       <div className="space-y-4">
-        {sortedCategories.map((category) => {
+        {sortedCategories.map((category, index) => {
           const categoryResources = filteredGroupedResources[category.name] || []
           const isExpanded = expandedCategories.has(category.name)
           
@@ -354,12 +454,42 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
           if (searchQuery && !filteredGroupedResources[category.name]) return null
 
           return (
-            <Card key={category.id} className="overflow-hidden">
+            <Card key={category.id} className="overflow-hidden group/category">
               <Collapsible open={isExpanded} onOpenChange={() => toggleCategory(category.name)}>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-4">
+                  <div className="flex items-center justify-between">
+                    {/* Category Reorder Controls */}
+                    <div className="flex flex-col gap-0.5 mr-2 opacity-0 group-hover/category:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        disabled={index === 0}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleMoveCategory(category.id, "up")
+                        }}
+                        title="Move category up"
+                      >
+                        <ArrowUp className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        disabled={index === sortedCategories.length - 1}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleMoveCategory(category.id, "down")
+                        }}
+                        title="Move category down"
+                      >
+                        <ArrowDown className="h-3 w-3" />
+                      </Button>
+                    </div>
+
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center gap-3 flex-1 cursor-pointer">
                         <span className="text-2xl">{category.icon}</span>
                         <div>
                           <CardTitle className="text-lg">{category.name}</CardTitle>
@@ -371,14 +501,47 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
                           {categoryResources.length} modules
                         </Badge>
                       </div>
-                      {isExpanded ? (
-                        <ChevronUp className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400" />
-                      )}
+                    </CollapsibleTrigger>
+
+                    {/* Category Action Buttons */}
+                    <div className="flex items-center gap-1 opacity-0 group-hover/category:opacity-100 transition-opacity mr-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingCategory(category)
+                          setShowEditCategoryModal(true)
+                        }}
+                        title="Edit category"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteCategoryClick(category)
+                        }}
+                        title="Delete category"
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </CardHeader>
-                </CollapsibleTrigger>
+
+                    <CollapsibleTrigger asChild>
+                      <div className="cursor-pointer p-1">
+                        {isExpanded ? (
+                          <ChevronUp className="h-5 w-5 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-gray-400" />
+                        )}
+                      </div>
+                    </CollapsibleTrigger>
+                  </div>
+                </CardHeader>
                 
                 <CollapsibleContent>
                   <CardContent className="pt-0 pb-4">
@@ -669,6 +832,132 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add Category Modal */}
+      <Dialog open={showAddCategoryModal} onOpenChange={setShowAddCategoryModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Training Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Category Name *</Label>
+              <Input
+                value={newCategory.name}
+                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                placeholder="e.g., Coach Launch Playbook"
+              />
+            </div>
+            <div>
+              <Label>Icon (Emoji)</Label>
+              <Input
+                value={newCategory.icon}
+                onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
+                placeholder="📚"
+                className="text-2xl"
+                maxLength={4}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter an emoji to represent this category
+              </p>
+            </div>
+            <div>
+              <Label>Description (Optional)</Label>
+              <Textarea
+                value={newCategory.description}
+                onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                placeholder="Brief description of what this category covers..."
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddCategoryModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddCategory}
+              disabled={!newCategory.name}
+              className="bg-[hsl(var(--optavia-green))]"
+            >
+              Add Category
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Category Modal */}
+      <Dialog open={showEditCategoryModal} onOpenChange={setShowEditCategoryModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+          </DialogHeader>
+          {editingCategory && (
+            <div className="space-y-4">
+              <div>
+                <Label>Category Name *</Label>
+                <Input
+                  value={editingCategory.name}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Icon (Emoji)</Label>
+                <Input
+                  value={editingCategory.icon}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })}
+                  className="text-2xl"
+                  maxLength={4}
+                />
+              </div>
+              <div>
+                <Label>Description (Optional)</Label>
+                <Textarea
+                  value={editingCategory.description || ""}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditCategoryModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateCategory} className="bg-[hsl(var(--optavia-green))]">
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Confirmation Dialog */}
+      <AlertDialog open={deleteCategoryDialogOpen} onOpenChange={setDeleteCategoryDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the category "{categoryToDelete?.name}"? 
+              {categoryToDelete && resources.filter(r => r.category === categoryToDelete.name).length > 0 && (
+                <span className="block mt-2 text-red-500 font-medium">
+                  This category still has modules. Remove or move them first.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCategoryToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteCategory}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
               Delete

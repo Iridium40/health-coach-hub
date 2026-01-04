@@ -334,15 +334,69 @@ export function useTrainingResourcesAdmin() {
   }
 
   const addCategory = async (category: Omit<TrainingCategory, "id" | "is_active">) => {
+    // Get max sort_order
+    const maxOrder = categories.length > 0 
+      ? Math.max(...categories.map(c => c.sort_order)) 
+      : 0
+
     const { data, error } = await supabase
       .from("training_categories")
-      .insert([{ ...category, is_active: true }])
+      .insert([{ ...category, is_active: true, sort_order: maxOrder + 1 }])
       .select()
       .single()
 
     if (error) throw error
     await reload()
     return data
+  }
+
+  const updateCategory = async (id: string, updates: Partial<TrainingCategory>) => {
+    const { data, error } = await supabase
+      .from("training_categories")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single()
+
+    if (error) throw error
+    await reload()
+    return data
+  }
+
+  const deleteCategory = async (id: string) => {
+    // Soft delete
+    const { error } = await supabase
+      .from("training_categories")
+      .update({ is_active: false })
+      .eq("id", id)
+
+    if (error) throw error
+    await reload()
+  }
+
+  const moveCategory = async (categoryId: string, direction: "up" | "down") => {
+    const sortedCategories = [...categories].sort((a, b) => a.sort_order - b.sort_order)
+    const currentIndex = sortedCategories.findIndex(c => c.id === categoryId)
+    if (currentIndex === -1) return
+
+    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
+    if (newIndex < 0 || newIndex >= sortedCategories.length) return
+
+    const current = sortedCategories[currentIndex]
+    const swapWith = sortedCategories[newIndex]
+
+    // Swap sort orders
+    await supabase
+      .from("training_categories")
+      .update({ sort_order: swapWith.sort_order })
+      .eq("id", current.id)
+
+    await supabase
+      .from("training_categories")
+      .update({ sort_order: current.sort_order })
+      .eq("id", swapWith.id)
+
+    await reload()
   }
 
   return {
@@ -356,6 +410,9 @@ export function useTrainingResourcesAdmin() {
     reorderResources,
     moveResource,
     addCategory,
+    updateCategory,
+    deleteCategory,
+    moveCategory,
     reload,
   }
 }
