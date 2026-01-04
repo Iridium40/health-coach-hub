@@ -503,13 +503,13 @@ export function DashboardOverview() {
         </Card>
       )}
 
-      {/* My Business Summary */}
+      {/* My Business Summary - Today's Focus */}
       <Card className="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2 text-optavia-dark">
               <Users className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
-              My Business
+              My Business - Today
             </CardTitle>
             <Link href="/daily-actions">
               <Button variant="ghost" size="sm" className="text-[hsl(var(--optavia-green))] hover:bg-green-100 -mr-2">
@@ -519,55 +519,66 @@ export function DashboardOverview() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {/* Active Clients */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Today's Touchpoints */}
             <Link href="/client-tracker" className="block">
-              <div className="p-4 rounded-lg bg-white border border-green-200 hover:shadow-md transition-shadow cursor-pointer text-center">
-                <div className="text-2xl font-bold text-[hsl(var(--optavia-green))]">{clientStats.active}</div>
-                <div className="text-xs text-gray-600 mt-1">Active Clients</div>
-                {clientStats.needsAttention > 0 && (
-                  <Badge variant="secondary" className="mt-2 bg-orange-100 text-orange-700 text-xs">
-                    {clientStats.needsAttention} need touchpoint
+              <div className="p-4 rounded-lg bg-white border border-green-200 hover:shadow-md transition-shadow cursor-pointer">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">Client Touchpoints</span>
+                  <Badge variant="secondary" className={clientStats.needsAttention > 0 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}>
+                    {clientStats.needsAttention > 0 ? `${clientStats.needsAttention} pending` : "All done!"}
                   </Badge>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl font-bold text-[hsl(var(--optavia-green))]">
+                    {clientStats.active - clientStats.needsAttention}/{clientStats.active}
+                  </div>
+                  <div className="text-xs text-gray-500">clients contacted today</div>
+                </div>
+                {clientStats.milestonesToday > 0 && (
+                  <div className="mt-2 flex items-center gap-1 text-xs text-yellow-600">
+                    <Trophy className="h-3 w-3" />
+                    {clientStats.milestonesToday} milestone{clientStats.milestonesToday > 1 ? 's' : ''} to celebrate!
+                  </div>
                 )}
               </div>
             </Link>
 
-            {/* Prospects */}
-            <Link href="/prospect-tracker" className="block">
-              <div className="p-4 rounded-lg bg-white border border-blue-200 hover:shadow-md transition-shadow cursor-pointer text-center">
-                <div className="text-2xl font-bold text-blue-600">{prospectStats.total}</div>
-                <div className="text-xs text-gray-600 mt-1">Prospects</div>
-                {prospectStats.warm > 0 && (
-                  <Badge variant="secondary" className="mt-2 bg-orange-100 text-orange-700 text-xs">
-                    {prospectStats.warm} warm leads
+            {/* Today's Scheduled Meetings (HA + Client) */}
+            <Link href="/calendar" className="block">
+              <div className="p-4 rounded-lg bg-white border border-blue-200 hover:shadow-md transition-shadow cursor-pointer">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">Today's Meetings</span>
+                  <Badge variant="secondary" className={upcomingMeetings.length > 0 || prospects.filter(p => p.status === 'ha_scheduled' && p.next_action === new Date().toISOString().split('T')[0]).length > 0 ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}>
+                    {upcomingMeetings.length + prospects.filter(p => p.status === 'ha_scheduled' && p.next_action === new Date().toISOString().split('T')[0]).length} scheduled
                   </Badge>
-                )}
+                </div>
+                <div className="space-y-1">
+                  {/* Health Assessments scheduled for today */}
+                  {prospects.filter(p => p.status === 'ha_scheduled' && p.next_action === new Date().toISOString().split('T')[0]).length > 0 && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-purple-500" />
+                      <span className="text-gray-700">
+                        {prospects.filter(p => p.status === 'ha_scheduled' && p.next_action === new Date().toISOString().split('T')[0]).length} Health Assessment{prospects.filter(p => p.status === 'ha_scheduled' && p.next_action === new Date().toISOString().split('T')[0]).length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
+                  {/* Zoom/Client Meetings */}
+                  {upcomingMeetings.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Video className="h-4 w-4 text-blue-500" />
+                      <span className="text-gray-700">
+                        {upcomingMeetings.length} Meeting{upcomingMeetings.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
+                  {/* No meetings */}
+                  {upcomingMeetings.length === 0 && prospects.filter(p => p.status === 'ha_scheduled' && p.next_action === new Date().toISOString().split('T')[0]).length === 0 && (
+                    <div className="text-sm text-gray-500">No meetings scheduled for today</div>
+                  )}
+                </div>
               </div>
             </Link>
-
-            {/* Converted */}
-            <div className="p-4 rounded-lg bg-white border border-purple-200 text-center">
-              <div className="text-2xl font-bold text-purple-600">{prospectStats.converted}</div>
-              <div className="text-xs text-gray-600 mt-1">Converted to Client</div>
-              {clientStats.coachProspects > 0 && (
-                <Badge variant="secondary" className="mt-2 bg-purple-100 text-purple-700 text-xs">
-                  {clientStats.coachProspects} future coaches
-                </Badge>
-              )}
-            </div>
-
-            {/* Milestones */}
-            <div className="p-4 rounded-lg bg-white border border-yellow-200 text-center">
-              <div className="text-2xl font-bold text-yellow-600">{clientStats.milestonesToday}</div>
-              <div className="text-xs text-gray-600 mt-1">Milestones Today</div>
-              {clientStats.milestonesToday > 0 && (
-                <Badge variant="secondary" className="mt-2 bg-yellow-100 text-yellow-700 text-xs">
-                  <Trophy className="h-3 w-3 mr-1" />
-                  Celebrate!
-                </Badge>
-              )}
-            </div>
           </div>
         </CardContent>
       </Card>
