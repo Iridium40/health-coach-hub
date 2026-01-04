@@ -50,7 +50,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const [coachRank, setCoachRank] = useState<string>(profile?.coach_rank || "")
   const [optaviaId, setOptaviaId] = useState(profile?.optavia_id || "")
   const [phoneNumber, setPhoneNumber] = useState(profile?.phone_number || "")
-  const [notificationEmail, setNotificationEmail] = useState(profile?.notification_email || "")
   const [sponsorInfo, setSponsorInfo] = useState<SponsorInfo | null>(null)
   const [loadingSponsor, setLoadingSponsor] = useState(false)
 
@@ -61,14 +60,12 @@ export function UserSettings({ onClose }: UserSettingsProps) {
       setCoachRank(profile.coach_rank || "")
       setOptaviaId(profile.optavia_id || "")
       setPhoneNumber(profile.phone_number || "")
-      setNotificationEmail(profile.notification_email || "")
     } else {
       // Reset to defaults if profile is null
       setFullName("")
       setCoachRank("")
       setOptaviaId("")
       setPhoneNumber("")
-      setNotificationEmail("")
     }
   }, [profile])
 
@@ -216,12 +213,11 @@ export function UserSettings({ onClose }: UserSettingsProps) {
     // Check if user is a coach (not admin)
     const userIsCoach = profile?.user_role?.toLowerCase() !== "admin"
 
-    // Coaches can update their name, phone, and notification email; admins can update all fields
+    // Coaches can update their name and phone; admins can update all fields
     if (userIsCoach) {
       const { error } = await updateProfile({
         full_name: fullName,
         phone_number: phoneNumber || null,
-        notification_email: notificationEmail || null,
       })
 
       if (error) {
@@ -245,7 +241,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
       const { error } = await updateProfile({
         full_name: fullName,
         phone_number: phoneNumber || null,
-        notification_email: notificationEmail || null,
         is_new_coach: isNewCoach,
         coach_rank: coachRank || null,
         optavia_id: optaviaId || null,
@@ -393,21 +388,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 placeholder="(555) 555-5555"
                 className="bg-white border-gray-300 text-optavia-dark"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notificationEmail" className="text-optavia-dark">Notification Email</Label>
-              <Input
-                id="notificationEmail"
-                type="email"
-                value={notificationEmail}
-                onChange={(e) => setNotificationEmail(e.target.value)}
-                placeholder="your-email@example.com"
-                className="bg-white border-gray-300 text-optavia-dark"
-              />
-              <p className="text-xs text-optavia-gray">
-                Email address for receiving calendar invites and scheduling notifications. If left blank, your login email will be used.
-              </p>
             </div>
 
             <div className="space-y-2">
