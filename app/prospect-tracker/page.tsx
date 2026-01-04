@@ -922,7 +922,7 @@ Talking Points:
             <Button
               onClick={handleScheduleHA}
               disabled={!haDate}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Add to Calendar

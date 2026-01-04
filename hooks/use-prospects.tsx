@@ -231,6 +231,9 @@ export function useProspects() {
     
     return prospects
       .filter(p => {
+        // Exclude converted clients from the list unless specifically filtering for them
+        // Converted prospects should be managed in the client tracker
+        if (filterStatus === 'all' && p.status === 'converted') return false
         if (filterStatus !== 'all' && p.status !== filterStatus) return false
         if (searchTerm && !p.label.toLowerCase().includes(searchTerm.toLowerCase())) return false
         return true

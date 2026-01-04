@@ -194,3 +194,22 @@ BEGIN
 END $$;
 
 COMMENT ON COLUMN public.profiles.user_id IS 'Reference to auth.users.id for explicit relationship';
+
+-- ============================================
+-- MIGRATE EXISTING PROSPECTS: Populate ha_scheduled_at from next_action
+-- For prospects with ha_scheduled status that only have next_action set
+-- ============================================
+UPDATE public.prospects
+SET ha_scheduled_at = (next_action::date + interval '10 hours')::timestamptz
+WHERE status = 'ha_scheduled'
+  AND ha_scheduled_at IS NULL
+  AND next_action IS NOT NULL;
+
+-- Log the migration
+DO $$ 
+DECLARE
+  updated_count INTEGER;
+BEGIN
+  GET DIAGNOSTICS updated_count = ROW_COUNT;
+  RAISE NOTICE 'Migrated % prospects with ha_scheduled status to use ha_scheduled_at field', updated_count;
+END $$;
