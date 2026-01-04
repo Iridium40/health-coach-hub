@@ -19,6 +19,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -88,6 +98,10 @@ export default function ProspectTrackerPage() {
   const [haMinute, setHaMinute] = useState("00")
   const [haAmPm, setHaAmPm] = useState<"AM" | "PM">("AM")
   const [prospectEmail, setProspectEmail] = useState("")
+
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [prospectToDelete, setProspectToDelete] = useState<string | null>(null)
 
   const [newProspect, setNewProspect] = useState({
     label: "",
@@ -290,10 +304,20 @@ Talking Points:
     await logAction(id, 3)
   }
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Remove this prospect?")) {
-      await deleteProspect(id)
-    }
+  const handleDelete = (id: string) => {
+    setProspectToDelete(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!prospectToDelete) return
+    await deleteProspect(prospectToDelete)
+    setDeleteDialogOpen(false)
+    setProspectToDelete(null)
+    toast({
+      title: "Prospect removed",
+      description: "The prospect has been deleted",
+    })
   }
 
   const filteredProspects = getFilteredProspects(filterStatus, searchTerm)
@@ -965,6 +989,29 @@ Talking Points:
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Prospect</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this prospect? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setProspectToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Footer />
     </div>
