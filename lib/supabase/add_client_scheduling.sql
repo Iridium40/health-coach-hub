@@ -1,5 +1,27 @@
--- Add scheduling, phone, and recurring columns to clients and prospects tables
+-- Add scheduling, phone, recurring columns to clients/prospects, and notification_email to profiles
 -- Run this in your Supabase SQL Editor
+
+-- ============================================
+-- PROFILES TABLE: Add notification_email column
+-- ============================================
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'profiles' 
+    AND column_name = 'notification_email'
+  ) THEN
+    ALTER TABLE public.profiles 
+    ADD COLUMN notification_email TEXT NULL;
+    
+    RAISE NOTICE 'Column notification_email added to profiles table';
+  ELSE
+    RAISE NOTICE 'Column notification_email already exists in profiles table';
+  END IF;
+END $$;
+
+COMMENT ON COLUMN public.profiles.notification_email IS 'Email address for receiving scheduling notifications and calendar invites';
 
 -- ============================================
 -- CLIENTS TABLE: Add scheduling and recurring columns

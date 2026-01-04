@@ -18,6 +18,7 @@ export interface UserProfile {
   optavia_id: string | null
   sponsor_id: string | null
   phone_number: string | null
+  notification_email: string | null
   created_at: string
   updated_at: string
 }
