@@ -40,7 +40,6 @@ import {
   Plus,
   Search,
   Calendar,
-  CheckCircle,
   Clock,
   AlertCircle,
   Trash2,
@@ -73,7 +72,6 @@ export default function ProspectTrackerPage() {
     addProspect,
     updateProspect,
     deleteProspect,
-    logAction,
     getFilteredProspects,
     getDaysUntil,
   } = useProspects()
@@ -301,10 +299,6 @@ Talking Points:
     setShowConvertModal(false)
     setConvertingProspect(null)
     setClientStartDate("")
-  }
-
-  const handleLogAction = async (id: string) => {
-    await logAction(id, 3)
   }
 
   const handleDelete = (id: string) => {
@@ -597,15 +591,6 @@ Talking Points:
                           Schedule
                         </Button>
                       )}
-
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleLogAction(prospect.id)}
-                        title="Log Action"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
 
                       <Button
                         variant="outline"
