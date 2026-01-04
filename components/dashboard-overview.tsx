@@ -206,6 +206,40 @@ export function DashboardOverview() {
       {/* Announcements */}
       <Announcements />
 
+      {/* New Coach Onboarding Card - Priority placement for new coaches */}
+      {profile?.is_new_coach && (
+        <Card className="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-[hsl(var(--optavia-green))] shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl flex items-center gap-2 text-optavia-dark">
+              <GraduationCap className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+              New Coach Training Path
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-optavia-gray">Progress</span>
+                  <span className="text-sm font-bold text-[hsl(var(--optavia-green))]">
+                    {onboardingProgress.completed} of {onboardingProgress.total} modules completed
+                  </span>
+                </div>
+                <Progress value={onboardingProgress.percentage} className="h-3" />
+              </div>
+              <Link href="/training">
+                <Button
+                  className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+                  size="lg"
+                >
+                  Continue Training
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Coach Tip of the Day */}
       <div className="mt-6">
         <CoachTip />
@@ -246,40 +280,6 @@ export function DashboardOverview() {
           toggleTouchpoint={toggleTouchpoint}
         />
       </div>
-
-      {/* New Coach Onboarding Card */}
-      {profile?.is_new_coach && (
-        <Card className="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-[hsl(var(--optavia-green))] shadow-lg">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xl flex items-center gap-2 text-optavia-dark">
-              <GraduationCap className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
-              New Coach Training Path
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-optavia-gray">Progress</span>
-                  <span className="text-sm font-bold text-[hsl(var(--optavia-green))]">
-                    {onboardingProgress.completed} of {onboardingProgress.total} modules completed
-                  </span>
-                </div>
-                <Progress value={onboardingProgress.percentage} className="h-3" />
-              </div>
-              <Link href="/training">
-                <Button
-                  className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
-                  size="lg"
-                >
-                  Continue Training
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Main Grid: Training Progress + Quick Links + Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
