@@ -212,21 +212,35 @@ export function useRankCalculator(user: User | null) {
           }])
       }
 
-      // Load frontline coaches (profiles where sponsor_id = user.id)
+      // Load frontline coaches from sponsor_team view
       const { data: coachesResult, error: coachesError } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, coach_rank")
+        .from("sponsor_team")
+        .select("coach_id, coach_name, coach_email, coach_rank")
         .eq("sponsor_id", user.id)
 
       if (coachesError) {
         console.error("Error loading frontline coaches:", coachesError)
-      }
-
-      if (coachesResult) {
+        // Fallback: try querying profiles directly
+        const { data: profilesResult } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, coach_rank")
+          .eq("sponsor_id", user.id)
+        
+        if (profilesResult) {
+          const coaches: FrontlineCoach[] = profilesResult.map(c => ({
+            id: c.id,
+            full_name: c.full_name,
+            email: c.email,
+            coach_rank: c.coach_rank || "Coach",
+            is_qualifying: isQualifyingLeg(c.coach_rank || "Coach")
+          }))
+          setFrontlineCoaches(coaches)
+        }
+      } else if (coachesResult) {
         const coaches: FrontlineCoach[] = coachesResult.map(c => ({
-          id: c.id,
-          full_name: c.full_name,
-          email: c.email,
+          id: c.coach_id,
+          full_name: c.coach_name,
+          email: c.coach_email,
           coach_rank: c.coach_rank || "Coach",
           is_qualifying: isQualifyingLeg(c.coach_rank || "Coach")
         }))

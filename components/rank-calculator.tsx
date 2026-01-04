@@ -5,14 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog"
 import { useUserData } from "@/contexts/user-data-context"
 import { useProspects } from "@/hooks/use-prospects"
@@ -27,24 +24,26 @@ import {
   type ClientStats,
 } from "@/hooks/use-rank-calculator"
 import {
-  TrendingUp,
   Target,
   Users,
-  RefreshCw,
   Trophy,
   Sparkles,
   ExternalLink,
   AlertCircle,
   CheckCircle,
+  Star,
+  UserCheck,
 } from "lucide-react"
 
 export function RankCalculator() {
   const { user } = useUserData()
-  const { prospects, stats: prospectStats } = useProspects()
-  const { clients, stats: clientStats } = useClients()
+  const { prospects } = useProspects()
+  const { stats: clientStats } = useClients()
   
   const {
     rankData,
+    frontlineCoaches,
+    qualifyingLegsCount,
     loading,
     updateRankData,
     calculateProjections,
@@ -55,8 +54,6 @@ export function RankCalculator() {
   } = useRankCalculator(user)
 
   const [showRankSelector, setShowRankSelector] = useState(false)
-  const [showCoachesModal, setShowCoachesModal] = useState(false)
-  const [frontlineCoachesInput, setFrontlineCoachesInput] = useState(0)
 
   // Build prospect pipeline from actual data
   const prospectPipeline: ProspectPipeline = useMemo(() => ({
@@ -76,7 +73,6 @@ export function RankCalculator() {
 
   // Current data
   const currentRank = (rankData?.current_rank || "Coach") as RankType
-  const frontlineCoaches = rankData?.frontline_coaches || 0
   const activeClients = clientPipeline.active
   
   const currentRankInfo = RANK_REQUIREMENTS[currentRank]
@@ -85,20 +81,10 @@ export function RankCalculator() {
   const nextRankReqs = nextRank ? RANK_REQUIREMENTS[nextRank] : null
 
   // Calculations
-  const progress = calculateProgress(currentRank, frontlineCoaches, activeClients)
-  const projections = calculateProjections(prospectPipeline, clientPipeline, frontlineCoaches)
-  const gaps = calculateGaps(currentRank, frontlineCoaches, activeClients)
+  const progress = calculateProgress(currentRank, activeClients)
+  const projections = calculateProjections(prospectPipeline, clientPipeline)
+  const gaps = calculateGaps(currentRank, activeClients)
   const actionItems = generateActionItems(gaps, projections, prospectPipeline, clientPipeline, nextRank)
-
-  const openCoachesModal = () => {
-    setFrontlineCoachesInput(frontlineCoaches)
-    setShowCoachesModal(true)
-  }
-
-  const handleSaveCoaches = async () => {
-    await updateRankData({ frontline_coaches: frontlineCoachesInput })
-    setShowCoachesModal(false)
-  }
 
   const handleRankChange = async (newRank: RankType) => {
     await updateRankData({
@@ -157,43 +143,109 @@ export function RankCalculator() {
         </CardContent>
       </Card>
 
-      {/* Current Stats */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-3 gap-2">
         <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{activeClients}</div>
-            <div className="text-xs text-gray-500">Active Clients</div>
+          <CardContent className="p-3 text-center">
+            <div className="text-xl font-bold text-green-600">{activeClients}</div>
+            <div className="text-[10px] text-gray-500">Active Clients</div>
             {nextRank && gaps && gaps.clients > 0 && (
-              <Badge variant="outline" className="mt-1 text-[10px] text-orange-500 border-orange-300">
-                Need {gaps.clients} more
-              </Badge>
-            )}
-            {nextRank && gaps && gaps.clients === 0 && (
-              <Badge className="mt-1 text-[10px] bg-green-100 text-green-700">
-                <CheckCircle className="h-3 w-3 mr-0.5" /> Met
+              <Badge variant="outline" className="mt-1 text-[9px] text-orange-500 border-orange-300 px-1">
+                Need {gaps.clients}
               </Badge>
             )}
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={openCoachesModal}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{frontlineCoaches}</div>
-            <div className="text-xs text-gray-500">Frontline Coaches</div>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <div className="text-xl font-bold text-purple-600">{frontlineCoaches.length}</div>
+            <div className="text-[10px] text-gray-500">Frontline Coaches</div>
             {nextRank && gaps && gaps.coaches > 0 && (
-              <Badge variant="outline" className="mt-1 text-[10px] text-orange-500 border-orange-300">
-                Need {gaps.coaches} more
+              <Badge variant="outline" className="mt-1 text-[9px] text-orange-500 border-orange-300 px-1">
+                Need {gaps.coaches}
               </Badge>
             )}
-            {nextRank && gaps && gaps.coaches === 0 && nextRankReqs && nextRankReqs.frontlineCoaches > 0 && (
-              <Badge className="mt-1 text-[10px] bg-green-100 text-green-700">
-                <CheckCircle className="h-3 w-3 mr-0.5" /> Met
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-3 text-center">
+            <div className="text-xl font-bold text-blue-600">{qualifyingLegsCount}</div>
+            <div className="text-[10px] text-gray-500">Qualifying Legs</div>
+            {nextRank && gaps && nextRankReqs && nextRankReqs.qualifyingLegs > 0 && gaps.qualifyingLegs > 0 && (
+              <Badge variant="outline" className="mt-1 text-[9px] text-orange-500 border-orange-300 px-1">
+                Need {gaps.qualifyingLegs}
               </Badge>
             )}
-            <p className="text-[10px] text-blue-500 mt-1">Tap to update</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Frontline Coaches List */}
+      {frontlineCoaches.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Users className="h-4 w-4 text-purple-500" />
+              Your Frontline Coaches
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              {frontlineCoaches.map((coach) => {
+                const coachColors = RANK_COLORS[coach.coach_rank as RankType] || RANK_COLORS['Coach']
+                const coachInfo = RANK_REQUIREMENTS[coach.coach_rank as RankType] || RANK_REQUIREMENTS['Coach']
+                
+                return (
+                  <div
+                    key={coach.id}
+                    className={`flex items-center justify-between p-2 rounded-lg ${coach.is_qualifying ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-8 h-8 ${coachColors.accent} rounded-full flex items-center justify-center text-white text-sm`}>
+                        {coachInfo.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {coach.full_name || coach.email || "Coach"}
+                        </p>
+                        <p className="text-xs text-gray-500">{coach.coach_rank}</p>
+                      </div>
+                    </div>
+                    {coach.is_qualifying ? (
+                      <Badge className="bg-green-100 text-green-700 text-[10px]">
+                        <Star className="h-3 w-3 mr-0.5" />
+                        Qualifying
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] text-gray-500">
+                        Not yet qualifying
+                      </Badge>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[10px] text-gray-400 mt-2 text-center">
+              Qualifying leg = Senior Coach rank or higher
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Frontline Coaches */}
+      {frontlineCoaches.length === 0 && (
+        <Card className="bg-gray-50">
+          <CardContent className="p-4 text-center">
+            <UserCheck className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">No frontline coaches yet</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Coaches you sponsor will appear here
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Next Rank Requirements */}
       {nextRank && nextRankReqs && (
@@ -203,14 +255,18 @@ export function RankCalculator() {
               <Target className="h-4 w-4 text-blue-500" />
               {nextRank} Requirements
             </h3>
-            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Clients:</span>
-                <span className="font-semibold">{nextRankReqs.minClients}+</span>
+            <div className="grid grid-cols-3 gap-2 text-sm mb-3">
+              <div className="text-center p-2 bg-white rounded">
+                <div className="font-bold text-gray-900">{nextRankReqs.minClients}+</div>
+                <div className="text-[10px] text-gray-500">Clients</div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Coaches:</span>
-                <span className="font-semibold">{nextRankReqs.frontlineCoaches}</span>
+              <div className="text-center p-2 bg-white rounded">
+                <div className="font-bold text-gray-900">{nextRankReqs.frontlineCoaches}</div>
+                <div className="text-[10px] text-gray-500">Coaches</div>
+              </div>
+              <div className="text-center p-2 bg-white rounded">
+                <div className="font-bold text-gray-900">{nextRankReqs.qualifyingLegs}</div>
+                <div className="text-[10px] text-gray-500">Qual. Legs</div>
               </div>
             </div>
             {nextRankReqs.note && (
@@ -227,8 +283,8 @@ export function RankCalculator() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Users className="h-4 w-4 text-blue-500" />
-            Your Pipeline
+            <Sparkles className="h-4 w-4 text-green-500" />
+            Pipeline Projections
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
@@ -241,15 +297,12 @@ export function RankCalculator() {
           
           {/* Projections */}
           <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+            <span className="text-xs text-gray-600">Projected:</span>
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-gray-700">Projected from pipeline:</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px]">
                 +{projections.newClients} clients
               </Badge>
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-[10px]">
                 +{projections.newCoaches} coaches
               </Badge>
             </div>
@@ -316,34 +369,6 @@ export function RankCalculator() {
           )
         })}
       </div>
-
-      {/* Update Frontline Coaches Modal */}
-      <Dialog open={showCoachesModal} onOpenChange={setShowCoachesModal}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Update Frontline Coaches</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-gray-500 mb-4">
-            Enter the number of coaches you have personally sponsored.
-          </p>
-          <div>
-            <Label>Frontline Coaches</Label>
-            <Input
-              type="number"
-              min="0"
-              value={frontlineCoachesInput}
-              onChange={(e) => setFrontlineCoachesInput(parseInt(e.target.value) || 0)}
-              className="mt-1"
-            />
-          </div>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setShowCoachesModal(false)}>Cancel</Button>
-            <Button onClick={handleSaveCoaches} className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]">
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Rank Selector Modal */}
       <Dialog open={showRankSelector} onOpenChange={setShowRankSelector}>
