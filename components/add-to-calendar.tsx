@@ -6,16 +6,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CalendarPlus, Download, ExternalLink } from "lucide-react"
+import { CalendarPlus, Mail, MessageSquare, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { 
-  downloadICSFile, 
-  getGoogleCalendarUrl, 
-  getOutlookCalendarUrl,
-  getYahooCalendarUrl 
-} from "@/lib/calendar-utils"
+import { useUserData } from "@/contexts/user-data-context"
+import { sendCalendarInviteEmail } from "@/lib/email"
+import { generateSMSUrl } from "@/lib/sms"
 import type { ZoomCall } from "@/lib/types"
 
 interface AddToCalendarProps {
@@ -34,74 +32,189 @@ export function AddToCalendar({
   showLabel = true 
 }: AddToCalendarProps) {
   const { toast } = useToast()
+  const { profile } = useUserData()
   const [open, setOpen] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
 
-  const handleDownloadICS = () => {
-    downloadICSFile(event)
-    toast({
-      title: "Calendar file downloaded",
-      description: "Open the .ics file to add to your calendar",
+  // Get coach's notification settings
+  const userEmail = profile?.notification_email || profile?.email
+  const userPhone = profile?.notification_phone
+  const userName = profile?.full_name
+
+  // Generate event details for email/SMS
+  const eventStartDate = new Date(event.scheduled_at)
+  const eventEndDate = new Date(eventStartDate.getTime() + (event.duration_minutes || 60) * 60000)
+
+  // Build description with Zoom details
+  const buildDescription = () => {
+    let desc = event.description || ""
+    if (event.zoom_link) {
+      desc += `\n\nZoom Link: ${event.zoom_link}`
+    }
+    if (event.zoom_meeting_id) {
+      desc += `\nMeeting ID: ${event.zoom_meeting_id}`
+    }
+    if (event.zoom_passcode) {
+      desc += `\nPasscode: ${event.zoom_passcode}`
+    }
+    return desc.trim()
+  }
+
+  // Send calendar invite via email to self
+  const handleEmailInvite = async () => {
+    if (!userEmail) {
+      toast({
+        title: "No email configured",
+        description: "Please set your notification email in Settings → Notifications",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setSendingEmail(true)
+    setOpen(false)
+
+    try {
+      const result = await sendCalendarInviteEmail({
+        to: userEmail,
+        toName: userName,
+        fromEmail: userEmail,
+        fromName: "Coaching Amplifier",
+        eventTitle: event.title,
+        eventDescription: buildDescription(),
+        startDate: eventStartDate.toISOString(),
+        endDate: eventEndDate.toISOString(),
+        eventType: "check-in", // Use check-in styling for meetings
+      })
+
+      if (result.success) {
+        toast({
+          title: "📧 Calendar invite sent!",
+          description: `Check your email at ${userEmail}`,
+        })
+      } else {
+        toast({
+          title: "Failed to send",
+          description: result.error || "Please try again",
+          variant: "destructive",
+        })
+      }
+    } catch (error: any) {
+      toast({
+        title: "Failed to send",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      })
+    } finally {
+      setSendingEmail(false)
+    }
+  }
+
+  // Send via SMS - opens native SMS app
+  const handleSMSInvite = () => {
+    if (!userPhone) {
+      toast({
+        title: "No phone configured",
+        description: "Please set your notification phone in Settings → Notifications",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Build SMS message
+    const dateStr = eventStartDate.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
     })
-    setOpen(false)
-  }
+    const timeStr = eventStartDate.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    })
 
-  const handleGoogleCalendar = () => {
-    window.open(getGoogleCalendarUrl(event), '_blank')
-    setOpen(false)
-  }
+    let message = `📅 Reminder: ${event.title}\n`
+    message += `📆 ${dateStr} at ${timeStr}\n`
+    message += `⏱️ ${event.duration_minutes || 60} min\n`
+    
+    if (event.zoom_link) {
+      message += `\n🔗 ${event.zoom_link}`
+    }
+    if (event.zoom_meeting_id) {
+      message += `\nID: ${event.zoom_meeting_id}`
+    }
+    if (event.zoom_passcode) {
+      message += `\nPass: ${event.zoom_passcode}`
+    }
 
-  const handleOutlookCalendar = () => {
-    window.open(getOutlookCalendarUrl(event), '_blank')
+    const smsUrl = generateSMSUrl(userPhone, message)
+    window.open(smsUrl, '_self')
+    
     setOpen(false)
-  }
-
-  const handleYahooCalendar = () => {
-    window.open(getYahooCalendarUrl(event), '_blank')
-    setOpen(false)
+    toast({
+      title: "📱 SMS app opened!",
+      description: "Your reminder is ready to send",
+    })
   }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant={variant} 
-          size={size} 
-          className={`border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))] hover:text-white ${className}`}
-        >
-          <CalendarPlus className="h-4 w-4" />
-          {showLabel && <span className="ml-2">Add to Calendar</span>}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-white">
-        <DropdownMenuItem onClick={handleGoogleCalendar} className="cursor-pointer">
-          <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.5 22h-15A2.5 2.5 0 012 19.5v-15A2.5 2.5 0 014.5 2h15A2.5 2.5 0 0122 4.5v15a2.5 2.5 0 01-2.5 2.5zM9.047 7.14v2.255H7.14V7.14h1.907zm3.813 0v2.255h-1.907V7.14h1.907zm3.813 0v2.255H14.78V7.14h1.907zM9.047 10.953v2.255H7.14v-2.255h1.907zm3.813 0v2.255h-1.907v-2.255h1.907zm3.813 0v2.255H14.78v-2.255h1.907zM9.047 14.767v2.255H7.14v-2.255h1.907zm3.813 0v2.255h-1.907v-2.255h1.907z"/>
-          </svg>
-          <span>Google Calendar</span>
-          <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleOutlookCalendar} className="cursor-pointer">
-          <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M7.88 12.04q0 .45-.11.87-.1.41-.33.74-.22.33-.58.52-.37.2-.87.2t-.85-.2q-.35-.21-.57-.55-.22-.33-.33-.75-.1-.42-.1-.86t.1-.87q.1-.43.34-.76.22-.34.59-.54.36-.2.87-.2t.86.2q.35.21.57.55.22.34.31.77.1.43.1.88zM24 12v9.38q0 .46-.33.8-.33.32-.8.32H7.13q-.46 0-.8-.33-.32-.33-.32-.8V18H1q-.41 0-.7-.3-.3-.29-.3-.7V7q0-.41.3-.7Q.58 6 1 6h6.5V2.55q0-.44.3-.75.3-.3.75-.3h12.9q.44 0 .75.3.3.3.3.75V5.8l.02.04V12zM8 14.5h1.5q0-.65-.24-1.14-.24-.5-.65-.82-.42-.32-.96-.47-.54-.16-1.14-.16-.67 0-1.26.19-.58.19-1.02.55-.44.36-.7.89-.25.53-.25 1.2 0 .58.19 1.06.18.48.51.85.33.37.79.58.45.22 1 .22.54 0 1.03-.17.5-.18.9-.5v-1.46H6.14v-.96H8zm13.09-9.5V3H9v3h3.5l-.01 9.34H22V5z"/>
-          </svg>
-          <span>Outlook / Office 365</span>
-          <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleYahooCalendar} className="cursor-pointer">
-          <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12.846 9.2L15.96 3h2.7l-4.602 9.2V18h-2.34v-5.8L7.2 3h2.76l3.086 6.2z"/>
-          </svg>
-          <span>Yahoo Calendar</span>
-          <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleDownloadICS} className="cursor-pointer">
-          <Download className="h-4 w-4 mr-2" />
-          <span>Download .ics file</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant={variant} 
+            size={size} 
+            className={`border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))] hover:text-white ${className}`}
+            disabled={sendingEmail}
+          >
+            {sendingEmail ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CalendarPlus className="h-4 w-4" />
+            )}
+            {showLabel && <span className="ml-2">Add to Calendar</span>}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 bg-white">
+          <DropdownMenuItem 
+            onClick={handleEmailInvite} 
+            className="cursor-pointer"
+            disabled={!userEmail}
+          >
+            <Mail className="h-4 w-4 mr-2 text-purple-500" />
+            <div className="flex flex-col">
+              <span>Email to Me</span>
+              {userEmail && (
+                <span className="text-xs text-gray-500 truncate max-w-[180px]">{userEmail}</span>
+              )}
+            </div>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            onClick={handleSMSInvite} 
+            className="cursor-pointer"
+            disabled={!userPhone}
+          >
+            <MessageSquare className="h-4 w-4 mr-2 text-teal-500" />
+            <div className="flex flex-col">
+              <span>SMS to Me</span>
+              {userPhone && (
+                <span className="text-xs text-gray-500">
+                  +1 ({userPhone.slice(0,3)}) {userPhone.slice(3,6)}-{userPhone.slice(6)}
+                </span>
+              )}
+            </div>
+          </DropdownMenuItem>
+
+          {(!userEmail || !userPhone) && (
+            <>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5 text-xs text-amber-600">
+                ⚠️ Set email/phone in Settings → Notifications
+              </div>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   )
 }
