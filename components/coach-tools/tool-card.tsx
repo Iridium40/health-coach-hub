@@ -143,7 +143,7 @@ export function ToolCard({
       {expandMode === "dialog" && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className={`max-h-[90vh] overflow-y-auto ${
-            id === "social-media-generator"
+            id === "social-media-generator" || id === "optavia-reference"
               ? "max-w-7xl w-[98vw]"
               : id === "health-assessment" || id === "client-onboarding" || id === "client-troubleshooting"
               ? "max-w-5xl" 

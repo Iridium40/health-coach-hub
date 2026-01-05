@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Pin, X, ExternalLink, Droplets, Dumbbell, Activity, ClipboardList, Users, Wrench, Share2 } from "lucide-react"
+import { Pin, X, ExternalLink, Droplets, Dumbbell, Activity, ClipboardList, Users, Wrench, Share2, BookOpen } from "lucide-react"
 import { ToolCard } from "@/components/coach-tools/tool-card"
 import { WaterCalculator } from "@/components/coach-tools/water-calculator"
 import { ExerciseGuide } from "@/components/coach-tools/exercise-guide"
@@ -23,6 +23,7 @@ import { ShareHALink } from "@/components/coach-tools/share-ha-link"
 import { ClientOnboardingDialog } from "@/components/coach-tools/client-onboarding-dialog"
 import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
 import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
+import { OPTAVIAReferenceGuide } from "@/components/coach-tools/optavia-reference-guide"
 
 interface Resource {
   id: string
@@ -94,6 +95,14 @@ const COACH_TOOLS = [
     description: "Build prompts for ChatGPT to generate 3 unique social media post ideas instantly.",
     icon: Share2,
     component: SocialMediaPromptGenerator,
+    expandMode: "dialog" as const,
+  },
+  {
+    id: "optavia-reference",
+    title: "OPTAVIA Quick Reference",
+    description: "Comprehensive guide to healthy fats, salad dressings, condiments, and portion sizes for the 5 & 1 Plan.",
+    icon: BookOpen,
+    component: OPTAVIAReferenceGuide,
     expandMode: "dialog" as const,
   },
 ]
