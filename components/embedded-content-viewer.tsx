@@ -122,7 +122,7 @@ export function EmbeddedContentViewer({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col">
+      <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] p-0 flex flex-col">
         <DialogHeader className="px-4 py-3 border-b flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0 pr-4">

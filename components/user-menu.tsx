@@ -178,13 +178,6 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
               Coaching
             </DropdownMenuLabel>
             <DropdownMenuItem 
-              onClick={() => router.push("/coach/downline")}
-              className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-            >
-              <Users className="mr-2 h-4 w-4" />
-              <span>Downline Progress</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
               onClick={() => router.push("/coach/assessments")}
               className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
             >

@@ -5,20 +5,29 @@ import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Users, BookOpen, CheckCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ArrowLeft, Users, CheckCircle, UserCircle, Calendar, Target, GraduationCap } from "lucide-react"
 import { useUserData } from "@/contexts/user-data-context"
 import { createClient } from "@/lib/supabase/client"
+import { meetsRankRequirement, COACH_RANKS } from "@/hooks/use-training-resources"
 
 interface DownlineCoach {
   id: string
   email: string | null
   full_name: string | null
+  avatar_url: string | null
   optavia_id: string | null
+  coach_rank: string | null
   is_new_coach: boolean
-  completedLessons: string[]
-  progress: number
+  // Stats
+  trainingCompleted: number
+  trainingTotal: number
+  trainingComplete: boolean
+  prospectCount: number
+  haScheduledCount: number
+  activeClientCount: number
 }
 
 export default function DownlineProgressPage() {
@@ -29,11 +38,11 @@ export default function DownlineProgressPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      loadDownlineProgress()
+      loadDownlineData()
     }
   }, [authLoading, user])
 
-  const loadDownlineProgress = async () => {
+  const loadDownlineData = async () => {
     if (!user || !profile?.id) {
       setDownlineCoaches([])
       setLoading(false)
@@ -43,10 +52,10 @@ export default function DownlineProgressPage() {
     const supabase = createClient()
 
     try {
-      // Get profiles for downline coaches (coaches whose sponsor_id matches this coach's profile id)
+      // Get profiles for downline coaches
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, email, full_name, optavia_id, is_new_coach")
+        .select("id, email, full_name, avatar_url, optavia_id, coach_rank, is_new_coach")
         .eq("sponsor_id", profile.id)
 
       if (profilesError) {
@@ -63,43 +72,120 @@ export default function DownlineProgressPage() {
 
       const coachIds = profiles.map((p) => p.id)
 
-      // Get progress for all downline coaches
-      const { data: progressData, error: progressError } = await supabase
-        .from("user_progress")
+      // Get training categories with required_rank
+      const { data: categories } = await supabase
+        .from("training_categories")
+        .select("id, name, required_rank")
+        .eq("is_active", true)
+
+      // Get all training resources
+      const { data: resources } = await supabase
+        .from("training_resources")
+        .select("id, category")
+        .eq("is_active", true)
+
+      // Get training completions for all downline coaches
+      const { data: completions } = await supabase
+        .from("training_resource_completions")
         .select("user_id, resource_id")
         .in("user_id", coachIds)
-        .like("resource_id", "welcome-orientation-%")
 
-      if (progressError) {
-        console.error("Error loading progress:", progressError)
-      }
+      // Get prospects for all downline coaches
+      const { data: prospects } = await supabase
+        .from("prospects")
+        .select("id, user_id, ha_scheduled_date")
+        .in("user_id", coachIds)
 
-      // Map progress to coaches
-      const coachesWithProgress: DownlineCoach[] = (profiles || []).map((profile) => {
-        const coachProgress = (progressData || [])
-          .filter((p) => p.user_id === profile.id)
-          .map((p) => p.resource_id.replace("welcome-orientation-", ""))
+      // Get active clients for all downline coaches
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id, user_id, status")
+        .in("user_id", coachIds)
+        .eq("status", "active")
 
-        const totalLessons = 4 // welcome-orientation has 4 lessons
-        const progress = totalLessons > 0 ? Math.round((coachProgress.length / totalLessons) * 100) : 0
+      // Calculate 2 weeks from now
+      const twoWeeksFromNow = new Date()
+      twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      // Build coach data with stats
+      const coachesWithStats: DownlineCoach[] = profiles.map((coachProfile) => {
+        const coachRank = coachProfile.coach_rank || "Coach"
+
+        // Calculate accessible resources based on coach's rank
+        const accessibleCategories = (categories || []).filter(cat => 
+          meetsRankRequirement(coachRank, cat.required_rank)
+        )
+        const accessibleCategoryNames = new Set(accessibleCategories.map(c => c.name))
+        
+        const accessibleResources = (resources || []).filter(r => 
+          accessibleCategoryNames.has(r.category)
+        )
+        const accessibleResourceIds = new Set(accessibleResources.map(r => r.id))
+
+        // Count completed resources for this coach
+        const coachCompletions = (completions || []).filter(c => 
+          c.user_id === coachProfile.id && accessibleResourceIds.has(c.resource_id)
+        )
+
+        const trainingTotal = accessibleResources.length
+        const trainingCompleted = coachCompletions.length
+        const trainingComplete = trainingTotal > 0 && trainingCompleted >= trainingTotal
+
+        // Count prospects
+        const coachProspects = (prospects || []).filter(p => p.user_id === coachProfile.id)
+        const prospectCount = coachProspects.length
+
+        // Count HA scheduled within 2 weeks
+        const haScheduledCount = coachProspects.filter(p => {
+          if (!p.ha_scheduled_date) return false
+          const haDate = new Date(p.ha_scheduled_date)
+          return haDate >= today && haDate <= twoWeeksFromNow
+        }).length
+
+        // Count active clients
+        const activeClientCount = (clients || []).filter(c => c.user_id === coachProfile.id).length
 
         return {
-          id: profile.id,
-          email: profile.email,
-          full_name: profile.full_name,
-          optavia_id: profile.optavia_id,
-          is_new_coach: profile.is_new_coach,
-          completedLessons: coachProgress,
-          progress,
+          id: coachProfile.id,
+          email: coachProfile.email,
+          full_name: coachProfile.full_name,
+          avatar_url: coachProfile.avatar_url,
+          optavia_id: coachProfile.optavia_id,
+          coach_rank: coachProfile.coach_rank,
+          is_new_coach: coachProfile.is_new_coach,
+          trainingCompleted,
+          trainingTotal,
+          trainingComplete,
+          prospectCount,
+          haScheduledCount,
+          activeClientCount,
         }
       })
 
-      setDownlineCoaches(coachesWithProgress)
+      setDownlineCoaches(coachesWithStats)
     } catch (error) {
-      console.error("Error loading downline progress:", error)
+      console.error("Error loading downline data:", error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const getRankLabel = (rank: string | null) => {
+    if (!rank) return "Coach"
+    const found = COACH_RANKS.find(r => r.value === rank)
+    return found ? found.label : rank
+  }
+
+  const getInitials = (name: string | null, email: string | null) => {
+    if (name) {
+      return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    }
+    if (email) {
+      return email[0].toUpperCase()
+    }
+    return "?"
   }
 
   if (authLoading || loading) {
@@ -113,61 +199,26 @@ export default function DownlineProgressPage() {
     )
   }
 
-  // Show message if user doesn't have an Optavia ID set
-  if (profile && !profile.optavia_id) {
-    return (
-      <div className="min-h-screen flex flex-col bg-white">
-        <Header activeTab="training" />
-        <main className="flex-1 bg-white">
-          <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <Button
-              variant="ghost"
-              onClick={() => router.push("/training")}
-              className="mb-6 gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Training
-            </Button>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-optavia-gray mb-4">
-                    Please set your Optavia ID in your profile settings to view your downline progress.
-                  </p>
-                  <Button onClick={() => router.push("/settings")}>
-                    Go to Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header activeTab="training" />
+      <Header activeTab="my-business" />
       <main className="flex-1 bg-white">
         <div className="container mx-auto px-4 py-8 max-w-6xl">
           <Button
             variant="ghost"
-            onClick={() => router.push("/training")}
+            onClick={() => router.push("/my-business")}
             className="mb-6 gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Training
+            Back to My Business
           </Button>
 
           <div className="mb-6">
             <h1 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark mb-2">
-              Downline Progress
+              Downline Overview
             </h1>
             <p className="text-optavia-gray">
-              Track your downline coaches' progress through the Welcome & Orientation module
+              Track your team's training progress, prospects, and client activity
             </p>
           </div>
 
@@ -185,58 +236,99 @@ export default function DownlineProgressPage() {
           ) : (
             <div className="grid gap-4">
               {downlineCoaches.map((coach) => (
-                <Card key={coach.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">
-                          {coach.full_name || coach.email || "Unknown Coach"}
-                        </CardTitle>
-                        <CardDescription className="mt-1">
-                          {coach.email}
-                          {coach.optavia_id && (
-                            <span className="ml-2">• ID: {coach.optavia_id}</span>
-                          )}
-                          {coach.is_new_coach && (
-                            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-semibold">
-                              New Coach
-                            </span>
-                          )}
-                        </CardDescription>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-[hsl(var(--optavia-green))]">
-                          {coach.progress}%
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {coach.completedLessons.length} of 4 lessons
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Progress value={coach.progress} className="h-2 mb-4" />
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {["1.1.1", "1.1.2", "1.1.3", "1.1.4"].map((lessonId) => {
-                        const isCompleted = coach.completedLessons.includes(lessonId)
-                        return (
-                          <div
-                            key={lessonId}
-                            className={`flex items-center gap-2 p-2 rounded ${
-                              isCompleted ? "bg-green-50" : "bg-slate-50"
-                            }`}
-                          >
-                            {isCompleted ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <div className="h-4 w-4 rounded-full border-2 border-slate-300" />
+                <Card key={coach.id} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="flex flex-col md:flex-row">
+                      {/* Coach Info Section */}
+                      <div className="flex items-center gap-4 p-4 md:w-1/3 border-b md:border-b-0 md:border-r">
+                        <Avatar className="h-14 w-14">
+                          <AvatarImage src={coach.avatar_url || undefined} />
+                          <AvatarFallback className="bg-[hsl(var(--optavia-green))]/10 text-[hsl(var(--optavia-green))] text-lg font-semibold">
+                            {getInitials(coach.full_name, coach.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-lg text-optavia-dark truncate">
+                            {coach.full_name || coach.email || "Unknown"}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {getRankLabel(coach.coach_rank)}
+                            </Badge>
+                            {coach.is_new_coach && (
+                              <Badge className="bg-green-100 text-green-700 text-xs">
+                                New Coach
+                              </Badge>
                             )}
-                            <span className="text-xs font-medium text-slate-700">
-                              {lessonId}
-                            </span>
                           </div>
-                        )
-                      })}
+                          {coach.email && (
+                            <p className="text-xs text-gray-500 mt-1 truncate">{coach.email}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Stats Section */}
+                      <div className="flex-1 grid grid-cols-2 md:grid-cols-4 divide-x">
+                        {/* Training Progress */}
+                        <div className="p-4 flex flex-col items-center justify-center text-center">
+                          <div className="flex items-center gap-1 mb-1">
+                            <GraduationCap className="h-4 w-4 text-gray-400" />
+                            <span className="text-xs text-gray-500">Training</span>
+                          </div>
+                          {coach.trainingComplete ? (
+                            <div className="flex items-center gap-1">
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              <span className="text-lg font-bold text-green-600">100%</span>
+                            </div>
+                          ) : (
+                            <div className="text-center">
+                              <span className="text-lg font-bold text-optavia-dark">
+                                {coach.trainingTotal > 0 
+                                  ? Math.round((coach.trainingCompleted / coach.trainingTotal) * 100) 
+                                  : 0}%
+                              </span>
+                              <p className="text-[10px] text-gray-400">
+                                {coach.trainingCompleted}/{coach.trainingTotal}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Prospects */}
+                        <div className="p-4 flex flex-col items-center justify-center text-center">
+                          <div className="flex items-center gap-1 mb-1">
+                            <Target className="h-4 w-4 text-gray-400" />
+                            <span className="text-xs text-gray-500">Prospects</span>
+                          </div>
+                          <span className="text-2xl font-bold text-optavia-dark">
+                            {coach.prospectCount}
+                          </span>
+                        </div>
+
+                        {/* HA Scheduled */}
+                        <div className="p-4 flex flex-col items-center justify-center text-center">
+                          <div className="flex items-center gap-1 mb-1">
+                            <Calendar className="h-4 w-4 text-gray-400" />
+                            <span className="text-xs text-gray-500">HA Scheduled</span>
+                          </div>
+                          <span className="text-2xl font-bold text-optavia-dark">
+                            {coach.haScheduledCount}
+                          </span>
+                          <p className="text-[10px] text-gray-400">next 2 weeks</p>
+                        </div>
+
+                        {/* Active Clients */}
+                        <div className="p-4 flex flex-col items-center justify-center text-center">
+                          <div className="flex items-center gap-1 mb-1">
+                            <UserCircle className="h-4 w-4 text-gray-400" />
+                            <span className="text-xs text-gray-500">Clients</span>
+                          </div>
+                          <span className="text-2xl font-bold text-optavia-dark">
+                            {coach.activeClientCount}
+                          </span>
+                          <p className="text-[10px] text-gray-400">active</p>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
