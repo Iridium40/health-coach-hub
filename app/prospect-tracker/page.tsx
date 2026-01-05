@@ -468,89 +468,88 @@ Talking Points:
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search by label..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <TooltipProvider>
-                    {(["all", "new", "interested", "converted", "not_interested", "not_closed"] as const).map((status) => {
-                      const statusTooltips: Record<string, string> = {
-                        new: "Reach Out",
-                        interested: "Send HA",
-                        converted: "Client Won!",
-                        not_interested: "Remove from 100's List",
-                        not_closed: "Set Reminder to Reach Out Again",
-                      }
-                      
-                      const button = (
-                        <Button
-                          key={status}
-                          variant={filterStatus === status ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setFilterStatus(status)}
-                          className={filterStatus === status ? "bg-[hsl(var(--optavia-green))]" : ""}
-                        >
-                          {status === "all" ? "All" : statusConfig[status as ProspectStatus]?.label || status}
-                        </Button>
-                      )
-                      
-                      // "All" doesn't need a tooltip
-                      if (status === "all") return button
-                      
-                      return (
-                        <Tooltip key={status}>
-                          <TooltipTrigger asChild>
-                            {button}
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{statusTooltips[status]}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )
-                    })}
-                  </TooltipProvider>
-                </div>
-
-                {/* View Toggle */}
-                <div className="flex rounded-lg border overflow-hidden">
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium transition-colors min-w-[90px] ${
-                      viewMode === "list"
-                        ? "bg-[hsl(var(--optavia-green))] text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    <List className="h-4 w-4" />
-                    List
-                  </button>
-                  <button
-                    onClick={() => setViewMode("week")}
-                    className={`px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium transition-colors min-w-[90px] ${
-                      viewMode === "week"
-                        ? "bg-[hsl(var(--optavia-green))] text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    <CalendarDays className="h-4 w-4" />
-                    Week
-                  </button>
-                </div>
-              </div>
+        {/* Search, Filter and View Toggle */}
+        <div className="flex flex-col gap-4 mb-6">
+          {/* Search Bar */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search by label..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Filter Tabs */}
+            <div className="flex gap-2 flex-wrap">
+              <TooltipProvider>
+                {(["all", "new", "interested", "converted", "not_interested", "not_closed"] as const).map((status) => {
+                  const statusTooltips: Record<string, string> = {
+                    new: "Reach Out",
+                    interested: "Send HA",
+                    converted: "Client Won!",
+                    not_interested: "Remove from 100's List",
+                    not_closed: "Set Reminder to Reach Out Again",
+                  }
+                  
+                  const button = (
+                    <Button
+                      key={status}
+                      variant={filterStatus === status ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setFilterStatus(status)}
+                      className={filterStatus === status ? "bg-[hsl(var(--optavia-green))]" : ""}
+                    >
+                      {status === "all" ? "All" : statusConfig[status as ProspectStatus]?.label || status}
+                    </Button>
+                  )
+                  
+                  // "All" doesn't need a tooltip
+                  if (status === "all") return button
+                  
+                  return (
+                    <Tooltip key={status}>
+                      <TooltipTrigger asChild>
+                        {button}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{statusTooltips[status]}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )
+                })}
+              </TooltipProvider>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* View Toggle */}
+            <div className="flex rounded-lg border overflow-hidden">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium transition-colors min-w-[90px] ${
+                  viewMode === "list"
+                    ? "bg-[hsl(var(--optavia-green))] text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <List className="h-4 w-4" />
+                List
+              </button>
+              <button
+                onClick={() => setViewMode("week")}
+                className={`px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium transition-colors min-w-[90px] ${
+                  viewMode === "week"
+                    ? "bg-[hsl(var(--optavia-green))] text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <CalendarDays className="h-4 w-4" />
+                Week
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Week Calendar View */}
         {viewMode === "week" && (
