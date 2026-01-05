@@ -21,6 +21,11 @@ interface EmbeddedContentViewerProps {
 
 // Convert URLs to embeddable versions
 function getEmbedUrl(url: string, type: string): string | null {
+  // Canva type resources cannot be embedded
+  if (type === "canva") {
+    return null
+  }
+  
   try {
     const urlObj = new URL(url)
     

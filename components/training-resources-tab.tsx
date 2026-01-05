@@ -39,10 +39,23 @@ export function TrainingResourcesTab() {
   const [viewerOpen, setViewerOpen] = useState(false)
   const [selectedResource, setSelectedResource] = useState<TrainingResource | null>(null)
 
-  // Open resource in embedded viewer
+  // Types that cannot be embedded - open directly in new tab
+  const nonEmbeddableTypes = ["canva"]
+  
+  // Open resource in embedded viewer or new tab
   const openResource = (resource: TrainingResource) => {
-    setSelectedResource(resource)
-    setViewerOpen(true)
+    // Check if resource type or URL indicates non-embeddable content
+    const isCanvaUrl = resource.url.includes("canva.com")
+    const isNonEmbeddable = nonEmbeddableTypes.includes(resource.type) || isCanvaUrl
+    
+    if (isNonEmbeddable) {
+      // Open directly in new tab
+      window.open(resource.url, "_blank", "noopener,noreferrer")
+    } else {
+      // Open in embedded viewer
+      setSelectedResource(resource)
+      setViewerOpen(true)
+    }
   }
 
   // Generate search suggestions from resource titles and categories
