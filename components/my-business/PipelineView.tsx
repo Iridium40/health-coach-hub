@@ -110,7 +110,7 @@ export function PipelineView() {
             <Link href="/prospect-tracker">
               <Button size="sm" className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white">
                 <Plus className="h-4 w-4 mr-1" />
-                Add Prospect
+                Add to 100's List
               </Button>
             </Link>
           </div>
@@ -140,7 +140,7 @@ export function PipelineView() {
               <Link href="/prospect-tracker">
                 <Button className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Prospect
+                  Add to 100's List
                 </Button>
               </Link>
             </div>
