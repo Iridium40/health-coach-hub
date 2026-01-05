@@ -52,7 +52,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { MilestoneActionModal } from "@/components/milestone-action-modal"
 import { ClientJourneyGuide } from "@/components/client-journey-guide"
-import { GraduationCap } from "lucide-react"
+import { GraduationCap, Trophy, Heart } from "lucide-react"
 import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
 import type { CalendarEvent } from "@/lib/calendar-utils"
@@ -91,6 +91,8 @@ export default function ClientTrackerPage() {
   const [showTextModal, setShowTextModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [showGuideModal, setShowGuideModal] = useState(false)
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false)
+  const [milestoneCount, setMilestoneCount] = useState(0)
   const [selectedClient, setSelectedClient] = useState<any>(null)
   const [filterStatus, setFilterStatus] = useState<ClientStatus | "all">("active")
   const [searchTerm, setSearchTerm] = useState("")
@@ -302,6 +304,10 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
 
   const handleAddClient = async () => {
     if (!newClient.label.trim() || !newClient.startDate) return
+    
+    // Get current total client count before adding
+    const currentCount = clients.length
+    
     await addClient({
       label: newClient.label,
       phone: newClient.phone || undefined,
@@ -309,6 +315,13 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     })
     setNewClient({ label: "", phone: "", startDate: today })
     setShowAddModal(false)
+    
+    // Check if new count is a milestone (5, 10, 15, 20, 25, etc.)
+    const newCount = currentCount + 1
+    if (newCount >= 5 && newCount % 5 === 0) {
+      setMilestoneCount(newCount)
+      setShowMilestoneModal(true)
+    }
   }
 
   const openTextTemplates = (client: any) => {
@@ -1191,6 +1204,56 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
             </DialogTitle>
           </DialogHeader>
           <ClientJourneyGuide />
+        </DialogContent>
+      </Dialog>
+
+      {/* Client Milestone Celebration Modal */}
+      <Dialog open={showMilestoneModal} onOpenChange={setShowMilestoneModal}>
+        <DialogContent className="max-w-md text-center">
+          <div className="py-6">
+            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+              <Trophy className="h-10 w-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              🎉 Amazing Achievement!
+            </h2>
+            <div className="text-5xl font-bold text-[hsl(var(--optavia-green))] mb-3">
+              {milestoneCount} Clients!
+            </div>
+            <p className="text-gray-600 mb-4">
+              You've now helped <strong>{milestoneCount} people</strong> on their health journey!
+            </p>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-center gap-2 text-green-700 mb-2">
+                <Heart className="h-5 w-5 fill-current" />
+                <span className="font-semibold">Lives Changed</span>
+                <Heart className="h-5 w-5 fill-current" />
+              </div>
+              <p className="text-sm text-green-600">
+                {milestoneCount === 5 && "Your first 5! You're officially making an impact."}
+                {milestoneCount === 10 && "Double digits! You're building real momentum."}
+                {milestoneCount === 15 && "15 lives transformed. You're on fire! 🔥"}
+                {milestoneCount === 20 && "20 clients! Think about the ripple effect you've created."}
+                {milestoneCount === 25 && "A quarter century of transformations! Incredible."}
+                {milestoneCount === 50 && "FIFTY clients! You're a true health champion! 🏆"}
+                {milestoneCount === 75 && "75 people healthier because of YOU!"}
+                {milestoneCount === 100 && "100 CLIENTS! You've changed 100 lives! 🌟"}
+                {milestoneCount > 100 && `${milestoneCount} lives changed. You're a legend!`}
+                {![5, 10, 15, 20, 25, 50, 75, 100].includes(milestoneCount) && milestoneCount <= 100 && milestoneCount > 25 && 
+                  `${milestoneCount} clients helped on their journey!`
+                }
+              </p>
+            </div>
+            <p className="text-sm text-gray-500 italic">
+              Rank is great, but impact is everything. Keep changing lives! 💚
+            </p>
+          </div>
+          <Button 
+            onClick={() => setShowMilestoneModal(false)}
+            className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))]/90"
+          >
+            Keep Going! 💪
+          </Button>
         </DialogContent>
       </Dialog>
 
