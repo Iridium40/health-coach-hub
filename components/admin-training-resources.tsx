@@ -504,11 +504,12 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
                         <Badge variant="secondary" className="ml-2">
                           {categoryResources.length} modules
                         </Badge>
-                        {category.required_rank && (
-                          <Badge variant="outline" className="ml-2 text-purple-600 border-purple-300">
-                            {category.required_rank}+ only
-                          </Badge>
-                        )}
+                        <Badge 
+                          variant="outline" 
+                          className={`ml-2 ${category.required_rank ? "text-purple-600 border-purple-300 bg-purple-50" : "text-gray-500 border-gray-300"}`}
+                        >
+                          {category.required_rank ? `${category.required_rank}+ only` : "All Coaches"}
+                        </Badge>
                       </div>
                     </CollapsibleTrigger>
 
