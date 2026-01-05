@@ -155,12 +155,12 @@ export function QuickActions({
           Quick Actions
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 h-[calc(100%-60px)]">
+      <CardContent className="pt-0 flex-1">
         <div className="grid grid-cols-2 gap-3 h-full">
           {displayActions.map((action) => (
-            <Link key={action.id} href={action.href} className="flex">
+            <Link key={action.id} href={action.href} className="flex h-full">
               <div
-                className={`flex-1 p-4 rounded-lg border transition-all cursor-pointer flex flex-col justify-center items-center text-center aspect-square ${action.bgClass}`}
+                className={`w-full min-h-[120px] p-4 rounded-lg border transition-all cursor-pointer flex flex-col justify-center items-center text-center ${action.bgClass}`}
               >
                 <div className={`${action.iconClass} mb-2`}>
                   {React.cloneElement(action.icon as React.ReactElement, { className: "h-8 w-8" })}
