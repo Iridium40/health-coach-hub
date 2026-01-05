@@ -978,14 +978,6 @@ Talking Points:
                   eventType="ha"
                 />
               )}
-
-              {/* Info */}
-              <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700 flex items-start gap-2">
-                <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>
-                  Choose your preferred calendar app. You can also send an invite to your prospect.
-                </span>
-              </div>
             </div>
           )}
           <DialogFooter>

@@ -1026,16 +1026,15 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 />
               )}
 
-              {/* Info */}
-              <div className="bg-purple-50 rounded-lg p-3 text-sm text-purple-700 flex items-start gap-2">
-                <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>
-                  {recurringFrequency !== "none" 
-                    ? "We'll track your recurring schedule and auto-advance to the next check-in date."
-                    : "Choose your preferred calendar app. You can also send an invite to your client."
-                  }
-                </span>
-              </div>
+              {/* Info - only show for recurring */}
+              {recurringFrequency !== "none" && (
+                <div className="bg-purple-50 rounded-lg p-3 text-sm text-purple-700 flex items-start gap-2">
+                  <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    We'll track your recurring schedule and auto-advance to the next check-in date.
+                  </span>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>

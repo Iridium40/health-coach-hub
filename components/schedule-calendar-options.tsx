@@ -249,24 +249,36 @@ ${organizerName || "Your Coach"}`
         <p className="text-xs text-gray-500">
           Copy the invite message and paste it into your favorite texting app
         </p>
-        <Button
-          type="button"
-          onClick={handleCopyTextInvite}
-          variant="outline"
-          className={`w-full ${copied ? "bg-teal-50 border-teal-300 text-teal-700" : "border-teal-200 text-teal-600 hover:bg-teal-50"}`}
-        >
-          {copied ? (
-            <>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            onClick={handleCopyTextInvite}
+            variant="outline"
+            className={`flex-1 ${copied ? "bg-teal-50 border-teal-300 text-teal-700" : "border-teal-200 text-teal-600 hover:bg-teal-50"}`}
+          >
+            {copied ? (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Text Invite
+              </>
+            )}
+          </Button>
+          {copied && onScheduleComplete && (
+            <Button
+              type="button"
+              onClick={onScheduleComplete}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
               <Check className="h-4 w-4 mr-2" />
-              Copied!
-            </>
-          ) : (
-            <>
-              <Copy className="h-4 w-4 mr-2" />
-              Copy Text Invite
-            </>
+              Save
+            </Button>
           )}
-        </Button>
+        </div>
       </div>
     </div>
   )
