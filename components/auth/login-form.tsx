@@ -34,10 +34,6 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
         variant: "destructive",
       })
     } else {
-      toast({
-        title: "Success",
-        description: "Logged in successfully",
-      })
       onSuccess?.()
     }
 
