@@ -539,9 +539,9 @@ Talking Points:
             />
           </div>
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-2">
             {/* Filter Tabs */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-1 sm:gap-2 flex-wrap">
               <TooltipProvider>
                 {(["all", "new", "interested", "converted", "not_interested", "not_closed"] as const).map((status) => {
                   const statusTooltips: Record<string, string> = {
@@ -558,7 +558,7 @@ Talking Points:
                       variant={filterStatus === status ? "default" : "outline"}
                       size="sm"
                       onClick={() => setFilterStatus(status)}
-                      className={filterStatus === status ? "bg-[hsl(var(--optavia-green))]" : ""}
+                      className={`text-xs sm:text-sm px-2 sm:px-3 ${filterStatus === status ? "bg-[hsl(var(--optavia-green))]" : ""}`}
                     >
                       {status === "all" ? "All" : statusConfig[status as ProspectStatus]?.label || status}
                     </Button>
@@ -582,7 +582,7 @@ Talking Points:
             </div>
 
             {/* View Toggle */}
-            <div className="flex rounded-lg border overflow-hidden">
+            <div className="flex rounded-lg border overflow-hidden flex-shrink-0">
               <button
                 onClick={() => setViewMode("list")}
                 className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors ${
@@ -796,194 +796,195 @@ Talking Points:
                 }`}
               >
                 <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                    {/* Status Icon & Label */}
-                    <div className="flex items-center gap-3 flex-1">
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-                        style={{ backgroundColor: config.bg }}
-                      >
-                        {config.icon}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-900">{prospect.label}</span>
-                          <Badge
-                            variant="secondary"
-                            style={{ backgroundColor: config.bg, color: config.color }}
-                          >
-                            {config.label}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                          <span>{sourceOptions.find(s => s.value === prospect.source)?.label}</span>
-                          {prospect.action_type && (
-                            <span className="flex items-center gap-1">
-                              <ArrowRight className="h-3 w-3" />
-                              {actionTypeLabels[prospect.action_type]}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                  {/* Header Row: Status Icon & Prospect Info */}
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                      style={{ backgroundColor: config.bg }}
+                    >
+                      {config.icon}
                     </div>
-
-                    {/* Scheduled Date/Time for HA - shows when ha_scheduled_at is set */}
-                    {prospect.ha_scheduled_at ? (
-                      <div className="flex items-center gap-1">
-                        <Badge 
-                          className={`flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium ${
-                            new Date(prospect.ha_scheduled_at) < new Date() 
-                              ? "bg-red-100 text-red-700 border border-red-200" 
-                              : "bg-purple-100 text-purple-700 border border-purple-200"
-                          }`}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-900">{prospect.label}</span>
+                        <Badge
+                          variant="secondary"
+                          style={{ backgroundColor: config.bg, color: config.color }}
                         >
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>HA:</span>
-                          {new Date(prospect.ha_scheduled_at).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                          {" "}
-                          {new Date(prospect.ha_scheduled_at).toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
+                          {config.label}
                         </Badge>
-                        {prospect.phone && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => sendHASMS(prospect)}
-                            className="h-7 w-7 p-0 text-purple-500 hover:text-purple-700 hover:bg-purple-50"
-                            title="Send SMS reminder"
-                          >
-                            <Send className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => updateProspect(prospect.id, { ha_scheduled_at: null })}
-                          className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
-                          title="Clear scheduled HA"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
                       </div>
-                    ) : prospect.next_action && (
-                      <div className="flex items-center gap-2">
-                        {isOverdue ? (
-                          <Badge variant="destructive" className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {Math.abs(daysUntil!)} days overdue
-                          </Badge>
-                        ) : daysUntil === 0 ? (
-                          <Badge className="bg-blue-500 flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            Today
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            In {daysUntil} days
-                          </Badge>
+                      <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                        <span>{sourceOptions.find(s => s.value === prospect.source)?.label}</span>
+                        {prospect.action_type && (
+                          <span className="flex items-center gap-1">
+                            <ArrowRight className="h-3 w-3" />
+                            {actionTypeLabels[prospect.action_type]}
+                          </span>
                         )}
                       </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Select
-                        value={prospect.status}
-                        onValueChange={(value) => handleUpdateStatus(prospect.id, value as ProspectStatus)}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(statusConfig)
-                            .filter(([key]) => 
-                              // Show current status + all except ha_scheduled and coach
-                              key === prospect.status || !["ha_scheduled", "coach"].includes(key)
-                            )
-                            .map(([key, value]) => (
-                              <SelectItem key={key} value={key}>
-                                {value.icon} {value.label}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-
-                      {/* Health Assessment Controls - Mobile Friendly */}
-                      {prospect.status !== "converted" && prospect.status !== "coach" && (
-                        <div className="flex items-center border rounded-lg overflow-hidden">
-                          <span className="px-2 sm:px-3 py-1.5 bg-gray-50 text-xs font-medium text-gray-600 border-r hidden sm:block">
-                            Health Assessment
-                          </span>
-                          <span className="px-2 py-1.5 bg-gray-50 text-xs font-medium text-gray-600 border-r sm:hidden">
-                            HA
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSchedulingProspect(prospect)
-                              setProspectEmail((prospect as any).email || "")
-                              setProspectPhone((prospect as any).phone || "")
-                              setShowHASendModal(true)
-                            }}
-                            className="rounded-none h-8 px-2 sm:px-3 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                            title="Send HA Invite"
-                          >
-                            <Send className="h-3.5 w-3.5 sm:mr-1" />
-                            <span className="hidden sm:inline">Send</span>
-                          </Button>
-                          <div className="w-px h-5 bg-gray-200" />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSchedulingProspect(prospect)
-                              setHaDate(prospect.status === "ha_scheduled" && prospect.next_action ? prospect.next_action : today)
-                              setHaHour(10)
-                              setHaMinute("00")
-                              setHaAmPm("AM")
-                              setProspectEmail((prospect as any).email || "")
-                              setProspectPhone((prospect as any).phone || "")
-                              setShowHAScheduleModal(true)
-                            }}
-                            className="rounded-none h-8 px-2 sm:px-3 text-green-600 hover:bg-green-50 hover:text-green-700"
-                            title="Schedule HA"
-                          >
-                            <CalendarPlus className="h-3.5 w-3.5 sm:mr-1" />
-                            <span className="hidden sm:inline">Schedule</span>
-                          </Button>
-                        </div>
-                      )}
-
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          setEditingProspect(prospect)
-                          setShowEditModal(true)
-                        }}
-                        title="Edit"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleDelete(prospect.id)}
-                        title="Delete"
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
+                  </div>
+
+                  {/* Scheduled Date/Time Row */}
+                  {(prospect.ha_scheduled_at || prospect.next_action) && (
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
+                      {prospect.ha_scheduled_at ? (
+                        <>
+                          <Badge 
+                            className={`flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium ${
+                              new Date(prospect.ha_scheduled_at) < new Date() 
+                                ? "bg-red-100 text-red-700 border border-red-200" 
+                                : "bg-purple-100 text-purple-700 border border-purple-200"
+                            }`}
+                          >
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>HA:</span>
+                            {new Date(prospect.ha_scheduled_at).toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                            {" "}
+                            {new Date(prospect.ha_scheduled_at).toLocaleTimeString("en-US", {
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </Badge>
+                          {prospect.phone && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => sendHASMS(prospect)}
+                              className="h-7 w-7 p-0 text-purple-500 hover:text-purple-700 hover:bg-purple-50"
+                              title="Send SMS reminder"
+                            >
+                              <Send className="h-3 w-3" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateProspect(prospect.id, { ha_scheduled_at: null })}
+                            className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
+                            title="Clear scheduled HA"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </>
+                      ) : prospect.next_action && (
+                        <>
+                          {isOverdue ? (
+                            <Badge variant="destructive" className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {Math.abs(daysUntil!)} days overdue
+                            </Badge>
+                          ) : daysUntil === 0 ? (
+                            <Badge className="bg-blue-500 flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Today
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              In {daysUntil} days
+                            </Badge>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons - All on same row */}
+                  <div className="mt-4 flex gap-2">
+                    {/* Status Select */}
+                    <Select
+                      value={prospect.status}
+                      onValueChange={(value) => handleUpdateStatus(prospect.id, value as ProspectStatus)}
+                    >
+                      <SelectTrigger className="flex-1 min-w-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(statusConfig)
+                          .filter(([key]) => 
+                            // Show current status + all except ha_scheduled and coach
+                            key === prospect.status || !["ha_scheduled", "coach"].includes(key)
+                          )
+                          .map(([key, value]) => (
+                            <SelectItem key={key} value={key}>
+                              {value.icon} {value.label}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Health Assessment Controls */}
+                    {prospect.status !== "converted" && prospect.status !== "coach" && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSchedulingProspect(prospect)
+                            setProspectEmail((prospect as any).email || "")
+                            setProspectPhone((prospect as any).phone || "")
+                            setShowHASendModal(true)
+                          }}
+                          className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                          title="Send HA Invite"
+                        >
+                          <Send className="h-4 w-4 mr-1" />
+                          <span className="text-xs sm:text-sm">Send HA</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSchedulingProspect(prospect)
+                            setHaDate(prospect.status === "ha_scheduled" && prospect.next_action ? prospect.next_action : today)
+                            setHaHour(10)
+                            setHaMinute("00")
+                            setHaAmPm("AM")
+                            setProspectEmail((prospect as any).email || "")
+                            setProspectPhone((prospect as any).phone || "")
+                            setShowHAScheduleModal(true)
+                          }}
+                          className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+                          title="Schedule HA"
+                        >
+                          <CalendarPlus className="h-4 w-4 mr-1" />
+                          <span className="text-xs sm:text-sm">Schedule</span>
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Secondary Actions: Edit & Delete */}
+                  <div className="mt-3 pt-3 border-t flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingProspect(prospect)
+                        setShowEditModal(true)
+                      }}
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4 mr-1" />
+                      <span className="text-xs sm:text-sm">Edit</span>
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(prospect.id)}
+                      title="Delete"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      <span className="text-xs sm:text-sm">Delete</span>
+                    </Button>
                   </div>
 
                   {prospect.notes && (
