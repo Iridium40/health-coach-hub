@@ -203,17 +203,6 @@ export function DashboardOverview() {
         <p className="text-optavia-gray text-base sm:text-lg">
           {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
-        {/* Quick Stats */}
-        <div className="flex flex-wrap justify-center gap-4 sm:gap-8 mt-4">
-          <div className="flex items-center gap-2 text-optavia-gray">
-            <Award className="h-5 w-5 text-amber-500" />
-            <span><strong className="text-optavia-dark">{badges.length}</strong> badges earned</span>
-          </div>
-          <div className="flex items-center gap-2 text-optavia-gray">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <span><strong className="text-optavia-dark">{trainingProgress.completed}</strong> resources completed</span>
-          </div>
-        </div>
       </div>
 
       {/* Announcements */}
