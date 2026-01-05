@@ -78,12 +78,9 @@ function getEmbedUrl(url: string, type: string): string | null {
       }
     }
     
-    // Canva - Try to get embed version
+    // Canva - Cannot be embedded (CSP blocks it)
     if (urlObj.hostname.includes("canva.com")) {
-      // Canva designs can sometimes be embedded
-      if (url.includes("/design/")) {
-        return url.replace("/design/", "/embed/")
-      }
+      return null // Canva blocks embedding via CSP
     }
     
     // For other URLs, return null to indicate embedding may not work
