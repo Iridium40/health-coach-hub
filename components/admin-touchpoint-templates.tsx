@@ -1,0 +1,793 @@
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/hooks/use-toast"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Plus,
+  Copy,
+  Check,
+  Edit2,
+  Trash2,
+  Phone,
+  MessageSquare,
+  Calendar,
+  Loader2,
+  Star,
+} from "lucide-react"
+
+// Types
+interface TouchpointTrigger {
+  id: string
+  trigger_key: string
+  trigger_label: string
+  phase: string
+  action_type: "text" | "call"
+  emoji: string
+  day_start: number | null
+  day_end: number | null
+  sort_order: number
+  is_active: boolean
+}
+
+interface TouchpointTemplate {
+  id: string
+  trigger_id: string
+  title: string
+  message: string
+  is_default: boolean
+  sort_order: number
+}
+
+interface MeetingInvite {
+  id: string
+  trigger_id: string
+  subject: string
+  body: string
+}
+
+interface TalkingPoint {
+  id: string
+  trigger_id: string
+  point: string
+  sort_order: number
+}
+
+// Personalization tokens
+const TOKENS = [
+  { token: "{firstName}", description: "Client first name" },
+  { token: "{days}", description: "Days on program" },
+  { token: "{coachName}", description: "Your name" },
+  { token: "{nextMilestone}", description: "Next milestone day" },
+]
+
+export function AdminTouchpointTemplates() {
+  const supabase = createClient()
+  const { toast } = useToast()
+
+  // Data state
+  const [triggers, setTriggers] = useState<TouchpointTrigger[]>([])
+  const [templates, setTemplates] = useState<TouchpointTemplate[]>([])
+  const [meetingInvites, setMeetingInvites] = useState<MeetingInvite[]>([])
+  const [talkingPoints, setTalkingPoints] = useState<TalkingPoint[]>([])
+
+  // UI state
+  const [loading, setLoading] = useState(true)
+  const [selectedTrigger, setSelectedTrigger] = useState<TouchpointTrigger | null>(null)
+  const [viewMode, setViewMode] = useState<"templates" | "meeting" | "talking">("templates")
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  // Modal state
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [showTriggerModal, setShowTriggerModal] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<TouchpointTemplate | null>(null)
+  const [editingTrigger, setEditingTrigger] = useState<TouchpointTrigger | null>(null)
+
+  // Form state
+  const [templateTitle, setTemplateTitle] = useState("")
+  const [templateMessage, setTemplateMessage] = useState("")
+  const [triggerLabel, setTriggerLabel] = useState("")
+  const [triggerKey, setTriggerKey] = useState("")
+  const [triggerPhase, setTriggerPhase] = useState("attention")
+  const [triggerActionType, setTriggerActionType] = useState<"text" | "call">("text")
+  const [triggerEmoji, setTriggerEmoji] = useState("📱")
+  const [triggerDayStart, setTriggerDayStart] = useState("")
+  const [triggerDayEnd, setTriggerDayEnd] = useState("")
+
+  // Meeting invite form
+  const [meetingSubject, setMeetingSubject] = useState("")
+  const [meetingBody, setMeetingBody] = useState("")
+
+  // Load all data
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [triggersRes, templatesRes, invitesRes, pointsRes] = await Promise.all([
+        supabase.from("touchpoint_triggers").select("*").order("sort_order"),
+        supabase.from("touchpoint_templates").select("*").order("sort_order"),
+        supabase.from("touchpoint_meeting_invites").select("*"),
+        supabase.from("touchpoint_talking_points").select("*").order("sort_order"),
+      ])
+
+      if (triggersRes.data) {
+        setTriggers(triggersRes.data)
+        if (!selectedTrigger && triggersRes.data.length > 0) {
+          setSelectedTrigger(triggersRes.data[0])
+        }
+      }
+      if (templatesRes.data) setTemplates(templatesRes.data)
+      if (invitesRes.data) setMeetingInvites(invitesRes.data)
+      if (pointsRes.data) setTalkingPoints(pointsRes.data)
+    } catch (error) {
+      console.error("Error loading data:", error)
+      toast({
+        title: "Error loading templates",
+        description: "Please try refreshing the page",
+        variant: "destructive",
+      })
+    }
+    setLoading(false)
+  }, [supabase, toast, selectedTrigger])
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  // Get templates for selected trigger
+  const triggerTemplates = selectedTrigger
+    ? templates.filter((t) => t.trigger_id === selectedTrigger.id)
+    : []
+
+  const triggerMeetingInvite = selectedTrigger
+    ? meetingInvites.find((m) => m.trigger_id === selectedTrigger.id)
+    : null
+
+  const triggerTalkingPoints = selectedTrigger
+    ? talkingPoints.filter((tp) => tp.trigger_id === selectedTrigger.id)
+    : []
+
+  // Copy to clipboard
+  const copyToClipboard = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedId(id)
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Save template
+  const handleSaveTemplate = async () => {
+    if (!selectedTrigger || !templateTitle.trim() || !templateMessage.trim()) {
+      toast({
+        title: "Please fill in all fields",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      if (editingTemplate) {
+        const { error } = await supabase
+          .from("touchpoint_templates")
+          .update({ title: templateTitle, message: templateMessage })
+          .eq("id", editingTemplate.id)
+
+        if (error) throw error
+        toast({ title: "Template updated!" })
+      } else {
+        const { error } = await supabase.from("touchpoint_templates").insert({
+          trigger_id: selectedTrigger.id,
+          title: templateTitle,
+          message: templateMessage,
+          is_default: triggerTemplates.length === 0,
+          sort_order: triggerTemplates.length,
+        })
+
+        if (error) throw error
+        toast({ title: "Template created!" })
+      }
+
+      setShowTemplateModal(false)
+      setEditingTemplate(null)
+      setTemplateTitle("")
+      setTemplateMessage("")
+      loadData()
+    } catch (error) {
+      console.error("Error saving template:", error)
+      toast({
+        title: "Failed to save template",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Set default template
+  const handleSetDefault = async (templateId: string) => {
+    if (!selectedTrigger) return
+
+    try {
+      // First, unset all defaults for this trigger
+      await supabase
+        .from("touchpoint_templates")
+        .update({ is_default: false })
+        .eq("trigger_id", selectedTrigger.id)
+
+      // Then set the new default
+      await supabase
+        .from("touchpoint_templates")
+        .update({ is_default: true })
+        .eq("id", templateId)
+
+      loadData()
+      toast({ title: "Default template updated!" })
+    } catch (error) {
+      toast({
+        title: "Failed to update default",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Delete template
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (!confirm("Are you sure you want to delete this template?")) return
+
+    try {
+      const { error } = await supabase
+        .from("touchpoint_templates")
+        .delete()
+        .eq("id", templateId)
+
+      if (error) throw error
+      loadData()
+      toast({ title: "Template deleted" })
+    } catch (error) {
+      toast({
+        title: "Failed to delete template",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Save meeting invite
+  const handleSaveMeetingInvite = async () => {
+    if (!selectedTrigger || !meetingSubject.trim() || !meetingBody.trim()) {
+      toast({
+        title: "Please fill in all fields",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      if (triggerMeetingInvite) {
+        await supabase
+          .from("touchpoint_meeting_invites")
+          .update({ subject: meetingSubject, body: meetingBody })
+          .eq("id", triggerMeetingInvite.id)
+      } else {
+        await supabase.from("touchpoint_meeting_invites").insert({
+          trigger_id: selectedTrigger.id,
+          subject: meetingSubject,
+          body: meetingBody,
+        })
+      }
+
+      loadData()
+      toast({ title: "Meeting invite saved!" })
+    } catch (error) {
+      toast({
+        title: "Failed to save meeting invite",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Open template modal
+  const openTemplateModal = (template?: TouchpointTemplate) => {
+    if (template) {
+      setEditingTemplate(template)
+      setTemplateTitle(template.title)
+      setTemplateMessage(template.message)
+    } else {
+      setEditingTemplate(null)
+      setTemplateTitle("")
+      setTemplateMessage("")
+    }
+    setShowTemplateModal(true)
+  }
+
+  // Load meeting invite for editing
+  useEffect(() => {
+    if (viewMode === "meeting" && triggerMeetingInvite) {
+      setMeetingSubject(triggerMeetingInvite.subject)
+      setMeetingBody(triggerMeetingInvite.body)
+    } else if (viewMode === "meeting") {
+      setMeetingSubject("")
+      setMeetingBody("")
+    }
+  }, [viewMode, triggerMeetingInvite])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Touchpoint Templates</h2>
+          <p className="text-gray-500 mt-1">
+            Manage milestone text messages and celebration call templates
+          </p>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-12 gap-6">
+        {/* Left Sidebar - Trigger List */}
+        <div className="lg:col-span-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Triggers</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                {triggers.map((trigger) => (
+                  <button
+                    key={trigger.id}
+                    onClick={() => {
+                      setSelectedTrigger(trigger)
+                      setViewMode("templates")
+                    }}
+                    className={`w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors ${
+                      selectedTrigger?.id === trigger.id
+                        ? "bg-green-50 border-l-4 border-[hsl(var(--optavia-green))]"
+                        : ""
+                    }`}
+                  >
+                    <span className="text-xl">{trigger.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={`text-sm font-medium truncate ${
+                          selectedTrigger?.id === trigger.id
+                            ? "text-[hsl(var(--optavia-green))]"
+                            : "text-gray-800"
+                        }`}
+                      >
+                        {trigger.trigger_label}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${
+                            trigger.action_type === "call"
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}
+                        >
+                          {trigger.action_type === "call" ? (
+                            <>
+                              <Phone className="h-3 w-3 mr-1" />
+                              Call
+                            </>
+                          ) : (
+                            <>
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              Text
+                            </>
+                          )}
+                        </Badge>
+                        <span className="text-xs text-gray-400">
+                          {templates.filter((t) => t.trigger_id === trigger.id).length} templates
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Content - Templates */}
+        <div className="lg:col-span-8 space-y-4">
+          {selectedTrigger && (
+            <>
+              {/* Trigger Header */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{selectedTrigger.emoji}</span>
+                      <div>
+                        <h3 className="font-bold text-gray-800 text-lg">
+                          {selectedTrigger.trigger_label}
+                        </h3>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${
+                            selectedTrigger.action_type === "call"
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}
+                        >
+                          {selectedTrigger.action_type === "call"
+                            ? "📅 Recommend: Schedule Call"
+                            : "📱 Recommend: Text Message"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => openTemplateModal()}
+                      className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Template
+                    </Button>
+                  </div>
+
+                  {/* Sub-tabs for call triggers */}
+                  {selectedTrigger.action_type === "call" && (
+                    <div className="border-t border-gray-100 mt-4 pt-3">
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setViewMode("templates")}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            viewMode === "templates"
+                              ? "bg-[hsl(var(--optavia-green))] text-white"
+                              : "text-gray-500 hover:bg-gray-100"
+                          }`}
+                        >
+                          📱 Text Templates
+                        </button>
+                        <button
+                          onClick={() => setViewMode("meeting")}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            viewMode === "meeting"
+                              ? "bg-[hsl(var(--optavia-green))] text-white"
+                              : "text-gray-500 hover:bg-gray-100"
+                          }`}
+                        >
+                          📧 Meeting Invite
+                        </button>
+                        <button
+                          onClick={() => setViewMode("talking")}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            viewMode === "talking"
+                              ? "bg-[hsl(var(--optavia-green))] text-white"
+                              : "text-gray-500 hover:bg-gray-100"
+                          }`}
+                        >
+                          💬 Talking Points
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Personalization Tokens */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg">💡</span>
+                  <div>
+                    <p className="text-amber-800 font-medium text-sm">Personalization Tokens</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {TOKENS.map((t, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => copyToClipboard(t.token, `token-${idx}`)}
+                          className="bg-white border border-amber-300 text-amber-700 text-xs px-2 py-1 rounded hover:bg-amber-100 transition-colors"
+                          title={t.description}
+                        >
+                          {t.token}
+                          {copiedId === `token-${idx}` && <span className="ml-1">✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Templates View */}
+              {viewMode === "templates" && (
+                <div className="space-y-4">
+                  {triggerTemplates.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-12 text-center">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p className="text-gray-500 mb-4">No templates yet</p>
+                        <Button onClick={() => openTemplateModal()}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create First Template
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    triggerTemplates.map((template) => (
+                      <Card
+                        key={template.id}
+                        className={template.is_default ? "ring-2 ring-[hsl(var(--optavia-green))]" : ""}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-gray-800">{template.title}</h4>
+                              {template.is_default && (
+                                <Badge className="bg-green-100 text-green-700 border-0">
+                                  <Star className="h-3 w-3 mr-1 fill-current" />
+                                  Default
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {!template.is_default && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleSetDefault(template.id)}
+                                  className="text-xs text-gray-500 hover:text-green-600"
+                                >
+                                  Set as default
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openTemplateModal(template)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteTemplate(template.id)}
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="bg-gray-50 rounded-lg p-4 mb-3">
+                            <p className="text-gray-700 text-sm whitespace-pre-wrap">
+                              {template.message}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-400">
+                              {template.message.length} characters
+                            </span>
+                            <Button
+                              variant={copiedId === template.id ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => copyToClipboard(template.message, template.id)}
+                              className={
+                                copiedId === template.id
+                                  ? "bg-green-100 text-green-700 hover:bg-green-100"
+                                  : ""
+                              }
+                            >
+                              {copiedId === template.id ? (
+                                <>
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Copied!
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-4 w-4 mr-1" />
+                                  Copy
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Meeting Invite View */}
+              {viewMode === "meeting" && (
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Meeting Invite Template
+                    </h4>
+
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Subject Line</Label>
+                        <Input
+                          value={meetingSubject}
+                          onChange={(e) => setMeetingSubject(e.target.value)}
+                          placeholder="e.g., 🎉 Celebrating Your First Week!"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Message Body</Label>
+                        <Textarea
+                          value={meetingBody}
+                          onChange={(e) => setMeetingBody(e.target.value)}
+                          placeholder="Write your meeting invite message..."
+                          rows={8}
+                        />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleSaveMeetingInvite}
+                          className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+                        >
+                          Save Meeting Invite
+                        </Button>
+                        {meetingSubject && (
+                          <Button
+                            variant="outline"
+                            onClick={() => copyToClipboard(meetingBody, "meeting-body")}
+                          >
+                            {copiedId === "meeting-body" ? (
+                              <>
+                                <Check className="h-4 w-4 mr-1" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4 mr-1" />
+                                Copy Body
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Talking Points View */}
+              {viewMode === "talking" && (
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      💬 Celebration Call Talking Points
+                    </h4>
+
+                    {triggerTalkingPoints.length === 0 ? (
+                      <p className="text-gray-500 text-sm">
+                        No talking points configured for this milestone.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {triggerTalkingPoints.map((point, idx) => (
+                          <div
+                            key={point.id}
+                            className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                          >
+                            <div className="w-6 h-6 bg-[hsl(var(--optavia-green))] text-white rounded-full flex items-center justify-center text-sm font-medium shrink-0">
+                              {idx + 1}
+                            </div>
+                            <p className="text-gray-700">{point.point}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {triggerTalkingPoints.length > 0 && (
+                      <Button
+                        variant="outline"
+                        className="mt-4 w-full"
+                        onClick={() =>
+                          copyToClipboard(
+                            triggerTalkingPoints.map((tp) => tp.point).join("\n"),
+                            "talking-points"
+                          )
+                        }
+                      >
+                        {copiedId === "talking-points" ? (
+                          <>
+                            <Check className="h-4 w-4 mr-1" />
+                            Copied all points!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 mr-1" />
+                            Copy all talking points
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Add/Edit Template Modal */}
+      <Dialog open={showTemplateModal} onOpenChange={setShowTemplateModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingTemplate ? "Edit Template" : "Add New Template"}
+            </DialogTitle>
+            <DialogDescription>
+              Create a message template for {selectedTrigger?.trigger_label}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Template Title</Label>
+              <Input
+                value={templateTitle}
+                onChange={(e) => setTemplateTitle(e.target.value)}
+                placeholder="e.g., Encouraging Check-in"
+              />
+            </div>
+            <div>
+              <Label>Message</Label>
+              <Textarea
+                value={templateMessage}
+                onChange={(e) => setTemplateMessage(e.target.value)}
+                placeholder="Type your message here... Use {firstName}, {days}, etc. for personalization"
+                rows={5}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {templateMessage.length} characters
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTemplateModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveTemplate}
+              className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+            >
+              {editingTemplate ? "Save Changes" : "Add Template"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
