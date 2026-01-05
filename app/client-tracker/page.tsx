@@ -37,7 +37,6 @@ import {
   List,
   CalendarDays,
   ChevronLeft,
-  ClipboardCheck,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -77,7 +76,6 @@ export default function ClientTrackerPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showTextModal, setShowTextModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
-  const [showHAModal, setShowHAModal] = useState(false)
   const [selectedClient, setSelectedClient] = useState<any>(null)
   const [filterStatus, setFilterStatus] = useState<ClientStatus | "all">("active")
   const [viewMode, setViewMode] = useState<"list" | "week">("list")
@@ -91,14 +89,6 @@ export default function ClientTrackerPage() {
   const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>("none")
   const [clientEmail, setClientEmail] = useState<string>("")
   const [clientPhone, setClientPhone] = useState<string>("")
-
-  // HA Scheduling state
-  const [haDate, setHaDate] = useState<string>("")
-  const [haHour, setHaHour] = useState<number>(10)
-  const [haMinute, setHaMinute] = useState<string>("00")
-  const [haAmPm, setHaAmPm] = useState<"AM" | "PM">("AM")
-  const [haClientEmail, setHaClientEmail] = useState<string>("")
-  const [haClientPhone, setHaClientPhone] = useState<string>("")
 
   // Recurring frequency options
   const RECURRING_OPTIONS: { value: RecurringFrequency; label: string }[] = [
@@ -283,70 +273,6 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       title: recurringFrequency !== "none" ? "🔄 Recurring Check-in Set" : "📅 Check-in Scheduled",
       description: `${scheduleHour}:${scheduleMinute} ${scheduleAmPm} on ${DAYS_OF_WEEK[scheduleDay].full}${recurringLabel}`,
     })
-  }
-
-  // Open HA modal for a client
-  const openHAModal = (client: any) => {
-    setSelectedClient(client)
-    setHaDate(today)
-    setHaHour(10)
-    setHaMinute("00")
-    setHaAmPm("AM")
-    setHaClientEmail(client.email || "")
-    setHaClientPhone(client.phone || "")
-    setShowHAModal(true)
-  }
-
-  // Generate HA calendar event
-  const generateHACalendarEvent = (): CalendarEvent | null => {
-    if (!selectedClient || !haDate) return null
-    
-    const targetDate = new Date(haDate + "T00:00:00")
-    const hour24 = get24Hour(haHour, haAmPm)
-    targetDate.setHours(hour24, parseInt(haMinute), 0, 0)
-    
-    const endDate = new Date(targetDate)
-    endDate.setMinutes(endDate.getMinutes() + 60) // 60 min for HA
-    
-    const programDay = getProgramDay(selectedClient.start_date)
-    
-    return {
-      title: `Health Assessment: ${selectedClient.label}`,
-      description: `Follow-up Health Assessment for ${selectedClient.label}
-
-Program Day: ${programDay}
-Client since: ${new Date(selectedClient.start_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-
-This is a follow-up Health Assessment to review progress and set new goals.`,
-      startDate: targetDate,
-      endDate: endDate,
-      uid: `ha-client-${selectedClient.id}-${Date.now()}@coachingamplifier.com`,
-    }
-  }
-
-  // Handle saving HA schedule
-  const handleSaveHA = async () => {
-    if (!selectedClient || !haDate) return
-    
-    const targetDate = new Date(haDate + "T00:00:00")
-    const hour24 = get24Hour(haHour, haAmPm)
-    targetDate.setHours(hour24, parseInt(haMinute), 0, 0)
-    
-    // Update client with email/phone if provided
-    if (haClientEmail || haClientPhone) {
-      await updateClient(selectedClient.id, {
-        email: haClientEmail || null,
-        phone: haClientPhone || null,
-      })
-    }
-    
-    toast({
-      title: "📅 HA Scheduled!",
-      description: `${haHour}:${haMinute} ${haAmPm} on ${targetDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`,
-    })
-    
-    setShowHAModal(false)
-    setSelectedClient(null)
   }
 
   const handleAddClient = async () => {
@@ -825,15 +751,6 @@ This is a follow-up Health Assessment to review progress and set new goals.`,
                           <CalendarPlus className="h-4 w-4 mr-1" />
                           Schedule
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openHAModal(client)}
-                          className="text-green-600 border-green-200 hover:bg-green-50"
-                        >
-                          <ClipboardCheck className="h-4 w-4 mr-1" />
-                          Send HA
-                        </Button>
                       </div>
                     )}
 
@@ -1128,123 +1045,6 @@ This is a follow-up Health Assessment to review progress and set new goals.`,
         </DialogContent>
       </Dialog>
 
-      {/* Send HA to Client Modal */}
-      <Dialog open={showHAModal} onOpenChange={setShowHAModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ClipboardCheck className="h-5 w-5 text-green-600" />
-              Schedule Health Assessment
-            </DialogTitle>
-            <DialogDescription>Schedule a follow-up HA for your client.</DialogDescription>
-          </DialogHeader>
-          {selectedClient && (
-            <div className="space-y-6">
-              {/* Client Info */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="font-semibold text-green-900">{selectedClient.label}</div>
-                <div className="text-sm text-green-700 mt-1">
-                  Day {getProgramDay(selectedClient.start_date)} • {getDayPhase(getProgramDay(selectedClient.start_date)).label}
-                </div>
-              </div>
-
-              {/* Date Picker */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Date</Label>
-                <Input
-                  type="date"
-                  value={haDate}
-                  onChange={(e) => setHaDate(e.target.value)}
-                  min={today}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Time Picker */}
-              <div>
-                <Label className="text-sm font-medium mb-3 block">Time</Label>
-                <div className="flex items-center gap-2 justify-center">
-                  <select
-                    value={haHour}
-                    onChange={(e) => setHaHour(parseInt(e.target.value))}
-                    className="w-16 h-12 text-center text-lg font-medium border rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  >
-                    {HOUR_OPTIONS.map((h) => (
-                      <option key={h} value={h}>{h}</option>
-                    ))}
-                  </select>
-                  <span className="text-2xl font-bold text-gray-400">:</span>
-                  <select
-                    value={haMinute}
-                    onChange={(e) => setHaMinute(e.target.value)}
-                    className="w-16 h-12 text-center text-lg font-medium border rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  >
-                    {MINUTE_OPTIONS.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                  <div className="flex rounded-lg border overflow-hidden">
-                    <button
-                      onClick={() => setHaAmPm("AM")}
-                      className={`px-4 h-12 font-medium transition-colors ${
-                        haAmPm === "AM"
-                          ? "bg-green-600 text-white"
-                          : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      AM
-                    </button>
-                    <button
-                      onClick={() => setHaAmPm("PM")}
-                      className={`px-4 h-12 font-medium transition-colors ${
-                        haAmPm === "PM"
-                          ? "bg-green-600 text-white"
-                          : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      PM
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 text-center mt-2">60 minute Health Assessment</p>
-              </div>
-
-              {/* Calendar Options with Email/SMS */}
-              {generateHACalendarEvent() && (
-                <ScheduleCalendarOptions
-                  event={generateHACalendarEvent()!}
-                  recipientName={selectedClient.label}
-                  recipientEmail={haClientEmail}
-                  recipientPhone={haClientPhone}
-                  onEmailChange={setHaClientEmail}
-                  onPhoneChange={setHaClientPhone}
-                  onScheduleComplete={handleSaveHA}
-                  eventType="ha"
-                />
-              )}
-
-              {/* Info */}
-              <div className="bg-green-50 rounded-lg p-3 text-sm text-green-700 flex items-start gap-2">
-                <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>
-                  Schedule a follow-up Health Assessment to review progress and set new goals with your client.
-                </span>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowHAModal(false)
-                setSelectedClient(null)
-              }}
-            >
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Footer />
     </div>
