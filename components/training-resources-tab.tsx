@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
-import { useTrainingResources, typeIcons } from "@/hooks/use-training-resources"
+import { useTrainingResources, typeIcons, type TrainingResource } from "@/hooks/use-training-resources"
 import { useUserData } from "@/contexts/user-data-context"
 import { SearchWithHistory } from "@/components/search-with-history"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Search, ExternalLink, FileText, Video, Palette, Link2, ChevronDown, ChevronRight, CheckCircle, Circle } from "lucide-react"
+import { EmbeddedContentViewer } from "@/components/embedded-content-viewer"
 
 export function TrainingResourcesTab() {
   const { user, profile } = useUserData()
@@ -35,6 +36,14 @@ export function TrainingResourcesTab() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [selectedResource, setSelectedResource] = useState<TrainingResource | null>(null)
+
+  // Open resource in embedded viewer
+  const openResource = (resource: TrainingResource) => {
+    setSelectedResource(resource)
+    setViewerOpen(true)
+  }
 
   // Generate search suggestions from resource titles and categories
   const searchSuggestions = useMemo(() => {
@@ -318,12 +327,10 @@ export function TrainingResourcesTab() {
                             {getTypeIcon(resource.type)}
                           </div>
 
-                          {/* Content - Clickable Link */}
-                          <a
-                            href={resource.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 min-w-0 flex items-center gap-2"
+                          {/* Content - Clickable to open in viewer */}
+                          <button
+                            onClick={() => openResource(resource)}
+                            className="flex-1 min-w-0 flex items-center gap-2 text-left"
                           >
                             <div className="flex-1 min-w-0">
                               <h4 className={`font-medium text-sm leading-snug group-hover:text-[hsl(var(--optavia-green))] transition-colors truncate ${
@@ -340,7 +347,7 @@ export function TrainingResourcesTab() {
                               </Badge>
                               <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-[hsl(var(--optavia-green))] transition-colors" />
                             </div>
-                          </a>
+                          </button>
                         </div>
                       )
                     })}
@@ -350,6 +357,17 @@ export function TrainingResourcesTab() {
             )
           })}
         </div>
+      )}
+
+      {/* Embedded Content Viewer */}
+      {selectedResource && (
+        <EmbeddedContentViewer
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          url={selectedResource.url}
+          title={selectedResource.title}
+          type={selectedResource.type}
+        />
       )}
     </div>
   )
