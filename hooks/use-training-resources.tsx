@@ -383,15 +383,12 @@ export function useTrainingResourcesAdmin() {
       ? Math.max(...categories.map(c => c.sort_order)) 
       : 0
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("training_categories")
       .insert([{ ...category, is_active: true, sort_order: maxOrder + 1 }])
-      .select()
-      .single()
 
     if (error) throw error
     await reload()
-    return data
   }
 
   const updateCategory = async (id: string, updates: Partial<TrainingCategory>) => {
