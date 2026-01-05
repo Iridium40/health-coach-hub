@@ -59,6 +59,7 @@ import {
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
+import { ShareHealthAssessment } from "@/components/share-health-assessment"
 import type { CalendarEvent } from "@/lib/calendar-utils"
 
 // Time options for HA scheduling
@@ -1020,141 +1021,17 @@ Talking Points:
         </DialogContent>
       </Dialog>
 
-      {/* Send HA Modal (Quick Send without scheduling) */}
-      <Dialog open={showHASendModal} onOpenChange={setShowHASendModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-blue-600" />
-              Send Health Assessment Invite
-            </DialogTitle>
-            <DialogDescription>Send an HA invite to your prospect via email or SMS.</DialogDescription>
-          </DialogHeader>
-          {schedulingProspect && (
-            <div className="space-y-6">
-              {/* Prospect Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="font-semibold text-blue-900">{schedulingProspect.label}</div>
-                <div className="text-sm text-blue-700 mt-1">
-                  {sourceOptions.find(s => s.value === schedulingProspect.source)?.label}
-                </div>
-              </div>
-
-              {/* Email Input */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Prospect's Email</Label>
-                <Input
-                  type="email"
-                  value={prospectEmail}
-                  onChange={(e) => setProspectEmail(e.target.value)}
-                  placeholder="prospect@email.com"
-                />
-              </div>
-
-              {/* Phone Input */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Prospect's Phone (10 digits)</Label>
-                <Input
-                  type="tel"
-                  value={prospectPhone}
-                  onChange={(e) => setProspectPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                  placeholder="5551234567"
-                  maxLength={10}
-                />
-              </div>
-
-              {/* Send Options */}
-              <div className="flex gap-3">
-                <Button
-                  onClick={async () => {
-                    if (!prospectEmail) {
-                      toast({
-                        title: "Email required",
-                        description: "Please enter the prospect's email address.",
-                        variant: "destructive",
-                      })
-                      return
-                    }
-                    // Send via email - open mailto with HA info
-                    const subject = encodeURIComponent("Health Assessment Invitation")
-                    const body = encodeURIComponent(`Hi!
-
-I'd love to schedule a Health Assessment with you! This is a free 30-minute session where we'll review your health goals and create a personalized plan together.
-
-Please let me know what time works best for you.
-
-Looking forward to connecting!`)
-                    window.open(`mailto:${prospectEmail}?subject=${subject}&body=${body}`)
-                    
-                    // Save email to prospect
-                    await updateProspect(schedulingProspect.id, { email: prospectEmail } as any)
-                    
-                    toast({
-                      title: "📧 Email Opened",
-                      description: `Sending HA invite to ${schedulingProspect.label}`,
-                    })
-                    setShowHASendModal(false)
-                  }}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  disabled={!prospectEmail}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Email
-                </Button>
-                <Button
-                  onClick={async () => {
-                    if (!prospectPhone || prospectPhone.length !== 10) {
-                      toast({
-                        title: "Phone required",
-                        description: "Please enter a valid 10-digit phone number.",
-                        variant: "destructive",
-                      })
-                      return
-                    }
-                    // Send via SMS
-                    const message = `Hi! I'd love to schedule a Health Assessment with you - a free 30-minute session to review your health goals. Let me know what time works best!`
-                    window.open(`sms:+1${prospectPhone}?body=${encodeURIComponent(message)}`)
-                    
-                    // Save phone to prospect
-                    await updateProspect(schedulingProspect.id, { phone: prospectPhone } as any)
-                    
-                    toast({
-                      title: "📱 SMS Opened",
-                      description: `Sending HA invite to ${schedulingProspect.label}`,
-                    })
-                    setShowHASendModal(false)
-                  }}
-                  variant="outline"
-                  className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
-                  disabled={!prospectPhone || prospectPhone.length !== 10}
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  Send SMS
-                </Button>
-              </div>
-
-              {/* Info */}
-              <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600 flex items-start gap-2">
-                <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>
-                  Send a quick invite to gauge interest. Use "Schedule" to set a specific date and time.
-                </span>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowHASendModal(false)
-                setSchedulingProspect(null)
-              }}
-            >
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Share Health Assessment Modal */}
+      <ShareHealthAssessment
+        open={showHASendModal}
+        onOpenChange={(open) => {
+          setShowHASendModal(open)
+          if (!open) setSchedulingProspect(null)
+        }}
+        recipientName={schedulingProspect?.label}
+        initialEmail={(schedulingProspect as any)?.email || ""}
+        initialPhone={(schedulingProspect as any)?.phone || ""}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
