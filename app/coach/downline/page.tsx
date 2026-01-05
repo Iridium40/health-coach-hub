@@ -8,10 +8,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Users, CheckCircle, UserCircle, Calendar, Target, GraduationCap } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { ArrowLeft, Users, CheckCircle, UserCircle, Calendar, Target, GraduationCap, TrendingUp } from "lucide-react"
 import { useUserData } from "@/contexts/user-data-context"
 import { createClient } from "@/lib/supabase/client"
 import { meetsRankRequirement, COACH_RANKS } from "@/hooks/use-training-resources"
+import { useToast } from "@/hooks/use-toast"
 
 interface DownlineCoach {
   id: string
@@ -20,6 +28,7 @@ interface DownlineCoach {
   avatar_url: string | null
   optavia_id: string | null
   coach_rank: string | null
+  target_rank: string | null
   is_new_coach: boolean
   // Stats
   trainingCompleted: number
@@ -35,6 +44,8 @@ export default function DownlineProgressPage() {
   const { authLoading, profile, user } = useUserData()
   const [downlineCoaches, setDownlineCoaches] = useState<DownlineCoach[]>([])
   const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
+  const supabase = createClient()
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -49,13 +60,11 @@ export default function DownlineProgressPage() {
       return
     }
 
-    const supabase = createClient()
-
     try {
       // Get profiles for downline coaches
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, email, full_name, avatar_url, optavia_id, coach_rank, is_new_coach")
+        .select("id, email, full_name, avatar_url, optavia_id, coach_rank, target_rank, is_new_coach")
         .eq("sponsor_id", profile.id)
 
       if (profilesError) {
@@ -154,6 +163,7 @@ export default function DownlineProgressPage() {
           avatar_url: coachProfile.avatar_url,
           optavia_id: coachProfile.optavia_id,
           coach_rank: coachProfile.coach_rank,
+          target_rank: coachProfile.target_rank,
           is_new_coach: coachProfile.is_new_coach,
           trainingCompleted,
           trainingTotal,
@@ -176,6 +186,43 @@ export default function DownlineProgressPage() {
     if (!rank) return "Coach"
     const found = COACH_RANKS.find(r => r.value === rank)
     return found ? found.label : rank
+  }
+
+  // Get available target ranks (ranks higher than current rank)
+  const getAvailableTargetRanks = (currentRank: string | null) => {
+    const currentIndex = COACH_RANKS.findIndex(r => r.value === (currentRank || "Coach"))
+    // Return all ranks higher than current rank
+    return COACH_RANKS.slice(currentIndex + 1)
+  }
+
+  // Update target rank for a coach
+  const updateTargetRank = async (coachId: string, targetRank: string | null) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ target_rank: targetRank })
+      .eq("id", coachId)
+
+    if (error) {
+      console.error("Error updating target rank:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update target rank",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Update local state
+    setDownlineCoaches(prev => 
+      prev.map(coach => 
+        coach.id === coachId ? { ...coach, target_rank: targetRank } : coach
+      )
+    )
+
+    toast({
+      title: "Target rank updated",
+      description: targetRank ? `Working toward ${getRankLabel(targetRank)}` : "Target rank cleared",
+    })
   }
 
   const getInitials = (name: string | null, email: string | null) => {
@@ -240,8 +287,8 @@ export default function DownlineProgressPage() {
                   <CardContent className="p-0">
                     <div className="flex flex-col md:flex-row">
                       {/* Coach Info Section */}
-                      <div className="flex items-center gap-4 p-4 md:w-1/3 border-b md:border-b-0 md:border-r">
-                        <Avatar className="h-14 w-14">
+                      <div className="flex items-center gap-4 p-4 md:w-2/5 border-b md:border-b-0 md:border-r">
+                        <Avatar className="h-14 w-14 flex-shrink-0">
                           <AvatarImage src={coach.avatar_url || undefined} />
                           <AvatarFallback className="bg-[hsl(var(--optavia-green))]/10 text-[hsl(var(--optavia-green))] text-lg font-semibold">
                             {getInitials(coach.full_name, coach.email)}
@@ -264,11 +311,34 @@ export default function DownlineProgressPage() {
                           {coach.email && (
                             <p className="text-xs text-gray-500 mt-1 truncate">{coach.email}</p>
                           )}
+                          
+                          {/* Target Rank Selector */}
+                          <div className="mt-3 flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                            <Select
+                              value={coach.target_rank || "none"}
+                              onValueChange={(value) => updateTargetRank(coach.id, value === "none" ? null : value)}
+                            >
+                              <SelectTrigger className="h-8 text-xs w-[180px]">
+                                <SelectValue placeholder="Set target rank..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">
+                                  <span className="text-gray-400">No target set</span>
+                                </SelectItem>
+                                {getAvailableTargetRanks(coach.coach_rank).map((rank) => (
+                                  <SelectItem key={rank.value} value={rank.value}>
+                                    {rank.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
 
                       {/* Stats Section */}
-                      <div className="flex-1 grid grid-cols-2 md:grid-cols-4 divide-x">
+                      <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 divide-x">
                         {/* Training Progress */}
                         <div className="p-4 flex flex-col items-center justify-center text-center">
                           <div className="flex items-center gap-1 mb-1">
