@@ -73,8 +73,8 @@ export function DashboardOverview() {
   const { prospects, stats: prospectStats } = useProspects()
   const { clients, stats: clientStats, toggleTouchpoint, needsAttention } = useClients()
 
-  // Training resources progress
-  const { progress: trainingProgress, uniqueCategories } = useTrainingResources(user)
+  // Training resources progress - pass user rank to properly filter accessible categories
+  const { progress: trainingProgress, uniqueCategories } = useTrainingResources(user, profile?.coach_rank || null)
 
   // Rank calculator
   const { rankData, frontlineCoaches, qualifyingLegsCount, calculateGaps, getNextRank } = useRankCalculator(user)
