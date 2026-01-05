@@ -360,19 +360,19 @@ export function useTrainingResourcesAdmin() {
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
     if (newIndex < 0 || newIndex >= categoryResources.length) return
 
-    // Swap the resources
-    const swapWith = categoryResources[newIndex]
-    
-    // Update both sort orders
-    await supabase
-      .from("training_resources")
-      .update({ sort_order: swapWith.sort_order })
-      .eq("id", resource.id)
+    // Create new ordered array by swapping positions
+    const reordered = [...categoryResources]
+    const temp = reordered[currentIndex]
+    reordered[currentIndex] = reordered[newIndex]
+    reordered[newIndex] = temp
 
-    await supabase
-      .from("training_resources")
-      .update({ sort_order: resource.sort_order })
-      .eq("id", swapWith.id)
+    // Update all sort_orders with new sequential values
+    for (let i = 0; i < reordered.length; i++) {
+      await supabase
+        .from("training_resources")
+        .update({ sort_order: i })
+        .eq("id", reordered[i].id)
+    }
 
     await reload()
   }
@@ -423,19 +423,19 @@ export function useTrainingResourcesAdmin() {
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
     if (newIndex < 0 || newIndex >= sortedCategories.length) return
 
-    const current = sortedCategories[currentIndex]
-    const swapWith = sortedCategories[newIndex]
+    // Create new ordered array by swapping positions
+    const reordered = [...sortedCategories]
+    const temp = reordered[currentIndex]
+    reordered[currentIndex] = reordered[newIndex]
+    reordered[newIndex] = temp
 
-    // Swap sort orders
-    await supabase
-      .from("training_categories")
-      .update({ sort_order: swapWith.sort_order })
-      .eq("id", current.id)
-
-    await supabase
-      .from("training_categories")
-      .update({ sort_order: current.sort_order })
-      .eq("id", swapWith.id)
+    // Update all sort_orders with new sequential values
+    for (let i = 0; i < reordered.length; i++) {
+      await supabase
+        .from("training_categories")
+        .update({ sort_order: i })
+        .eq("id", reordered[i].id)
+    }
 
     await reload()
   }
