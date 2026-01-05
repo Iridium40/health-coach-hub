@@ -244,12 +244,12 @@ export function useClients() {
     return updateClient(id, { status })
   }, [updateClient])
 
-  // Check if client needs attention (no scheduled meeting or overdue)
+  // Check if client needs attention (hasn't been checked in today)
   const needsAttention = useCallback((client: Client): boolean => {
     if (client.status !== 'active') return false
-    // Needs attention if no scheduled meeting or scheduled meeting is in the past
-    if (!client.next_scheduled_at) return true
-    return new Date(client.next_scheduled_at) < new Date()
+    // If already checked in today (am_done is true), no attention needed
+    if (client.am_done) return false
+    return true
   }, [])
 
   // Get stats
