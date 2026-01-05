@@ -73,7 +73,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     try {
       const [loadedModules, loadedRecipes] = await Promise.all([
         getModules(),
-        getRecipes(),
+        getRecipes(true), // Force refresh to get latest images
       ])
       setModules(loadedModules)
       setRecipes(loadedRecipes)

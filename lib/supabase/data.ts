@@ -31,9 +31,15 @@ export async function getModules(): Promise<Module[]> {
 
 /**
  * Fetch all recipes from Supabase
- * Results are cached for the lifetime of the page
+ * Results are cached for the lifetime of the page unless forceRefresh is true
  */
-export async function getRecipes(): Promise<Recipe[]> {
+export async function getRecipes(forceRefresh: boolean = false): Promise<Recipe[]> {
+  // Clear cache if force refresh requested
+  if (forceRefresh) {
+    cachedRecipes = null
+    recipesLoadPromise = null
+  }
+
   // Return cached data if available
   if (cachedRecipes) {
     return cachedRecipes
