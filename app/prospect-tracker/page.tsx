@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -646,6 +647,7 @@ Talking Points:
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Prospect</DialogTitle>
+            <DialogDescription>Add a new prospect to your pipeline.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -727,6 +729,7 @@ Talking Points:
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Prospect</DialogTitle>
+            <DialogDescription>Update prospect information.</DialogDescription>
           </DialogHeader>
           {editingProspect && (
             <div className="space-y-4">
@@ -804,6 +807,7 @@ Talking Points:
               <PartyPopper className="h-5 w-5 text-green-500" />
               Convert to Client
             </DialogTitle>
+            <DialogDescription>This prospect is ready to become a client!</DialogDescription>
           </DialogHeader>
           {convertingProspect && (
             <div className="space-y-4">
@@ -868,6 +872,7 @@ Talking Points:
               <CalendarPlus className="h-5 w-5 text-blue-600" />
               Schedule Health Assessment
             </DialogTitle>
+            <DialogDescription>Set a date and time for the health assessment.</DialogDescription>
           </DialogHeader>
           {schedulingProspect && (
             <div className="space-y-6">
