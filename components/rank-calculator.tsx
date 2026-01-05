@@ -56,10 +56,13 @@ export function RankCalculator() {
   const [showRankSelector, setShowRankSelector] = useState(false)
 
   // Build prospect pipeline from actual data
+  // New = new status prospects
+  // Interested = interested status prospects (without HA scheduled)
+  // HA Scheduled = prospects with ha_scheduled_at set (regardless of status, excluding converted)
   const prospectPipeline: ProspectPipeline = useMemo(() => ({
-    new: prospects.filter(p => p.status === "new").length,
-    interested: prospects.filter(p => p.status === "interested").length,
-    ha_scheduled: prospects.filter(p => p.status === "ha_scheduled").length,
+    new: prospects.filter(p => p.status === "new" && !p.ha_scheduled_at).length,
+    interested: prospects.filter(p => p.status === "interested" && !p.ha_scheduled_at).length,
+    ha_scheduled: prospects.filter(p => p.ha_scheduled_at && !["converted", "coach"].includes(p.status)).length,
   }), [prospects])
 
   // Build client stats from actual data
@@ -287,11 +290,10 @@ export function RankCalculator() {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-4 gap-1.5 mb-3">
-            <PipelineCard count={prospectPipeline.cold} label="Cold" color="gray" />
-            <PipelineCard count={prospectPipeline.warm} label="Warm" color="orange" />
-            <PipelineCard count={prospectPipeline.ha_scheduled} label="HA Sched" color="blue" />
-            <PipelineCard count={prospectPipeline.ha_done} label="HA Done" color="purple" />
+          <div className="grid grid-cols-3 gap-1.5 mb-3">
+            <PipelineCard count={prospectPipeline.new} label="New" color="blue" />
+            <PipelineCard count={prospectPipeline.interested} label="Interested" color="orange" />
+            <PipelineCard count={prospectPipeline.ha_scheduled} label="HA Sched" color="purple" />
           </div>
           
           {/* Projections */}

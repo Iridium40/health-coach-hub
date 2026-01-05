@@ -368,7 +368,7 @@ export default function DownlineProgressPage() {
                         <div className="p-4 flex flex-col items-center justify-center text-center">
                           <div className="flex items-center gap-1 mb-1">
                             <Target className="h-4 w-4 text-gray-400" />
-                            <span className="text-xs text-gray-500">Prospects</span>
+                            <span className="text-xs text-gray-500">100's List</span>
                           </div>
                           <span className="text-2xl font-bold text-optavia-dark">
                             {coach.prospectCount}

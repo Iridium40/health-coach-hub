@@ -67,7 +67,7 @@ export function PipelineView() {
               </div>
               <div>
                 <div className="text-3xl font-bold text-blue-700">{totals.prospects}</div>
-                <div className="text-sm text-blue-600">Prospects</div>
+                <div className="text-sm text-blue-600">100's List</div>
               </div>
             </div>
           </CardContent>
