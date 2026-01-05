@@ -31,6 +31,7 @@ import { Progress } from "@/components/ui/progress"
 
 // Dashboard Components
 import { CoachTip, PipelineSnapshot, TodaysPriorities, TrainingProgressCard, RankProgressCard, QuickActions, NextTrainingCard } from "@/components/dashboard/index"
+import { TodaysFocus } from "@/components/dashboard/TodaysFocus"
 
 // Coach Tools imports
 import { WaterCalculator } from "@/components/coach-tools/water-calculator"
@@ -208,12 +209,18 @@ export function DashboardOverview() {
       {/* Announcements */}
       <Announcements />
 
-      {/* Training Progress Card - Shows for all coaches with next recommended module */}
+      {/* Today's Focus - Combined Training + Today's Tasks */}
       <div className="mt-6">
-        <NextTrainingCard 
-          user={user} 
+        <TodaysFocus
+          user={user}
           userRank={profile?.coach_rank || null}
           isNewCoach={profile?.is_new_coach}
+          clients={clients}
+          prospects={prospects}
+          upcomingMeetings={upcomingMeetings}
+          loadingMeetings={loadingMeetings}
+          needsAttention={needsAttention}
+          toggleTouchpoint={toggleTouchpoint}
         />
       </div>
 
@@ -243,18 +250,6 @@ export function DashboardOverview() {
           clientStats={clientStats}
           prospects={prospects}
           prospectStats={prospectStats}
-        />
-      </div>
-
-      {/* Section 3: Today's Priorities */}
-      <div className="mt-6">
-        <TodaysPriorities
-          clients={clients}
-          prospects={prospects}
-          upcomingMeetings={upcomingMeetings}
-          loadingMeetings={loadingMeetings}
-          needsAttention={needsAttention}
-          toggleTouchpoint={toggleTouchpoint}
         />
       </div>
 
