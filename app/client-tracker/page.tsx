@@ -511,7 +511,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
             />
           </div>
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-2">
             {/* Filter Tabs */}
             <div className="flex gap-2">
               {(["active", "paused", "all"] as const).map((status) => (
@@ -527,31 +527,31 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               ))}
             </div>
 
-          {/* View Toggle */}
-          <div className="flex rounded-lg border overflow-hidden">
-            <button
-              onClick={() => setViewMode("list")}
-              className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors ${
-                viewMode === "list"
-                  ? "bg-[hsl(var(--optavia-green))] text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              <List className="h-4 w-4" />
-              <span className="hidden sm:inline">List</span>
-            </button>
-            <button
-              onClick={() => setViewMode("week")}
-              className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors ${
-                viewMode === "week"
-                  ? "bg-[hsl(var(--optavia-green))] text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              <CalendarDays className="h-4 w-4" />
-              <span className="hidden sm:inline">Week</span>
-            </button>
-          </div>
+            {/* View Toggle */}
+            <div className="flex rounded-lg border overflow-hidden">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors ${
+                  viewMode === "list"
+                    ? "bg-[hsl(var(--optavia-green))] text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <List className="h-4 w-4" />
+                <span className="hidden sm:inline">List</span>
+              </button>
+              <button
+                onClick={() => setViewMode("week")}
+                className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors ${
+                  viewMode === "week"
+                    ? "bg-[hsl(var(--optavia-green))] text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <CalendarDays className="h-4 w-4" />
+                <span className="hidden sm:inline">Week</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -847,46 +847,46 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                         </div>
                       )}
 
-                      {/* Action Buttons - Grid layout for mobile */}
-                      <div className="grid grid-cols-3 gap-2">
+                      {/* Action Buttons - All 3 on same row */}
+                      <div className="flex gap-2">
                         {/* Check-in Button */}
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => toggleTouchpoint(client.id, "am_done")}
-                          className={`w-full ${client.am_done 
+                          className={`flex-1 ${client.am_done 
                             ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200" 
                             : "text-green-600 border-green-200 hover:bg-green-50"
                           }`}
                         >
                           {client.am_done ? (
-                            <CheckCircle className="h-4 w-4 sm:mr-1" />
+                            <CheckCircle className="h-4 w-4 mr-1" />
                           ) : (
-                            <Circle className="h-4 w-4 sm:mr-1" />
+                            <Circle className="h-4 w-4 mr-1" />
                           )}
-                          <span className="hidden sm:inline">{client.am_done ? "Checked In" : "Check In"}</span>
+                          <span className="text-xs sm:text-sm">{client.am_done ? "Checked In" : "Check In"}</span>
                         </Button>
                         {/* Text Button - highlighted for milestones */}
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => openTextTemplates(client)}
-                          className={`w-full ${isMilestoneDay(programDay)
+                          className={`flex-1 ${isMilestoneDay(programDay)
                             ? "bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200 animate-pulse"
                             : "text-blue-600 border-blue-200 hover:bg-blue-50"
                           }`}
                         >
-                          <MessageSquare className="h-4 w-4 sm:mr-1" />
-                          <span className="hidden sm:inline">{isMilestoneDay(programDay) ? "Celebrate!" : "Text"}</span>
+                          <MessageSquare className="h-4 w-4 mr-1" />
+                          <span className="text-xs sm:text-sm">{isMilestoneDay(programDay) ? "Celebrate!" : "Text"}</span>
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => openScheduleModal(client)}
-                          className="w-full text-purple-600 border-purple-200 hover:bg-purple-50"
+                          className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50"
                         >
-                          <CalendarPlus className="h-4 w-4 sm:mr-1" />
-                          <span className="hidden sm:inline">Schedule</span>
+                          <CalendarPlus className="h-4 w-4 mr-1" />
+                          <span className="text-xs sm:text-sm">Schedule</span>
                         </Button>
                       </div>
                     </div>
