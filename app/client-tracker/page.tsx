@@ -259,15 +259,24 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     // Format time for storage (HH:MM in 24-hour format)
     const timeStr = `${hour24.toString().padStart(2, "0")}:${scheduleMinute}`
     
-    // Save the scheduled time, recurring settings, and email to the client record
-    await updateClient(selectedClient.id, {
+    // Save the scheduled time and recurring settings to the client record
+    // Note: email is not stored on client, only used for sending invites
+    const success = await updateClient(selectedClient.id, {
       next_scheduled_at: targetDate.toISOString(),
       recurring_frequency: recurringFrequency,
       recurring_day: recurringFrequency !== "none" ? scheduleDay : null,
       recurring_time: recurringFrequency !== "none" ? timeStr : null,
-      email: clientEmail || null,
       phone: clientPhone || null,
     })
+    
+    if (!success) {
+      toast({
+        title: "Failed to save schedule",
+        description: "Please try again",
+        variant: "destructive",
+      })
+      return
+    }
     
     setShowScheduleModal(false)
     
