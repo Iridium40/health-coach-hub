@@ -19,6 +19,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Users,
   Plus,
   Calendar,
@@ -40,6 +46,7 @@ import {
   CheckCircle,
   Circle,
   Search,
+  Info,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -385,32 +392,88 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
 
       <div className="container mx-auto px-4 py-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-[hsl(var(--optavia-green))]">{stats.active}</div>
-              <div className="text-sm text-gray-500">Active</div>
-            </CardContent>
-          </Card>
-          <Card className={stats.needsAttention > 0 ? "border-orange-300 bg-orange-50" : ""}>
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-orange-500">{stats.needsAttention}</div>
-              <div className="text-sm text-gray-500">Need Attention</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-purple-500">{stats.coachProspects}</div>
-              <div className="text-sm text-gray-500">Coach Prospects</div>
-            </CardContent>
-          </Card>
-          <Card className={stats.milestonesToday > 0 ? "border-yellow-300 bg-yellow-50" : ""}>
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-yellow-600">{stats.milestonesToday}</div>
-              <div className="text-sm text-gray-500">Milestones Today</div>
-            </CardContent>
-          </Card>
-        </div>
+        <TooltipProvider>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="p-4 text-center relative">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs p-3">
+                    <p className="font-semibold text-green-700 mb-1">Active Clients</p>
+                    <p className="text-sm text-gray-600">Clients currently on program with "Active" status.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <div className="text-3xl font-bold text-[hsl(var(--optavia-green))]">{stats.active}</div>
+                <div className="text-sm text-gray-500">Active</div>
+              </CardContent>
+            </Card>
+            <Card className={stats.needsAttention > 0 ? "border-orange-300 bg-orange-50" : ""}>
+              <CardContent className="p-4 text-center relative">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs p-3">
+                    <p className="font-semibold text-orange-700 mb-2">🚨 "Needs Attention" Triggers</p>
+                    <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
+                      <li><strong>Scheduled check-in is due</strong> — Meeting date is today or past</li>
+                      <li><strong>10+ days since last check-in</strong> — Time to reach out!</li>
+                      <li><strong>Never checked in</strong> — New client needs first touchpoint</li>
+                    </ol>
+                  </TooltipContent>
+                </Tooltip>
+                <div className="text-3xl font-bold text-orange-500">{stats.needsAttention}</div>
+                <div className="text-sm text-gray-500">Need Attention</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center relative">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs p-3">
+                    <p className="font-semibold text-purple-700 mb-1">Coach Prospects</p>
+                    <p className="text-sm text-gray-600">Active clients you've marked as potential future coaches. Keep nurturing these relationships!</p>
+                  </TooltipContent>
+                </Tooltip>
+                <div className="text-3xl font-bold text-purple-500">{stats.coachProspects}</div>
+                <div className="text-sm text-gray-500">Coach Prospects</div>
+              </CardContent>
+            </Card>
+            <Card className={stats.milestonesToday > 0 ? "border-yellow-300 bg-yellow-50" : ""}>
+              <CardContent className="p-4 text-center relative">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs p-3">
+                    <p className="font-semibold text-yellow-700 mb-1">🎉 Milestones Today</p>
+                    <p className="text-sm text-gray-600">Clients hitting key milestones today:</p>
+                    <ul className="text-sm text-gray-600 mt-1 space-y-0.5">
+                      <li>• <strong>Day 7</strong> — Week 1 Complete!</li>
+                      <li>• <strong>Day 14</strong> — 2 Weeks!</li>
+                      <li>• <strong>Day 21</strong> — Habit Formed!</li>
+                      <li>• <strong>Day 30</strong> — ONE MONTH!</li>
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+                <div className="text-3xl font-bold text-yellow-600">{stats.milestonesToday}</div>
+                <div className="text-sm text-gray-500">Milestones Today</div>
+              </CardContent>
+            </Card>
+          </div>
+        </TooltipProvider>
 
         {/* Search, Filter and View Toggle */}
         <div className="flex flex-col gap-4 mb-6">
