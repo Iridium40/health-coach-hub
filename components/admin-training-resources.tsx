@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useTrainingResourcesAdmin, type TrainingResource, type TrainingCategory } from "@/hooks/use-training-resources"
+import { useTrainingResourcesAdmin, type TrainingResource, type TrainingCategory, COACH_RANKS } from "@/hooks/use-training-resources"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -92,6 +92,7 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
     name: "",
     description: "",
     icon: "📚",
+    required_rank: "" as string,
   })
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [resourceToDelete, setResourceToDelete] = useState<string | null>(null)
@@ -286,10 +287,11 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
         description: newCategory.description || null,
         icon: newCategory.icon || "📚",
         sort_order: 0,
+        required_rank: newCategory.required_rank || null,
       })
       toast({ title: "Success", description: "Category added successfully" })
       setShowAddCategoryModal(false)
-      setNewCategory({ name: "", description: "", icon: "📚" })
+      setNewCategory({ name: "", description: "", icon: "📚", required_rank: "" })
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" })
     }
@@ -303,6 +305,7 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
         name: editingCategory.name,
         description: editingCategory.description,
         icon: editingCategory.icon,
+        required_rank: editingCategory.required_rank,
       })
       toast({ title: "Success", description: "Category updated successfully" })
       setShowEditCategoryModal(false)
@@ -500,6 +503,11 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
                         <Badge variant="secondary" className="ml-2">
                           {categoryResources.length} modules
                         </Badge>
+                        {category.required_rank && (
+                          <Badge variant="outline" className="ml-2 text-purple-600 border-purple-300">
+                            {category.required_rank}+ only
+                          </Badge>
+                        )}
                       </div>
                     </CollapsibleTrigger>
 
@@ -877,6 +885,28 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
                 rows={2}
               />
             </div>
+            <div>
+              <Label>Minimum Rank Required</Label>
+              <Select
+                value={newCategory.required_rank || "all"}
+                onValueChange={(value) => setNewCategory({ ...newCategory, required_rank: value === "all" ? "" : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All coaches can access" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Coaches (No Restriction)</SelectItem>
+                  {COACH_RANKS.map((rank) => (
+                    <SelectItem key={rank.value} value={rank.value}>
+                      {rank.label} & above
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Only coaches at or above this rank can see this category
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddCategoryModal(false)}>
@@ -924,6 +954,28 @@ export function AdminTrainingResources({ onClose }: AdminTrainingResourcesProps)
                   onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
                   rows={2}
                 />
+              </div>
+              <div>
+                <Label>Minimum Rank Required</Label>
+                <Select
+                  value={editingCategory.required_rank || "all"}
+                  onValueChange={(value) => setEditingCategory({ ...editingCategory, required_rank: value === "all" ? null : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All coaches can access" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Coaches (No Restriction)</SelectItem>
+                    {COACH_RANKS.map((rank) => (
+                      <SelectItem key={rank.value} value={rank.value}>
+                        {rank.label} & above
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Only coaches at or above this rank can see this category
+                </p>
               </div>
             </div>
           )}

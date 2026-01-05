@@ -17,7 +17,9 @@ import {
 import { Search, ExternalLink, FileText, Video, Palette, Link2, ChevronDown, ChevronRight, CheckCircle, Circle } from "lucide-react"
 
 export function TrainingResourcesTab() {
-  const { user } = useUserData()
+  const { user, profile } = useUserData()
+  const userRank = profile?.coach_rank || null
+  
   const {
     resources,
     uniqueCategories,
@@ -28,7 +30,7 @@ export function TrainingResourcesTab() {
     toggleCompletion,
     progress,
     getCategoryProgress,
-  } = useTrainingResources(user)
+  } = useTrainingResources(user, userRank)
 
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")

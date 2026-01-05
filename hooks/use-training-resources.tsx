@@ -24,6 +24,36 @@ export interface TrainingCategory {
   icon: string
   sort_order: number
   is_active: boolean
+  required_rank: string | null
+}
+
+// Coach rank hierarchy (lower index = lower rank)
+export const COACH_RANKS = [
+  { value: "Coach", label: "Coach" },
+  { value: "SC", label: "Senior Coach (SC)" },
+  { value: "MG", label: "Manager (MG)" },
+  { value: "AD", label: "Associate Director (AD)" },
+  { value: "DR", label: "Director (DR)" },
+  { value: "ED", label: "Executive Director (ED)" },
+  { value: "IED", label: "Int'l Executive Director (IED)" },
+  { value: "FIBC", label: "FIBC" },
+  { value: "IGD", label: "Int'l Global Director (IGD)" },
+  { value: "FIBL", label: "FIBL" },
+  { value: "IND", label: "Int'l National Director (IND)" },
+  { value: "IPD", label: "Int'l Presidential Director (IPD)" },
+]
+
+// Check if a user's rank meets or exceeds the required rank
+export function meetsRankRequirement(userRank: string | null, requiredRank: string | null): boolean {
+  if (!requiredRank) return true // No requirement means everyone can access
+  if (!userRank) return false // No user rank but requirement exists = no access
+  
+  const userIndex = COACH_RANKS.findIndex(r => r.value === userRank)
+  const requiredIndex = COACH_RANKS.findIndex(r => r.value === requiredRank)
+  
+  if (userIndex === -1 || requiredIndex === -1) return true // Unknown ranks = allow access
+  
+  return userIndex >= requiredIndex
 }
 
 export interface TrainingProgress {
@@ -40,7 +70,7 @@ export const typeIcons: Record<string, string> = {
   other: "📎",
 }
 
-export function useTrainingResources(user?: User | null) {
+export function useTrainingResources(user?: User | null, userRank?: string | null) {
   const [resources, setResources] = useState<TrainingResource[]>([])
   const [categories, setCategories] = useState<TrainingCategory[]>([])
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
@@ -98,28 +128,41 @@ export function useTrainingResources(user?: User | null) {
     loadData()
   }, [loadData])
 
-  // Get unique categories from resources
+  // Filter categories based on user rank
+  const accessibleCategories = useMemo(() => {
+    return categories.filter(cat => meetsRankRequirement(userRank || null, cat.required_rank))
+  }, [categories, userRank])
+
+  // Get unique categories from resources (filtered by rank access)
   const uniqueCategories = useMemo(() => {
+    const accessibleCategoryNames = new Set(accessibleCategories.map(c => c.name))
     const cats = Array.from(new Set(resources.map(r => r.category)))
+      .filter(catName => accessibleCategoryNames.has(catName))
     // Sort by category order from training_categories table
     return cats.sort((a, b) => {
       const aOrder = categories.find(c => c.name === a)?.sort_order ?? 999
       const bOrder = categories.find(c => c.name === b)?.sort_order ?? 999
       return aOrder - bOrder
     })
-  }, [resources, categories])
+  }, [resources, categories, accessibleCategories])
+
+  // Filter resources to only include those in accessible categories
+  const accessibleResources = useMemo(() => {
+    const accessibleCategoryNames = new Set(accessibleCategories.map(c => c.name))
+    return resources.filter(r => accessibleCategoryNames.has(r.category))
+  }, [resources, accessibleCategories])
 
   // Get category icon
   const getCategoryIcon = useCallback((categoryName: string) => {
     return categories.find(c => c.name === categoryName)?.icon || "📚"
   }, [categories])
 
-  // Filter resources by category and search
+  // Filter resources by category and search (using accessible resources)
   const filterResources = useCallback((
     category: string | "All",
     searchQuery: string
   ): TrainingResource[] => {
-    return resources.filter(r => {
+    return accessibleResources.filter(r => {
       // Category filter
       if (category !== "All" && r.category !== category) return false
 
@@ -134,24 +177,25 @@ export function useTrainingResources(user?: User | null) {
 
       return true
     })
-  }, [resources])
+  }, [accessibleResources])
 
-  // Group resources by category
+  // Group resources by category (using accessible resources)
   const groupedResources = useMemo(() => {
     const grouped: Record<string, TrainingResource[]> = {}
     uniqueCategories.forEach(cat => {
-      grouped[cat] = resources.filter(r => r.category === cat)
+      grouped[cat] = accessibleResources.filter(r => r.category === cat)
     })
     return grouped
-  }, [resources, uniqueCategories])
+  }, [accessibleResources, uniqueCategories])
 
-  // Calculate training progress
+  // Calculate training progress (only for accessible resources)
   const progress: TrainingProgress = useMemo(() => {
-    const total = resources.length
-    const completed = completedIds.size
+    const total = accessibleResources.length
+    const accessibleIds = new Set(accessibleResources.map(r => r.id))
+    const completed = Array.from(completedIds).filter(id => accessibleIds.has(id)).length
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0
     return { total, completed, percentage }
-  }, [resources, completedIds])
+  }, [accessibleResources, completedIds])
 
   // Check if a resource is completed
   const isCompleted = useCallback((resourceId: string) => {
@@ -208,16 +252,16 @@ export function useTrainingResources(user?: User | null) {
     }
   }, [user, completedIds])
 
-  // Get category progress
+  // Get category progress (for accessible resources only)
   const getCategoryProgress = useCallback((categoryName: string) => {
-    const catResources = resources.filter(r => r.category === categoryName)
+    const catResources = accessibleResources.filter(r => r.category === categoryName)
     const catCompleted = catResources.filter(r => completedIds.has(r.id)).length
     return {
       total: catResources.length,
       completed: catCompleted,
       percentage: catResources.length > 0 ? Math.round((catCompleted / catResources.length) * 100) : 0
     }
-  }, [resources, completedIds])
+  }, [accessibleResources, completedIds])
 
   return {
     resources,
