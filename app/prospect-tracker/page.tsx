@@ -496,13 +496,14 @@ Talking Points:
                     {prospect.ha_scheduled_at ? (
                       <div className="flex items-center gap-1">
                         <Badge 
-                          className={`flex items-center gap-1 ${
+                          className={`flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium ${
                             new Date(prospect.ha_scheduled_at) < new Date() 
-                              ? "bg-red-100 text-red-700" 
-                              : "bg-green-100 text-green-700"
+                              ? "bg-red-100 text-red-700 border border-red-200" 
+                              : "bg-purple-100 text-purple-700 border border-purple-200"
                           }`}
                         >
-                          <Calendar className="h-3 w-3" />
+                          <Calendar className="h-3.5 w-3.5" />
+                          <span>HA:</span>
                           {new Date(prospect.ha_scheduled_at).toLocaleDateString("en-US", {
                             weekday: "short",
                             month: "short",
@@ -519,7 +520,7 @@ Talking Points:
                             variant="ghost"
                             size="sm"
                             onClick={() => sendHASMS(prospect)}
-                            className="h-7 w-7 p-0 text-green-500 hover:text-green-700 hover:bg-green-50"
+                            className="h-7 w-7 p-0 text-purple-500 hover:text-purple-700 hover:bg-purple-50"
                             title="Send SMS reminder"
                           >
                             <Send className="h-3 w-3" />
@@ -530,7 +531,7 @@ Talking Points:
                           size="sm"
                           onClick={() => updateProspect(prospect.id, { ha_scheduled_at: null })}
                           className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
-                          title="Clear scheduled time"
+                          title="Clear scheduled HA"
                         >
                           <X className="h-3 w-3" />
                         </Button>
