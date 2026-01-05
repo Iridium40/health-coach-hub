@@ -865,7 +865,15 @@ Talking Points:
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => updateProspect(prospect.id, { ha_scheduled_at: null })}
+                            onClick={() => {
+                              if (window.confirm("Clear this scheduled Health Assessment?")) {
+                                updateProspect(prospect.id, { ha_scheduled_at: null })
+                                toast({
+                                  title: "HA cleared",
+                                  description: "The scheduled Health Assessment has been removed.",
+                                })
+                              }
+                            }}
                             className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
                             title="Clear scheduled HA"
                           >

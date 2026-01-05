@@ -833,12 +833,20 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => updateClient(client.id, { 
-                              next_scheduled_at: null,
-                              recurring_frequency: null,
-                              recurring_day: null,
-                              recurring_time: null 
-                            })}
+                            onClick={() => {
+                              if (window.confirm("Clear this scheduled check-in?")) {
+                                updateClient(client.id, { 
+                                  next_scheduled_at: null,
+                                  recurring_frequency: null,
+                                  recurring_day: null,
+                                  recurring_time: null 
+                                })
+                                toast({
+                                  title: "Check-in cleared",
+                                  description: "The scheduled check-in has been removed.",
+                                })
+                              }
+                            }}
                             className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
                             title="Clear scheduled time"
                           >
