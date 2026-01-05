@@ -12,13 +12,14 @@ import {
   Video, Calendar, Clock, Users, ChevronRight,
   BookOpen, UtensilsCrossed, Wrench, ExternalLink, Award,
   CheckCircle, Sparkles, Star, GraduationCap, Link2, Pin,
-  ClipboardList, Droplets, Dumbbell, Activity, Share2
+  ClipboardList, Droplets, Dumbbell, Activity, Share2, Bookmark
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { useProspects } from "@/hooks/use-prospects"
 import { useClients } from "@/hooks/use-clients"
 import { useTrainingResources } from "@/hooks/use-training-resources"
 import { useRankCalculator, type RankType } from "@/hooks/use-rank-calculator"
+import { useBookmarks } from "@/hooks/use-bookmarks"
 import type { ZoomCall } from "@/lib/types"
 import { getOnboardingProgress } from "@/lib/onboarding-utils"
 import {
@@ -74,7 +75,10 @@ export function DashboardOverview() {
   const { clients, stats: clientStats, toggleTouchpoint, needsAttention } = useClients()
 
   // Training resources progress - pass user rank to properly filter accessible categories
-  const { progress: trainingProgress } = useTrainingResources(user, profile?.coach_rank || null)
+  const { progress: trainingProgress, resources: trainingResources } = useTrainingResources(user, profile?.coach_rank || null)
+  
+  // Bookmarks for training resources
+  const { getBookmarkedIds } = useBookmarks(user)
 
   // Rank calculator
   const { rankData, frontlineCoaches, qualifyingLegsCount, calculateGaps, getNextRank } = useRankCalculator(user)
@@ -116,7 +120,13 @@ export function DashboardOverview() {
     return EXTERNAL_RESOURCES.filter(r => pinnedResourceIds.includes(r.id))
   }, [pinnedResourceIds])
 
-  const hasPinnedItems = pinnedTools.length > 0 || pinnedResources.length > 0
+  // Get bookmarked training resources
+  const bookmarkedTrainingResources = useMemo(() => {
+    const bookmarkedIds = getBookmarkedIds()
+    return trainingResources.filter(r => bookmarkedIds.includes(r.id))
+  }, [trainingResources, getBookmarkedIds])
+
+  const hasPinnedItems = pinnedTools.length > 0 || pinnedResources.length > 0 || bookmarkedTrainingResources.length > 0
 
   // Load today's meetings
   useEffect(() => {
@@ -286,6 +296,23 @@ export function DashboardOverview() {
                   >
                     <Link2 className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
                     <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1 truncate">
+                      {resource.title}
+                    </span>
+                    <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
+                  </a>
+                ))}
+
+                {/* Bookmarked Training Resources */}
+                {bookmarkedTrainingResources.map((resource) => (
+                  <a
+                    key={`bookmark-${resource.id}`}
+                    href={resource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer group"
+                  >
+                    <Bookmark className="h-4 w-4 text-amber-500 fill-amber-400 flex-shrink-0" />
+                    <span className="font-medium text-sm text-optavia-dark group-hover:text-amber-600 flex-1 truncate">
                       {resource.title}
                     </span>
                     <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
