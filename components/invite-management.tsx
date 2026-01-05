@@ -185,15 +185,6 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
       return
     }
 
-    if (!optaviaId) {
-      toast({
-        title: "Error",
-        description: "Optavia ID is required",
-        variant: "destructive",
-      })
-      return
-    }
-
     setLoading(true)
 
     try {
@@ -209,7 +200,7 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
           invited_email: email,
           invited_full_name: fullName,
           coach_rank: coachRank,
-          optavia_id: optaviaId,
+          optavia_id: optaviaId || null,
           expires_at: expiresAt.toISOString(),
           is_active: true,
         })
@@ -469,14 +460,13 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="optaviaId" className="text-optavia-dark">Optavia ID *</Label>
+              <Label htmlFor="optaviaId" className="text-optavia-dark">Optavia ID <span className="text-gray-400 font-normal">(optional)</span></Label>
               <Input
                 id="optaviaId"
                 type="text"
                 placeholder="Enter Optavia ID"
                 value={optaviaId}
                 onChange={(e) => setOptaviaId(e.target.value)}
-                required
                 className="bg-white border-gray-300 text-optavia-dark focus:border-[hsl(var(--optavia-green))] focus:ring-[hsl(var(--optavia-green-light))]"
               />
             </div>
@@ -493,7 +483,7 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
 
             <Button
               onClick={handleGenerateInvite}
-              disabled={loading || !fullName || !email || !coachRank || !optaviaId}
+              disabled={loading || !fullName || !email || !coachRank}
               className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
             >
               {loading ? "Generating..." : "Generate Invite Link"}
