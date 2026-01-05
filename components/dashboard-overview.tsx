@@ -229,20 +229,6 @@ export function DashboardOverview() {
         <CoachTip />
       </div>
 
-      {/* Section 1: Business Growth (Rank Progress) */}
-      {rankData && (
-        <div className="mt-6">
-          <RankProgressCard
-            currentRank={rankData.current_rank}
-            nextRank={nextRank}
-            activeClients={clientStats.active}
-            frontlineCoaches={frontlineCoaches.length}
-            qualifyingLegs={qualifyingLegsCount}
-            gaps={gaps}
-          />
-        </div>
-      )}
-
       {/* Section 2: Pipeline Snapshot (4 stat cards) */}
       <div className="mt-6">
         <PipelineSnapshot
@@ -362,6 +348,20 @@ export function DashboardOverview() {
           )
         })()}
       </div>
+
+      {/* Business Growth (Rank Progress) */}
+      {rankData && (
+        <div className="mt-6">
+          <RankProgressCard
+            currentRank={rankData.current_rank}
+            nextRank={nextRank}
+            activeClients={clientStats.active}
+            frontlineCoaches={frontlineCoaches.length}
+            qualifyingLegs={qualifyingLegsCount}
+            gaps={gaps}
+          />
+        </div>
+      )}
 
       {/* Popular Recipes */}
       {popularRecipes.length > 0 && (
