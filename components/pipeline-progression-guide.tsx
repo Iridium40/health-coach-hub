@@ -70,7 +70,6 @@ export function PipelineProgressionGuide() {
       description: 'Meeting is booked! Prepare to walk through their HA and present the program.',
       tips: [
         'Review their HA responses before the call',
-        'Have your presentation ready',
         'Focus on THEIR goals and struggles',
         'Consider a 3-way call with your coach',
       ],
