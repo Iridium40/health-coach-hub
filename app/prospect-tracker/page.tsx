@@ -1104,7 +1104,7 @@ Talking Points:
               <PartyPopper className="h-5 w-5 text-green-500" />
               Convert to Client
             </DialogTitle>
-            <DialogDescription>This prospect is ready to become a client!</DialogDescription>
+            <DialogDescription>This person is ready to become a client!</DialogDescription>
           </DialogHeader>
           {convertingProspect && (
             <div className="space-y-4">
@@ -1152,7 +1152,7 @@ Talking Points:
             <Button
               onClick={handleConvertToClient}
               disabled={!clientStartDate}
-              className="bg-[hsl(var(--optavia-green))]"
+              className="bg-[hsl(var(--optavia-green))] text-white hover:bg-[hsl(var(--optavia-green-dark))]"
             >
               <Heart className="h-4 w-4 mr-2" />
               Create Client
