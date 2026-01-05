@@ -107,8 +107,8 @@ export function PipelineProgressionGuide() {
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="max-w-2xl mx-auto">
+    <div className="max-h-[70vh] overflow-y-auto">
+      <div className="max-w-2xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">
