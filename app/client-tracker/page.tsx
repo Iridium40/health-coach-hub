@@ -51,6 +51,8 @@ import {
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { MilestoneActionModal } from "@/components/milestone-action-modal"
+import { ClientJourneyGuide } from "@/components/client-journey-guide"
+import { GraduationCap } from "lucide-react"
 import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
 import type { CalendarEvent } from "@/lib/calendar-utils"
@@ -88,6 +90,7 @@ export default function ClientTrackerPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showTextModal, setShowTextModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showGuideModal, setShowGuideModal] = useState(false)
   const [selectedClient, setSelectedClient] = useState<any>(null)
   const [filterStatus, setFilterStatus] = useState<ClientStatus | "all">("active")
   const [searchTerm, setSearchTerm] = useState("")
@@ -352,6 +355,14 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               </p>
             </div>
             <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                onClick={() => setShowGuideModal(true)}
+              >
+                <GraduationCap className="h-4 w-4 mr-2" />
+                Learn the Client Journey
+              </Button>
               <Link href="/prospect-tracker">
                 <Button variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
                   <Users className="h-4 w-4 mr-2" />
@@ -1171,6 +1182,17 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
         </DialogContent>
       </Dialog>
 
+      {/* Client Journey Guide Modal */}
+      <Dialog open={showGuideModal} onOpenChange={setShowGuideModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center">
+              Learn the Client Journey
+            </DialogTitle>
+          </DialogHeader>
+          <ClientJourneyGuide />
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
