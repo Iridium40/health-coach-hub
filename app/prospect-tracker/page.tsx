@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useProspects, statusConfig, sourceOptions, actionTypeLabels, type ProspectStatus, type ProspectSource, type Prospect } from "@/hooks/use-prospects"
 import { useClients } from "@/hooks/use-clients"
+import { useUserData } from "@/contexts/user-data-context"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -78,6 +79,7 @@ export default function ProspectTrackerPage() {
   } = useProspects()
 
   const { addClient } = useClients()
+  const { user, profile } = useUserData()
   const { toast } = useToast()
 
   const [showAddModal, setShowAddModal] = useState(false)
@@ -301,6 +303,28 @@ Talking Points:
         title: "🎉 Client Created!",
         description: `${convertingProspect.label} has been added to your client list.`,
       })
+
+      // Send celebration email to the coach
+      const coachEmail = profile?.notification_email || user?.email
+      const coachName = profile?.full_name || user?.email?.split("@")[0] || "Coach"
+      
+      if (coachEmail) {
+        try {
+          await fetch("/api/send-new-client-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: coachEmail,
+              coachName: coachName,
+              clientName: convertingProspect.label,
+              startDate: clientStartDate,
+            }),
+          })
+        } catch (error) {
+          console.error("Failed to send celebration email:", error)
+          // Don't show error to user - email is a bonus, not critical
+        }
+      }
     }
 
     setShowConvertModal(false)
