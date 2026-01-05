@@ -369,8 +369,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
             </div>
             <div className="flex gap-3">
               <Button
-                variant="outline"
-                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                className="bg-[#f88221] border-[#f88221] text-white hover:bg-[#e07520]"
                 onClick={() => setShowGuideModal(true)}
               >
                 <GraduationCap className="h-4 w-4 mr-2" />
