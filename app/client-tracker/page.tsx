@@ -58,6 +58,7 @@ import {
   Circle,
   Search,
   Info,
+  Video,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -67,6 +68,7 @@ import { ReminderButton } from "@/components/reminders-panel"
 import { GraduationCap, Trophy, Heart, Download } from "lucide-react"
 import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
+import { useUserData } from "@/contexts/user-data-context"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { StatsCardsSkeleton, ClientListSkeleton, WeekViewSkeleton } from "@/components/ui/skeleton-loaders"
 import { ClientCard } from "@/components/client-tracker/client-card"
@@ -101,6 +103,7 @@ export default function ClientTrackerPage() {
     getFilteredClients,
   } = useClients()
   const { toast } = useToast()
+  const { profile } = useUserData()
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [showTextModal, setShowTextModal] = useState(false)
@@ -124,6 +127,19 @@ export default function ClientTrackerPage() {
   const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>("none")
   const [clientEmail, setClientEmail] = useState<string>("")
   const [clientPhone, setClientPhone] = useState<string>("")
+  
+  // Meeting type state (Phone vs Zoom)
+  const [meetingType, setMeetingType] = useState<"phone" | "zoom">("phone")
+  const [zoomLink, setZoomLink] = useState("")
+  const [zoomMeetingId, setZoomMeetingId] = useState("")
+  const [zoomPasscode, setZoomPasscode] = useState("")
+  
+  // Prefill zoom details from profile when meeting type changes to Zoom
+  const prefillZoomDetails = () => {
+    if (profile?.zoom_link && !zoomLink) setZoomLink(profile.zoom_link)
+    if (profile?.zoom_meeting_id && !zoomMeetingId) setZoomMeetingId(profile.zoom_meeting_id)
+    if (profile?.zoom_passcode && !zoomPasscode) setZoomPasscode(profile.zoom_passcode)
+  }
   
   // Debounce search term for better performance
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
@@ -263,11 +279,26 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     const programDay = getProgramDay(selectedClient.start_date)
     const phase = getDayPhase(programDay)
     
+    // Build meeting details based on meeting type
+    let meetingDetails = ""
+    let location = ""
+    
+    if (meetingType === "zoom" && zoomLink) {
+      meetingDetails = `\n\n📹 Zoom Meeting:\n${zoomLink}`
+      if (zoomMeetingId) meetingDetails += `\nMeeting ID: ${zoomMeetingId}`
+      if (zoomPasscode) meetingDetails += `\nPasscode: ${zoomPasscode}`
+      location = zoomLink
+    } else if (meetingType === "phone") {
+      meetingDetails = "\n\n📱 Phone Call"
+      if (clientPhone) meetingDetails += `\nCall: ${clientPhone}`
+    }
+    
     return {
       title: `Check-in: ${selectedClient.label} (Day ${programDay})`,
       description: `Client: ${selectedClient.label}
 Program Day: ${programDay}
 Phase: ${phase.label}
+${meetingDetails}
 
 Suggested talking points:
 - How are you feeling today?
@@ -276,6 +307,7 @@ Suggested talking points:
 ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achievement!` : ""}`,
       startDate: targetDate,
       endDate: endDate,
+      location: location || undefined,
       uid: `client-${selectedClient.id}-${Date.now()}@coachingamplifier.com`,
     }
   }
@@ -312,6 +344,12 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     }
     
     setShowScheduleModal(false)
+    
+    // Reset zoom fields
+    setMeetingType("phone")
+    setZoomLink("")
+    setZoomMeetingId("")
+    setZoomPasscode("")
     
     const recurringLabel = recurringFrequency !== "none" 
       ? ` (${RECURRING_OPTIONS.find(r => r.value === recurringFrequency)?.label})`
@@ -1277,6 +1315,77 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 )}
               </div>
 
+              {/* Meeting Type Selector */}
+              <div>
+                <Label className="text-sm font-medium mb-3 block">Meeting Type</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setMeetingType("phone")}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      meetingType === "phone"
+                        ? "border-purple-600 bg-purple-50 text-purple-700"
+                        : "border-gray-200 hover:border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    <Phone className="h-5 w-5" />
+                    <span className="font-medium">Phone</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMeetingType("zoom")
+                      prefillZoomDetails()
+                    }}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      meetingType === "zoom"
+                        ? "border-purple-600 bg-purple-50 text-purple-700"
+                        : "border-gray-200 hover:border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    <Video className="h-5 w-5" />
+                    <span className="font-medium">Zoom</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Zoom Details (shown when Zoom is selected) */}
+              {meetingType === "zoom" && (
+                <div className="space-y-3 bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-purple-700 text-sm font-medium">
+                    <Video className="h-4 w-4" />
+                    Zoom Meeting Details
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Zoom Link (e.g., https://zoom.us/j/...)"
+                      value={zoomLink}
+                      onChange={(e) => setZoomLink(e.target.value)}
+                      className="bg-white"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Meeting ID"
+                        value={zoomMeetingId}
+                        onChange={(e) => setZoomMeetingId(e.target.value)}
+                        className="bg-white"
+                      />
+                      <Input
+                        placeholder="Passcode"
+                        value={zoomPasscode}
+                        onChange={(e) => setZoomPasscode(e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+                  {!profile?.zoom_link && (
+                    <p className="text-xs text-purple-600">
+                      💡 Tip: Save your default Zoom details in Settings → Zoom Room to auto-fill
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Calendar Options with Email/SMS */}
               {generateCalendarEvent() && (
                 <ScheduleCalendarOptions
@@ -1304,7 +1413,14 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowScheduleModal(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowScheduleModal(false)
+              // Reset zoom fields
+              setMeetingType("phone")
+              setZoomLink("")
+              setZoomMeetingId("")
+              setZoomPasscode("")
+            }}>
               Cancel
             </Button>
           </DialogFooter>

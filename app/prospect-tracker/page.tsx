@@ -69,6 +69,8 @@ import {
   GraduationCap,
   Download,
   CheckCircle,
+  Phone,
+  Video,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -138,6 +140,19 @@ export default function ProspectTrackerPage() {
   const [haAmPm, setHaAmPm] = useState<"AM" | "PM">("AM")
   const [prospectEmail, setProspectEmail] = useState("")
   const [prospectPhone, setProspectPhone] = useState("")
+  
+  // Meeting type state (Phone vs Zoom)
+  const [haMeetingType, setHaMeetingType] = useState<"phone" | "zoom">("phone")
+  const [haZoomLink, setHaZoomLink] = useState("")
+  const [haZoomMeetingId, setHaZoomMeetingId] = useState("")
+  const [haZoomPasscode, setHaZoomPasscode] = useState("")
+  
+  // Prefill zoom details from profile when meeting type changes to Zoom
+  const prefillZoomDetails = () => {
+    if (profile?.zoom_link && !haZoomLink) setHaZoomLink(profile.zoom_link)
+    if (profile?.zoom_meeting_id && !haZoomMeetingId) setHaZoomMeetingId(profile.zoom_meeting_id)
+    if (profile?.zoom_passcode && !haZoomPasscode) setHaZoomPasscode(profile.zoom_passcode)
+  }
 
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -232,9 +247,24 @@ Talking Points:
     const endDate = new Date(targetDate)
     endDate.setMinutes(endDate.getMinutes() + 45) // 45 min duration for HA
     
+    // Build meeting details based on meeting type
+    let meetingDetails = ""
+    let location = ""
+    
+    if (haMeetingType === "zoom" && haZoomLink) {
+      meetingDetails = `\n\n📹 Zoom Meeting:\n${haZoomLink}`
+      if (haZoomMeetingId) meetingDetails += `\nMeeting ID: ${haZoomMeetingId}`
+      if (haZoomPasscode) meetingDetails += `\nPasscode: ${haZoomPasscode}`
+      location = haZoomLink
+    } else if (haMeetingType === "phone") {
+      meetingDetails = "\n\n📱 Phone Call"
+      if (prospectPhone) meetingDetails += `\nCall: ${prospectPhone}`
+    }
+    
     return {
       title: `Health Assessment: ${schedulingProspect.label}`,
       description: `Health Assessment Call with ${schedulingProspect.label}
+${meetingDetails}
 
 Source: ${sourceOptions.find(s => s.value === schedulingProspect.source)?.label || schedulingProspect.source}
 ${schedulingProspect.notes ? `Notes: ${schedulingProspect.notes}` : ""}
@@ -247,6 +277,7 @@ Talking Points:
 - Ready to commit?`,
       startDate: targetDate,
       endDate: endDate,
+      location: location || undefined,
       uid: `prospect-ha-${schedulingProspect.id}-${Date.now()}@coachingamplifier.com`,
     }
   }
@@ -276,6 +307,11 @@ Talking Points:
       
       setShowHAScheduleModal(false)
       setSchedulingProspect(null)
+      // Reset zoom fields
+      setHaMeetingType("phone")
+      setHaZoomLink("")
+      setHaZoomMeetingId("")
+      setHaZoomPasscode("")
     } else {
       toast({
         title: "Failed to schedule HA",
@@ -1417,6 +1453,77 @@ Talking Points:
                 <p className="text-xs text-gray-500 text-center mt-2">45 minute health assessment</p>
               </div>
 
+              {/* Meeting Type Selector */}
+              <div>
+                <Label className="text-sm font-medium mb-3 block">Meeting Type</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setHaMeetingType("phone")}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      haMeetingType === "phone"
+                        ? "border-blue-600 bg-blue-50 text-blue-700"
+                        : "border-gray-200 hover:border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    <Phone className="h-5 w-5" />
+                    <span className="font-medium">Phone</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHaMeetingType("zoom")
+                      prefillZoomDetails()
+                    }}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      haMeetingType === "zoom"
+                        ? "border-blue-600 bg-blue-50 text-blue-700"
+                        : "border-gray-200 hover:border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    <Video className="h-5 w-5" />
+                    <span className="font-medium">Zoom</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Zoom Details (shown when Zoom is selected) */}
+              {haMeetingType === "zoom" && (
+                <div className="space-y-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
+                    <Video className="h-4 w-4" />
+                    Zoom Meeting Details
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Zoom Link (e.g., https://zoom.us/j/...)"
+                      value={haZoomLink}
+                      onChange={(e) => setHaZoomLink(e.target.value)}
+                      className="bg-white"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Meeting ID"
+                        value={haZoomMeetingId}
+                        onChange={(e) => setHaZoomMeetingId(e.target.value)}
+                        className="bg-white"
+                      />
+                      <Input
+                        placeholder="Passcode"
+                        value={haZoomPasscode}
+                        onChange={(e) => setHaZoomPasscode(e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+                  {!profile?.zoom_link && (
+                    <p className="text-xs text-blue-600">
+                      💡 Tip: Save your default Zoom details in Settings → Zoom Room to auto-fill
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Calendar Options with Email/SMS */}
               {haDate && generateHACalendarEvent() && (
                 <ScheduleCalendarOptions
@@ -1438,6 +1545,11 @@ Talking Points:
               onClick={() => {
                 setShowHAScheduleModal(false)
                 setSchedulingProspect(null)
+                // Reset zoom fields
+                setHaMeetingType("phone")
+                setHaZoomLink("")
+                setHaZoomMeetingId("")
+                setHaZoomPasscode("")
               }}
             >
               Cancel
