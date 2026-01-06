@@ -102,7 +102,7 @@ export default function DownlineProgressPage() {
       // Get prospects for all downline coaches
       const { data: prospects } = await supabase
         .from("prospects")
-        .select("id, user_id, ha_scheduled_date")
+        .select("id, user_id, ha_scheduled_at")
         .in("user_id", coachIds)
 
       // Get active clients for all downline coaches
@@ -148,8 +148,8 @@ export default function DownlineProgressPage() {
 
         // Count HA scheduled within 2 weeks
         const haScheduledCount = coachProspects.filter(p => {
-          if (!p.ha_scheduled_date) return false
-          const haDate = new Date(p.ha_scheduled_date)
+          if (!p.ha_scheduled_at) return false
+          const haDate = new Date(p.ha_scheduled_at)
           return haDate >= today && haDate <= twoWeeksFromNow
         }).length
 
