@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useUserData } from "@/contexts/user-data-context"
 import { createClient } from "@/lib/supabase/client"
-import { ArrowLeft, Users, BookOpen, Award, TrendingUp } from "lucide-react"
+import { ArrowLeft, Users, BookOpen, Award, TrendingUp, UserCheck, Calendar } from "lucide-react"
 
 interface ReportStats {
   totalUsers: number
@@ -20,6 +20,9 @@ interface ReportStats {
   experiencedCoaches: number
   totalCompletedResources: number
   totalBadgesEarned: number
+  totalActiveClients: number
+  totalHAScheduled: number
+  haScheduledToday: number
 }
 
 export default function AdminReportsPage() {
@@ -89,6 +92,29 @@ export default function AdminReportsPage() {
         .from("user_badges")
         .select("*", { count: "exact", head: true })
 
+      // Get total active clients across all coaches
+      const { count: totalActiveClients } = await supabase
+        .from("clients")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active")
+
+      // Get total HA scheduled (today and in the future)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const { count: totalHAScheduled } = await supabase
+        .from("prospects")
+        .select("*", { count: "exact", head: true })
+        .gte("ha_scheduled_at", today.toISOString())
+
+      // Get HA scheduled for today only
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const { count: haScheduledToday } = await supabase
+        .from("prospects")
+        .select("*", { count: "exact", head: true })
+        .gte("ha_scheduled_at", today.toISOString())
+        .lt("ha_scheduled_at", tomorrow.toISOString())
+
       setStats({
         totalUsers: totalUsers || 0,
         activeUsers7Days: activeUsers7Days || 0,
@@ -99,6 +125,9 @@ export default function AdminReportsPage() {
         experiencedCoaches,
         totalCompletedResources: totalCompletedResources || 0,
         totalBadgesEarned: totalBadgesEarned || 0,
+        totalActiveClients: totalActiveClients || 0,
+        totalHAScheduled: totalHAScheduled || 0,
+        haScheduledToday: haScheduledToday || 0,
       })
     } catch (error) {
       console.error("Error loading stats:", error)
@@ -231,6 +260,32 @@ export default function AdminReportsPage() {
                   <div className="text-3xl font-bold text-optavia-dark">{stats.totalBadgesEarned}</div>
                   <p className="text-xs text-optavia-gray mt-1">
                     Total badges earned by coaches
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-optavia-gray">Active Clients</CardTitle>
+                  <UserCheck className="h-5 w-5 text-purple-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-optavia-dark">{stats.totalActiveClients}</div>
+                  <p className="text-xs text-optavia-gray mt-1">
+                    Total active clients across all coaches
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border border-gray-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-optavia-gray">HA Scheduled</CardTitle>
+                  <Calendar className="h-5 w-5 text-orange-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-optavia-dark">{stats.totalHAScheduled}</div>
+                  <p className="text-xs text-optavia-gray mt-1">
+                    {stats.haScheduledToday} today • {stats.totalHAScheduled - stats.haScheduledToday} upcoming
                   </p>
                 </CardContent>
               </Card>
