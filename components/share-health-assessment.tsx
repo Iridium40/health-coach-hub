@@ -159,7 +159,7 @@ export function ShareHealthAssessment({
             Send your assessment link via email, SMS, or social media
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-hidden">
             {/* Customize Message */}
             <div className="space-y-3">
               <Label htmlFor="customMessage" className="font-semibold">
