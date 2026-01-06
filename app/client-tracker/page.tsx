@@ -62,7 +62,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { MilestoneActionModal } from "@/components/milestone-action-modal"
 import { ClientJourneyGuide } from "@/components/client-journey-guide"
-import { GraduationCap, Trophy, Heart } from "lucide-react"
+import { GraduationCap, Trophy, Heart, Download } from "lucide-react"
 import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
 import type { CalendarEvent } from "@/lib/calendar-utils"
@@ -336,6 +336,45 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     }
   }
 
+  const exportToCSV = () => {
+    const headers = ["Label", "Status", "Start Date", "Program Day", "Phase", "Coach Prospect", "Next Check-in", "Last Touchpoint", "Notes", "Created"]
+    
+    const rows = clients.map(c => {
+      const programDay = getProgramDay(c.start_date)
+      const phase = getDayPhase(programDay)
+      return [
+        c.label,
+        c.status.charAt(0).toUpperCase() + c.status.slice(1),
+        new Date(c.start_date).toLocaleDateString(),
+        programDay.toString(),
+        phase.label,
+        c.is_coach_prospect ? "Yes" : "No",
+        c.next_scheduled_at ? new Date(c.next_scheduled_at).toLocaleString() : "",
+        c.last_touchpoint_date || "",
+        c.notes?.replace(/"/g, '""') || "",
+        new Date(c.created_at).toLocaleDateString(),
+      ]
+    })
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `clients-${new Date().toISOString().split("T")[0]}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+
+    toast({
+      title: "Export complete",
+      description: `Exported ${clients.length} clients to CSV`,
+    })
+  }
+
   const openTextTemplates = (client: any) => {
     setSelectedClient(client)
     setShowTextModal(true)
@@ -393,6 +432,14 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                   100's List
                 </Button>
               </Link>
+              <Button
+                variant="outline"
+                onClick={exportToCSV}
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
               <Button
                 onClick={() => setShowAddModal(true)}
                 className="bg-white text-[hsl(var(--optavia-green))] hover:bg-white/90"

@@ -66,6 +66,7 @@ import {
   CalendarDays,
   Info,
   GraduationCap,
+  Download,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -379,6 +380,39 @@ Talking Points:
     })
   }
 
+  const exportToCSV = () => {
+    const headers = ["Label", "Status", "Source", "Action Type", "Next Action", "HA Scheduled", "Notes", "Created"]
+    
+    const rows = prospects.map(p => [
+      p.label,
+      statusConfig[p.status]?.label || p.status,
+      sourceOptions.find(s => s.value === p.source)?.label || p.source,
+      p.action_type ? actionTypeLabels[p.action_type] : "",
+      p.next_action || "",
+      p.ha_scheduled_at ? new Date(p.ha_scheduled_at).toLocaleString() : "",
+      p.notes?.replace(/"/g, '""') || "",
+      new Date(p.created_at).toLocaleDateString(),
+    ])
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `100s-list-${new Date().toISOString().split("T")[0]}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+
+    toast({
+      title: "Export complete",
+      description: `Exported ${prospects.length} prospects to CSV`,
+    })
+  }
+
   const filteredProspects = getFilteredProspects(filterStatus, searchTerm)
 
   if (loading) {
@@ -429,6 +463,14 @@ Talking Points:
                   My Clients
                 </Button>
               </Link>
+              <Button
+                variant="outline"
+                onClick={exportToCSV}
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
               <Button
                 onClick={() => setShowAddModal(true)}
                 className="bg-white text-[hsl(var(--optavia-green))] hover:bg-white/90"
