@@ -287,17 +287,26 @@ function CreateReminderModal({ isOpen, onClose, editingReminder, prefillEntity }
 function ReminderCard({ 
   reminder, 
   onEdit, 
+  onComplete,
+  onUncomplete,
+  onDelete,
+  isOverdue: isOverdueFn,
+  isDueToday: isDueTodayFn,
   compact = false 
 }: { 
   reminder: Reminder
   onEdit: () => void
+  onComplete: (id: string) => Promise<boolean>
+  onUncomplete: (id: string) => Promise<boolean>
+  onDelete: (id: string) => Promise<boolean>
+  isOverdue: (reminder: Reminder) => boolean
+  isDueToday: (reminder: Reminder) => boolean
   compact?: boolean 
 }) {
-  const { completeReminder, uncompleteReminder, deleteReminder, isOverdue, isDueToday } = useReminders()
   const { toast } = useToast()
 
-  const overdue = isOverdue(reminder)
-  const dueToday = isDueToday(reminder)
+  const overdue = isOverdueFn(reminder)
+  const dueToday = isDueTodayFn(reminder)
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + "T00:00:00")
@@ -322,18 +331,18 @@ function ReminderCard({
   }
 
   const handleComplete = async () => {
-    const success = await completeReminder(reminder.id)
+    const success = await onComplete(reminder.id)
     if (success) {
       toast({ title: "✓ Reminder completed!" })
     }
   }
 
   const handleUncomplete = async () => {
-    await uncompleteReminder(reminder.id)
+    await onUncomplete(reminder.id)
   }
 
   const handleDelete = async () => {
-    const success = await deleteReminder(reminder.id)
+    const success = await onDelete(reminder.id)
     if (success) {
       toast({ title: "Reminder deleted" })
     }
