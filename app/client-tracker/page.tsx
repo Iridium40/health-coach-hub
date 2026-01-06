@@ -893,6 +893,29 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                               <Send className="h-3 w-3" />
                             </Button>
                           )}
+                          {/* Complete Check-in Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              updateClient(client.id, { 
+                                next_scheduled_at: null,
+                                recurring_frequency: null,
+                                recurring_day: null,
+                                recurring_time: null 
+                              })
+                              toggleTouchpoint(client.id, "am_done")
+                              toast({
+                                title: "✓ Check-in Completed!",
+                                description: "Great job staying connected!",
+                              })
+                            }}
+                            className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
+                            title="Mark check-in as completed"
+                          >
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </Button>
+                          {/* Cancel Check-in Button */}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -900,10 +923,10 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                               setClientToClear(client.id)
                               setShowClearConfirm(true)
                             }}
-                            className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
-                            title="Clear scheduled time"
+                            className="h-7 w-7 p-0 bg-red-100 hover:bg-red-200 rounded-full"
+                            title="Cancel scheduled check-in"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-4 w-4 text-red-600" />
                           </Button>
                         </div>
                       )}

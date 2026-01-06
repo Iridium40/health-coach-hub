@@ -67,6 +67,7 @@ import {
   Info,
   GraduationCap,
   Download,
+  CheckCircle,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -912,6 +913,27 @@ Talking Points:
                               <Send className="h-3 w-3" />
                             </Button>
                           )}
+                          {/* Complete HA Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              updateProspect(prospect.id, { 
+                                ha_scheduled_at: null, 
+                                next_action: null,
+                                status: "converted" 
+                              })
+                              toast({
+                                title: "🎉 HA Completed!",
+                                description: "Great job! Prospect marked as converted.",
+                              })
+                            }}
+                            className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
+                            title="Mark HA as completed"
+                          >
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </Button>
+                          {/* Cancel HA Button */}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -919,10 +941,10 @@ Talking Points:
                               setProspectToClearHA(prospect.id)
                               setShowClearHAConfirm(true)
                             }}
-                            className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
-                            title="Clear scheduled HA"
+                            className="h-7 w-7 p-0 bg-red-100 hover:bg-red-200 rounded-full"
+                            title="Cancel scheduled HA"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-4 w-4 text-red-600" />
                           </Button>
                         </>
                       ) : prospect.next_action && (
@@ -1436,10 +1458,13 @@ Talking Points:
             <AlertDialogAction
               onClick={() => {
                 if (prospectToClearHA) {
-                  updateProspect(prospectToClearHA, { ha_scheduled_at: null })
+                  updateProspect(prospectToClearHA, { 
+                    ha_scheduled_at: null,
+                    next_action: null 
+                  })
                   toast({
-                    title: "HA cleared",
-                    description: "The scheduled Health Assessment has been removed.",
+                    title: "HA cancelled",
+                    description: "The scheduled Health Assessment has been cancelled.",
                   })
                   setProspectToClearHA(null)
                 }
