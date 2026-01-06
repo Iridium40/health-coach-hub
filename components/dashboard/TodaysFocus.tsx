@@ -28,6 +28,7 @@ import { getProgramDay, getDayPhase } from "@/hooks/use-clients"
 import type { User } from "@supabase/supabase-js"
 import type { Prospect } from "@/hooks/use-prospects"
 import type { ZoomCall } from "@/lib/types"
+import type { ExpandedZoomCall } from "@/lib/expand-recurring-events"
 
 interface TodaysFocusProps {
   user: User | null
@@ -35,7 +36,7 @@ interface TodaysFocusProps {
   isNewCoach?: boolean
   clients: any[]
   prospects: Prospect[]
-  upcomingMeetings: ZoomCall[]
+  upcomingMeetings: ExpandedZoomCall[]
   loadingMeetings: boolean
   needsAttention: (client: any) => boolean
   toggleTouchpoint: (clientId: string, field: "am_done" | "pm_done") => void
@@ -116,9 +117,9 @@ export function TodaysFocus({
     new Date(p.ha_scheduled_at) <= todayEnd
   ).slice(0, 3)
 
-  // Get meetings today
+  // Get meetings today (already filtered by date in parent, use occurrence_date)
   const meetingsToday = upcomingMeetings.filter(m => {
-    const meetingDate = new Date(m.scheduled_at)
+    const meetingDate = new Date(m.occurrence_date)
     return meetingDate >= todayStart && meetingDate <= todayEnd
   }).slice(0, 3)
 
@@ -234,9 +235,9 @@ export function TodaysFocus({
             ))}
 
             {/* Meetings Today */}
-            {meetingsToday.map(meeting => (
+            {meetingsToday.map((meeting, idx) => (
               <div
-                key={meeting.id}
+                key={`${meeting.id}-${idx}`}
                 className={`flex items-center justify-between p-2.5 bg-white rounded-lg border ${
                   meeting.status === "live" ? "border-red-300" : "border-blue-200"
                 }`}
@@ -248,8 +249,11 @@ export function TodaysFocus({
                     <Video className={`h-4 w-4 ${meeting.status === "live" ? "text-red-500" : "text-blue-500"}`} />
                   </div>
                   <div>
-                    <div className="font-medium text-sm text-gray-900 line-clamp-1">{meeting.title}</div>
-                    <div className="text-xs text-gray-500">{formatTime(meeting.scheduled_at)}</div>
+                    <div className="font-medium text-sm text-gray-900 line-clamp-1">
+                      {meeting.title}
+                      {meeting.is_occurrence && <span className="text-xs text-gray-400 ml-1">(recurring)</span>}
+                    </div>
+                    <div className="text-xs text-gray-500">{formatTime(meeting.occurrence_date)}</div>
                   </div>
                 </div>
                 {meeting.zoom_link && (

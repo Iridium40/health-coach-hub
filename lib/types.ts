@@ -57,6 +57,7 @@ export interface ZoomCall {
   is_recurring: boolean
   recurrence_pattern: string | null
   recurrence_day: string | null
+  recurrence_end_date?: string | null
   zoom_link: string | null
   zoom_meeting_id: string | null
   zoom_passcode: string | null

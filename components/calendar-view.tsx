@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { AddToCalendar } from "@/components/add-to-calendar"
+import { expandRecurringEvents, type ExpandedZoomCall } from "@/lib/expand-recurring-events"
 import type { ZoomCall } from "@/lib/types"
 
 type ViewMode = "month" | "week"
@@ -22,12 +23,12 @@ export function CalendarView() {
   const { user } = useAuth()
   const { toast } = useToast()
   const isMobile = useIsMobile()
-  const [zoomCalls, setZoomCalls] = useState<ZoomCall[]>([])
+  const [expandedCalls, setExpandedCalls] = useState<ExpandedZoomCall[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>("week") // Default to week for better mobile UX
   const [currentDate, setCurrentDate] = useState(new Date())
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [selectedEvent, setSelectedEvent] = useState<ZoomCall | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<ExpandedZoomCall | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -46,7 +47,9 @@ export function CalendarView() {
       .order("scheduled_at", { ascending: true })
 
     if (!error && data) {
-      setZoomCalls(data)
+      // Expand recurring events into individual occurrences
+      const expanded = expandRecurringEvents(data)
+      setExpandedCalls(expanded)
     }
     setLoading(false)
   }
@@ -134,10 +137,10 @@ export function CalendarView() {
     return days
   }, [currentDate])
 
-  // Get events for a specific date
+  // Get events for a specific date (using occurrence_date for recurring events)
   const getEventsForDate = (date: Date) => {
-    return zoomCalls.filter(call => {
-      const callDate = new Date(call.scheduled_at)
+    return expandedCalls.filter(call => {
+      const callDate = new Date(call.occurrence_date)
       return (
         callDate.getFullYear() === date.getFullYear() &&
         callDate.getMonth() === date.getMonth() &&
@@ -297,9 +300,9 @@ export function CalendarView() {
                     {dayInfo.date.getDate()}
                   </div>
                   <div className="space-y-0.5 sm:space-y-1">
-                    {events.slice(0, maxEventsToShow).map(event => (
+                    {events.slice(0, maxEventsToShow).map((event, eventIdx) => (
                       <button
-                        key={event.id}
+                        key={`${event.id}-${eventIdx}`}
                         onClick={(e) => {
                           e.stopPropagation()
                           setSelectedEvent(event)
@@ -307,7 +310,7 @@ export function CalendarView() {
                         className={`w-full text-left text-[10px] sm:text-xs text-white rounded px-0.5 sm:px-1 py-0 sm:py-0.5 truncate relative ${getCallTypeColor(event.call_type)}`}
                       >
                         {getStatusIndicator(event.status)}
-                        <span className="hidden sm:inline">{formatTime(event.scheduled_at)} </span>
+                        <span className="hidden sm:inline">{formatTime(event.occurrence_date)} </span>
                         <span className="hidden sm:inline">{event.title}</span>
                         <span className="sm:hidden">{event.title.substring(0, 8)}{event.title.length > 8 ? "…" : ""}</span>
                       </button>
@@ -374,9 +377,9 @@ export function CalendarView() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {events.map(event => (
+                      {events.map((event, eventIdx) => (
                         <button
-                          key={event.id}
+                          key={`${event.id}-${eventIdx}`}
                           onClick={() => setSelectedEvent(event)}
                           className={`w-full text-left p-2 rounded-lg border transition-shadow hover:shadow-md cursor-pointer ${
                             event.status === "live" 
@@ -389,7 +392,7 @@ export function CalendarView() {
                           {/* Time */}
                           <div className="flex items-center gap-1 text-xs font-medium text-gray-600 mb-1">
                             <Clock className="h-3 w-3" />
-                            {formatTime(event.scheduled_at)}
+                            {formatTime(event.occurrence_date)}
                           </div>
                           
                           {/* Title */}
@@ -475,11 +478,11 @@ export function CalendarView() {
                 </Button>
               </div>
 
-              <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2 sm:gap-3 text-optavia-gray text-sm sm:text-base">
                   <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                   <span>
-                    {new Date(selectedEvent.scheduled_at).toLocaleDateString(undefined, {
+                    {new Date(selectedEvent.occurrence_date).toLocaleDateString(undefined, {
                       weekday: 'short',
                       month: 'short',
                       day: 'numeric',
@@ -491,9 +494,15 @@ export function CalendarView() {
                 <div className="flex items-center gap-2 sm:gap-3 text-optavia-gray text-sm sm:text-base">
                   <Clock className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                   <span>
-                    {formatTime(selectedEvent.scheduled_at)} ({selectedEvent.duration_minutes} min)
+                    {formatTime(selectedEvent.occurrence_date)} ({selectedEvent.duration_minutes} min)
                   </span>
                 </div>
+
+                {selectedEvent.is_occurrence && (
+                  <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                    This is part of a recurring {selectedEvent.recurrence_pattern} meeting on {selectedEvent.recurrence_day}s
+                  </div>
+                )}
 
                 {selectedEvent.description && (
                   <p className="text-optavia-gray text-sm sm:text-base">{selectedEvent.description}</p>

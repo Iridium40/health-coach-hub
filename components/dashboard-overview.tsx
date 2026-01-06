@@ -21,6 +21,7 @@ import { useTrainingResources } from "@/hooks/use-training-resources"
 import { useRankCalculator, type RankType } from "@/hooks/use-rank-calculator"
 import { useBookmarks } from "@/hooks/use-bookmarks"
 import type { ZoomCall } from "@/lib/types"
+import { expandRecurringEvents, getEventsForDate, type ExpandedZoomCall } from "@/lib/expand-recurring-events"
 import { getOnboardingProgress } from "@/lib/onboarding-utils"
 import {
   Dialog,
@@ -87,7 +88,7 @@ export function DashboardOverview() {
   // Rank calculator
   const { rankData, frontlineCoaches, qualifyingLegsCount, calculateGaps, getNextRank } = useRankCalculator(user)
 
-  const [upcomingMeetings, setUpcomingMeetings] = useState<ZoomCall[]>([])
+  const [upcomingMeetings, setUpcomingMeetings] = useState<ExpandedZoomCall[]>([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
   const [onboardingProgress, setOnboardingProgress] = useState<{ completed: number; total: number; percentage: number }>({ completed: 0, total: 3, percentage: 0 })
   const [pinnedToolIds, setPinnedToolIds] = useState<string[]>([])
@@ -134,26 +135,25 @@ export function DashboardOverview() {
 
   const hasPinnedItems = pinnedTools.length > 0 || pinnedResources.length > 0 || bookmarkedTrainingResources.length > 0
 
-  // Load today's meetings
+  // Load today's meetings (including recurring)
   useEffect(() => {
     if (!user) return
 
     const loadMeetings = async () => {
-      const now = new Date()
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+      const today = new Date()
 
+      // Fetch all upcoming/live meetings to expand recurring ones
       const { data, error } = await supabase
         .from("zoom_calls")
         .select("*")
         .in("status", ["upcoming", "live"])
-        .gte("scheduled_at", startOfToday.toISOString())
-        .lte("scheduled_at", endOfToday.toISOString())
         .order("scheduled_at", { ascending: true })
-        .limit(3)
 
       if (!error && data) {
-        setUpcomingMeetings(data)
+        // Expand recurring events and filter for today
+        const expandedEvents = expandRecurringEvents(data)
+        const todaysEvents = getEventsForDate(expandedEvents, today)
+        setUpcomingMeetings(todaysEvents.slice(0, 5))
       }
       setLoadingMeetings(false)
     }

@@ -46,6 +46,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurrencePattern, setRecurrencePattern] = useState<string>("")
   const [recurrenceDay, setRecurrenceDay] = useState<string>("")
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<string>("")
   const [zoomLink, setZoomLink] = useState("")
   const [zoomMeetingId, setZoomMeetingId] = useState("")
   const [zoomPasscode, setZoomPasscode] = useState("")
@@ -98,6 +99,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setIsRecurring(false)
     setRecurrencePattern("")
     setRecurrenceDay("")
+    setRecurrenceEndDate("")
     setZoomLink("")
     setZoomMeetingId("")
     setZoomPasscode("")
@@ -125,6 +127,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setIsRecurring(call.is_recurring || false)
     setRecurrencePattern(call.recurrence_pattern || "")
     setRecurrenceDay(call.recurrence_day || "")
+    setRecurrenceEndDate(call.recurrence_end_date || "")
     setZoomLink(call.zoom_link || "")
     setZoomMeetingId(call.zoom_meeting_id || "")
     setZoomPasscode(call.zoom_passcode || "")
@@ -182,6 +185,18 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
 
     if (!user) return
 
+    // Validate recurring fields
+    if (isRecurring && eventType === "meeting") {
+      if (!recurrencePattern || !recurrenceDay || !recurrenceEndDate) {
+        toast({
+          title: "Missing Information",
+          description: "Please select pattern, day, and end date for recurring meetings",
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
     setSubmitting(true)
 
     const scheduledDate = new Date(scheduledAt)
@@ -194,6 +209,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
       is_recurring: isRecurring,
       recurrence_pattern: isRecurring ? recurrencePattern : null,
       recurrence_day: isRecurring ? recurrenceDay : null,
+      recurrence_end_date: isRecurring ? recurrenceEndDate : null,
       zoom_link: isVirtual ? (zoomLink || null) : null,
       zoom_meeting_id: isVirtual ? (zoomMeetingId || null) : null,
       zoom_passcode: isVirtual ? (zoomPasscode || null) : null,
@@ -583,11 +599,11 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                   )}
 
                   {isRecurring && eventType === "meeting" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-optavia-dark">Pattern</Label>
-                        <Select value={recurrencePattern} onValueChange={setRecurrencePattern}>
-                          <SelectTrigger className="border-gray-300">
+                        <Label className="text-optavia-dark">Pattern *</Label>
+                        <Select value={recurrencePattern} onValueChange={setRecurrencePattern} required>
+                          <SelectTrigger className={`border-gray-300 ${!recurrencePattern ? 'border-red-300' : ''}`}>
                             <SelectValue placeholder="Select pattern" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border border-gray-200 shadow-lg">
@@ -596,11 +612,14 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                             <SelectItem value="monthly">Monthly</SelectItem>
                           </SelectContent>
                         </Select>
+                        {!recurrencePattern && (
+                          <p className="text-xs text-red-500">Please select a pattern</p>
+                        )}
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-optavia-dark">Day</Label>
-                        <Select value={recurrenceDay} onValueChange={setRecurrenceDay}>
-                          <SelectTrigger className="border-gray-300">
+                        <Label className="text-optavia-dark">Day *</Label>
+                        <Select value={recurrenceDay} onValueChange={setRecurrenceDay} required>
+                          <SelectTrigger className={`border-gray-300 ${!recurrenceDay ? 'border-red-300' : ''}`}>
                             <SelectValue placeholder="Select day" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border border-gray-200 shadow-lg">
@@ -613,6 +632,23 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                             <SelectItem value="Sunday">Sunday</SelectItem>
                           </SelectContent>
                         </Select>
+                        {!recurrenceDay && (
+                          <p className="text-xs text-red-500">Please select a day</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-optavia-dark">End Date *</Label>
+                        <Input
+                          type="date"
+                          value={recurrenceEndDate}
+                          onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                          min={scheduledAt ? scheduledAt.split("T")[0] : undefined}
+                          required
+                          className={`border-gray-300 ${!recurrenceEndDate ? 'border-red-300' : ''}`}
+                        />
+                        {!recurrenceEndDate && (
+                          <p className="text-xs text-red-500">Please select an end date</p>
+                        )}
                       </div>
                     </div>
                   )}

@@ -12,12 +12,14 @@ import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { AddToCalendar } from "@/components/add-to-calendar"
+import { expandRecurringEvents, filterUpcomingEvents, type ExpandedZoomCall } from "@/lib/expand-recurring-events"
 import type { ZoomCall } from "@/lib/types"
 
 export function ZoomCalls() {
   const { user } = useAuth()
   const { toast } = useToast()
-  const [zoomCalls, setZoomCalls] = useState<ZoomCall[]>([])
+  const [expandedCalls, setExpandedCalls] = useState<ExpandedZoomCall[]>([])
+  const [pastCalls, setPastCalls] = useState<ZoomCall[]>([])
   const [loading, setLoading] = useState(true)
   const [showPast, setShowPast] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -39,7 +41,17 @@ export function ZoomCalls() {
       .order("scheduled_at", { ascending: true })
 
     if (!error && data) {
-      setZoomCalls(data)
+      // Separate completed calls (for recordings) from upcoming/live calls
+      const completed = data.filter(call => call.status === "completed")
+      const upcomingAndLive = data.filter(call => call.status !== "completed")
+      
+      // Expand recurring events into individual occurrences
+      const expanded = expandRecurringEvents(upcomingAndLive)
+      // Filter to only show upcoming occurrences
+      const upcomingExpanded = filterUpcomingEvents(expanded)
+      
+      setExpandedCalls(upcomingExpanded)
+      setPastCalls(completed.slice(0, 10)) // Keep last 10 completed
     }
     setLoading(false)
   }
@@ -105,14 +117,6 @@ export function ZoomCalls() {
     })
   }
 
-  const isCallUpcoming = (call: ZoomCall) => {
-    return call.status === "upcoming" || call.status === "live"
-  }
-
-  const isPastCall = (call: ZoomCall) => {
-    return call.status === "completed"
-  }
-
   if (loading) {
     return (
       <Card className="bg-white border border-gray-200">
@@ -125,10 +129,7 @@ export function ZoomCalls() {
     )
   }
 
-  const upcomingCalls = zoomCalls.filter(isCallUpcoming)
-  const pastCalls = zoomCalls.filter(isPastCall).slice(0, 10) // Show last 10
-
-  if (upcomingCalls.length === 0 && pastCalls.length === 0) {
+  if (expandedCalls.length === 0 && pastCalls.length === 0) {
     return null
   }
 
@@ -140,11 +141,11 @@ export function ZoomCalls() {
       </div>
 
       {/* Upcoming & Live Calls */}
-      {upcomingCalls.length > 0 && (
+      {expandedCalls.length > 0 && (
         <div className="space-y-3">
-          {upcomingCalls.map((call) => (
+          {expandedCalls.map((call, index) => (
             <Card 
-              key={call.id} 
+              key={`${call.id}-${index}`} 
               className={`bg-white border shadow-sm transition-all ${
                 call.status === "live" 
                   ? "border-red-300 ring-2 ring-red-100" 
@@ -158,19 +159,24 @@ export function ZoomCalls() {
                       <CardTitle className="text-base text-optavia-dark">{call.title}</CardTitle>
                       {getStatusBadge(call.status)}
                       {getCallTypeBadge(call.call_type)}
+                      {call.is_occurrence && (
+                        <Badge variant="outline" className="text-xs text-gray-500 border-gray-300">
+                          Recurring
+                        </Badge>
+                      )}
                     </div>
                     <CardDescription className="text-optavia-gray flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                       <span className="flex items-center gap-1 font-medium text-optavia-dark">
                         <Calendar className="h-3 w-3" />
-                        {formatDate(call.scheduled_at)}
+                        {formatDate(call.occurrence_date)}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {formatTime(call.scheduled_at)} ({call.duration_minutes} min)
+                        {formatTime(call.occurrence_date)} ({call.duration_minutes} min)
                       </span>
                       {call.is_recurring && call.recurrence_pattern && (
                         <span className="text-xs text-gray-500">
-                          • {call.recurrence_pattern}
+                          • {call.recurrence_pattern} on {call.recurrence_day}s
                         </span>
                       )}
                     </CardDescription>
