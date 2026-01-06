@@ -45,7 +45,10 @@ export function ShareHealthAssessment({
   const assessmentLink = profile?.email ? createAssessmentLink(profile.email) : null
   const coachName = profile?.full_name || "Your Coach"
   
-  const defaultMessage = `Hi${recipientName ? ` ${recipientName}` : ""}! I'd love to learn more about your health goals. Please take a few minutes to complete this quick health assessment, and I'll reach out to schedule a time to chat!\n\n${assessmentLink}\n\n- ${coachName}`
+  // Get first name only from recipient name
+  const firstName = recipientName ? recipientName.split(" ")[0] : ""
+  
+  const defaultMessage = `Hi${firstName ? ` ${firstName}` : ""}! I'd love to learn more about your health goals. Please take a few minutes to complete this quick health assessment, and I'll reach out to schedule a time to chat!\n\n${assessmentLink}\n\n- ${coachName}`
 
   useEffect(() => {
     if (open) {
