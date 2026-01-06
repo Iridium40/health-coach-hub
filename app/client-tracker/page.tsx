@@ -19,6 +19,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -93,6 +103,8 @@ export default function ClientTrackerPage() {
   const [showGuideModal, setShowGuideModal] = useState(false)
   const [showMilestoneModal, setShowMilestoneModal] = useState(false)
   const [milestoneCount, setMilestoneCount] = useState(0)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [clientToClear, setClientToClear] = useState<string | null>(null)
   const [selectedClient, setSelectedClient] = useState<any>(null)
   const [filterStatus, setFilterStatus] = useState<ClientStatus | "all">("active")
   const [searchTerm, setSearchTerm] = useState("")
@@ -834,18 +846,8 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              if (window.confirm("Clear this scheduled check-in?")) {
-                                updateClient(client.id, { 
-                                  next_scheduled_at: null,
-                                  recurring_frequency: null,
-                                  recurring_day: null,
-                                  recurring_time: null 
-                                })
-                                toast({
-                                  title: "Check-in cleared",
-                                  description: "The scheduled check-in has been removed.",
-                                })
-                              }
+                              setClientToClear(client.id)
+                              setShowClearConfirm(true)
                             }}
                             className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
                             title="Clear scheduled time"
@@ -1209,6 +1211,41 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
           <ClientJourneyGuide />
         </DialogContent>
       </Dialog>
+
+      {/* Clear Schedule Confirmation */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Scheduled Check-in?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the scheduled check-in time. You can always schedule a new one.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (clientToClear) {
+                  updateClient(clientToClear, { 
+                    next_scheduled_at: null,
+                    recurring_frequency: null,
+                    recurring_day: null,
+                    recurring_time: null 
+                  })
+                  toast({
+                    title: "Check-in cleared",
+                    description: "The scheduled check-in has been removed.",
+                  })
+                  setClientToClear(null)
+                }
+              }}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Clear Schedule
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Client Milestone Celebration Modal */}
       <Dialog open={showMilestoneModal} onOpenChange={setShowMilestoneModal}>

@@ -132,6 +132,10 @@ export default function ProspectTrackerPage() {
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [prospectToDelete, setProspectToDelete] = useState<string | null>(null)
+  
+  // Clear HA confirmation state
+  const [showClearHAConfirm, setShowClearHAConfirm] = useState(false)
+  const [prospectToClearHA, setProspectToClearHA] = useState<string | null>(null)
 
   const [newProspect, setNewProspect] = useState({
     label: "",
@@ -866,13 +870,8 @@ Talking Points:
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              if (window.confirm("Clear this scheduled Health Assessment?")) {
-                                updateProspect(prospect.id, { ha_scheduled_at: null })
-                                toast({
-                                  title: "HA cleared",
-                                  description: "The scheduled Health Assessment has been removed.",
-                                })
-                              }
+                              setProspectToClearHA(prospect.id)
+                              setShowClearHAConfirm(true)
                             }}
                             className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
                             title="Clear scheduled HA"
@@ -1370,6 +1369,38 @@ Talking Points:
               className="bg-red-500 hover:bg-red-600 text-white"
             >
               Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear HA Confirmation Dialog */}
+      <AlertDialog open={showClearHAConfirm} onOpenChange={setShowClearHAConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Scheduled Health Assessment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the scheduled HA time. You can always schedule a new one.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setProspectToClearHA(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (prospectToClearHA) {
+                  updateProspect(prospectToClearHA, { ha_scheduled_at: null })
+                  toast({
+                    title: "HA cleared",
+                    description: "The scheduled Health Assessment has been removed.",
+                  })
+                  setProspectToClearHA(null)
+                }
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Clear Schedule
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
