@@ -893,28 +893,30 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                               <Send className="h-3 w-3" />
                             </Button>
                           )}
-                          {/* Complete Check-in Button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              updateClient(client.id, { 
-                                next_scheduled_at: null,
-                                recurring_frequency: null,
-                                recurring_day: null,
-                                recurring_time: null 
-                              })
-                              toggleTouchpoint(client.id, "am_done")
-                              toast({
-                                title: "✓ Check-in Completed!",
-                                description: "Great job staying connected!",
-                              })
-                            }}
-                            className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
-                            title="Mark check-in as completed"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </Button>
+                          {/* Complete Check-in Button - only show if date is today or past */}
+                          {new Date(client.next_scheduled_at!).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                updateClient(client.id, { 
+                                  next_scheduled_at: null,
+                                  recurring_frequency: null,
+                                  recurring_day: null,
+                                  recurring_time: null 
+                                })
+                                toggleTouchpoint(client.id, "am_done")
+                                toast({
+                                  title: "✓ Check-in Completed!",
+                                  description: "Great job staying connected!",
+                                })
+                              }}
+                              className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
+                              title="Mark check-in as completed"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </Button>
+                          )}
                           {/* Cancel Check-in Button */}
                           <Button
                             variant="ghost"

@@ -913,26 +913,28 @@ Talking Points:
                               <Send className="h-3 w-3" />
                             </Button>
                           )}
-                          {/* Complete HA Button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              updateProspect(prospect.id, { 
-                                ha_scheduled_at: null, 
-                                next_action: null,
-                                status: "converted" 
-                              })
-                              toast({
-                                title: "🎉 HA Completed!",
-                                description: "Great job! Prospect marked as converted.",
-                              })
-                            }}
-                            className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
-                            title="Mark HA as completed"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </Button>
+                          {/* Complete HA Button - only show if HA date is today or past */}
+                          {new Date(prospect.ha_scheduled_at).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                updateProspect(prospect.id, { 
+                                  ha_scheduled_at: null, 
+                                  next_action: null,
+                                  status: "converted" 
+                                })
+                                toast({
+                                  title: "🎉 HA Completed!",
+                                  description: "Great job! Prospect marked as converted.",
+                                })
+                              }}
+                              className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
+                              title="Mark HA as completed"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </Button>
+                          )}
                           {/* Cancel HA Button */}
                           <Button
                             variant="ghost"
