@@ -7,6 +7,7 @@ import type { User } from "@supabase/supabase-js"
 export interface TrainingResource {
   id: string
   category: string
+  category_id?: string | null
   title: string
   description: string | null
   url: string
@@ -81,30 +82,36 @@ export function useTrainingResources(user?: User | null, userRank?: string | nul
   const supabase = useMemo(() => createClient(), [])
 
   // Load resources, categories, and completions
+  // Categories are loaded in sort_order from database
+  // Resources are loaded in sort_order from database
   const loadData = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      // Load categories
+      // Load categories - sorted by sort_order
       const { data: catData, error: catError } = await supabase
         .from("training_categories")
         .select("*")
         .eq("is_active", true)
-        .order("sort_order")
+        .order("sort_order", { ascending: true })
 
       if (catError) throw catError
-      setCategories(catData || [])
+      // Ensure categories are sorted by sort_order (belt and suspenders)
+      const sortedCategories = (catData || []).sort((a, b) => a.sort_order - b.sort_order)
+      setCategories(sortedCategories)
 
-      // Load resources
+      // Load resources - sorted by sort_order within category
       const { data: resData, error: resError } = await supabase
         .from("training_resources")
         .select("*")
         .eq("is_active", true)
-        .order("sort_order")
+        .order("sort_order", { ascending: true })
 
       if (resError) throw resError
-      setResources(resData || [])
+      // Ensure resources are sorted by sort_order (belt and suspenders)
+      const sortedResources = (resData || []).sort((a, b) => a.sort_order - b.sort_order)
+      setResources(sortedResources)
 
       // Load completions if user is logged in
       if (user) {
@@ -137,14 +144,24 @@ export function useTrainingResources(user?: User | null, userRank?: string | nul
   }, [categories, userRank])
 
   // Get unique categories from resources (filtered by rank access)
+  // IMPORTANT: Sort by category sort_order from database
   const uniqueCategories = useMemo(() => {
     const accessibleCategoryNames = new Set(accessibleCategories.map(c => c.name))
+    
+    // Create a map of category name -> sort_order from the categories table
+    const categorySortOrders = new Map<string, number>()
+    categories.forEach(c => {
+      categorySortOrders.set(c.name, c.sort_order)
+    })
+    
+    // Get unique category names from resources that are accessible
     const cats = Array.from(new Set(resources.map(r => r.category)))
       .filter(catName => accessibleCategoryNames.has(catName))
-    // Sort by category order from training_categories table
+    
+    // Sort by the sort_order from training_categories table
     return cats.sort((a, b) => {
-      const aOrder = categories.find(c => c.name === a)?.sort_order ?? 999
-      const bOrder = categories.find(c => c.name === b)?.sort_order ?? 999
+      const aOrder = categorySortOrders.get(a) ?? 999
+      const bOrder = categorySortOrders.get(b) ?? 999
       return aOrder - bOrder
     })
   }, [resources, categories, accessibleCategories])
@@ -161,32 +178,39 @@ export function useTrainingResources(user?: User | null, userRank?: string | nul
   }, [categories])
 
   // Filter resources by category and search (using accessible resources)
+  // IMPORTANT: Results are sorted by sort_order
   const filterResources = useCallback((
     category: string | "All",
     searchQuery: string
   ): TrainingResource[] => {
-    return accessibleResources.filter(r => {
-      // Category filter
-      if (category !== "All" && r.category !== category) return false
+    return accessibleResources
+      .filter(r => {
+        // Category filter
+        if (category !== "All" && r.category !== category) return false
 
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        const matchesTitle = r.title.toLowerCase().includes(query)
-        const matchesDescription = r.description?.toLowerCase().includes(query) || false
-        const matchesCategory = r.category.toLowerCase().includes(query)
-        return matchesTitle || matchesDescription || matchesCategory
-      }
+        // Search filter
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase()
+          const matchesTitle = r.title.toLowerCase().includes(query)
+          const matchesDescription = r.description?.toLowerCase().includes(query) || false
+          const matchesCategory = r.category.toLowerCase().includes(query)
+          return matchesTitle || matchesDescription || matchesCategory
+        }
 
-      return true
-    })
+        return true
+      })
+      .sort((a, b) => a.sort_order - b.sort_order)
   }, [accessibleResources])
 
   // Group resources by category (using accessible resources)
+  // IMPORTANT: Sort resources within each category by sort_order
   const groupedResources = useMemo(() => {
     const grouped: Record<string, TrainingResource[]> = {}
     uniqueCategories.forEach(cat => {
-      grouped[cat] = accessibleResources.filter(r => r.category === cat)
+      // Get resources for this category and sort by sort_order
+      grouped[cat] = accessibleResources
+        .filter(r => r.category === cat)
+        .sort((a, b) => a.sort_order - b.sort_order)
     })
     return grouped
   }, [accessibleResources, uniqueCategories])
@@ -372,14 +396,21 @@ export function useTrainingResourcesAdmin() {
     reordered[currentIndex] = reordered[newIndex]
     reordered[newIndex] = temp
 
-    // Update all sort_orders with new sequential values
+    // Update all sort_orders with new sequential values (1-indexed for clarity)
+    const updates: Promise<any>[] = []
     for (let i = 0; i < reordered.length; i++) {
-      await supabase
-        .from("training_resources")
-        .update({ sort_order: i })
-        .eq("id", reordered[i].id)
+      updates.push(
+        supabase
+          .from("training_resources")
+          .update({ sort_order: i + 1 })
+          .eq("id", reordered[i].id)
+      )
     }
+    
+    // Execute all updates in parallel for better performance
+    await Promise.all(updates)
 
+    // Reload to get fresh data
     await reload()
   }
 
@@ -427,6 +458,7 @@ export function useTrainingResourcesAdmin() {
   }
 
   const moveCategory = async (categoryId: string, direction: "up" | "down") => {
+    // Sort categories by current sort_order to get proper sequence
     const sortedCategories = [...categories].sort((a, b) => a.sort_order - b.sort_order)
     const currentIndex = sortedCategories.findIndex(c => c.id === categoryId)
     if (currentIndex === -1) return
@@ -440,14 +472,21 @@ export function useTrainingResourcesAdmin() {
     reordered[currentIndex] = reordered[newIndex]
     reordered[newIndex] = temp
 
-    // Update all sort_orders with new sequential values
+    // Update all sort_orders with new sequential values (1-indexed for clarity)
+    const updates: Promise<any>[] = []
     for (let i = 0; i < reordered.length; i++) {
-      await supabase
-        .from("training_categories")
-        .update({ sort_order: i })
-        .eq("id", reordered[i].id)
+      updates.push(
+        supabase
+          .from("training_categories")
+          .update({ sort_order: i + 1 })
+          .eq("id", reordered[i].id)
+      )
     }
+    
+    // Execute all updates in parallel for better performance
+    await Promise.all(updates)
 
+    // Reload to get fresh data
     await reload()
   }
 
