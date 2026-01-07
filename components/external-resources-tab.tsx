@@ -24,6 +24,8 @@ import { ClientOnboardingDialog } from "@/components/coach-tools/client-onboardi
 import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
 import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
 import { OPTAVIAReferenceGuide } from "@/components/coach-tools/optavia-reference-guide"
+import { createClient } from "@/lib/supabase/client"
+import type { ExternalResource as DBExternalResource } from "@/lib/types"
 
 interface Resource {
   id: string
@@ -114,6 +116,28 @@ export function ExternalResourcesTab() {
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam || "All")
   const [pinnedIds, setPinnedIds] = useState<string[]>([])
   const [pinnedToolIds, setPinnedToolIds] = useState<string[]>([])
+  const [dbResources, setDbResources] = useState<DBExternalResource[]>([])
+  const [loadingResources, setLoadingResources] = useState(true)
+
+  // Fetch resources from database
+  useEffect(() => {
+    const fetchResources = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("external_resources")
+        .select("*")
+        .eq("is_active", true)
+        .order("category", { ascending: true })
+        .order("sort_order", { ascending: true })
+
+      if (!error && data) {
+        setDbResources(data)
+      }
+      setLoadingResources(false)
+    }
+
+    fetchResources()
+  }, [])
 
   // Sync selectedCategory with URL parameter when it changes
   useEffect(() => {
@@ -161,8 +185,32 @@ export function ExternalResourcesTab() {
     localStorage.setItem("pinnedTools", JSON.stringify(newPinned))
   }
 
-  // Memoize resources array to prevent unnecessary re-renders
-  const resources: Resource[] = useMemo(() => [
+  // Convert database resources to the Resource format (preserving sort_order)
+  const dbResourcesConverted: (Resource & { sort_order: number })[] = useMemo(() => {
+    return dbResources.map(r => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      url: r.is_dynamic && r.url.includes("{optavia_id}") && profile?.optavia_id
+        ? r.url.replace("{optavia_id}", profile.optavia_id)
+        : r.url,
+      buttonText: r.button_text,
+      category: r.category,
+      features: r.features || [],
+      sort_order: r.sort_order,
+    })).filter(r => {
+      // Filter out dynamic resources if user doesn't meet the condition
+      const dbResource = dbResources.find(db => db.id === r.id)
+      if (dbResource?.show_condition === "optavia_id" && !profile?.optavia_id) {
+        return false
+      }
+      return true
+    })
+  }, [dbResources, profile?.optavia_id])
+
+  // Static resources that are always available (fallback/built-in resources)
+  // These have high sort_order values so DB resources appear first within each category
+  const staticResources: (Resource & { sort_order: number })[] = useMemo(() => [
     {
       id: "optavia-strong-fb",
       title: "Optavia Strong Facebook Group",
@@ -170,6 +218,7 @@ export function ExternalResourcesTab() {
       url: "https://www.facebook.com/groups/810104670912639",
       buttonText: "Go to Facebook Group",
       category: "Community",
+      sort_order: 100,
       features: [
         "Connect with fellow coaches",
         "Share best practices and tips",
@@ -185,6 +234,7 @@ export function ExternalResourcesTab() {
       url: "https://www.facebook.com/groups/2156291101444241",
       buttonText: "Join Team Page",
       category: "Community",
+      sort_order: 101,
       features: [
         "Team updates and announcements",
         "Fresh momentum and new beginnings",
@@ -200,6 +250,7 @@ export function ExternalResourcesTab() {
       url: "https://www.facebook.com/groups/778947831962215",
       buttonText: "Join Client Page",
       category: "Community",
+      sort_order: 102,
       features: [
         "Client community and support",
         "Share success stories and wins",
@@ -215,6 +266,7 @@ export function ExternalResourcesTab() {
       url: "https://optaviaconnect.com/login",
       buttonText: "Go to OPTAVIA Connect",
       category: "OPTAVIA Resources",
+      sort_order: 100,
       features: [
         "Business performance tracking and analytics",
         "Client management tools and resources",
@@ -232,6 +284,7 @@ export function ExternalResourcesTab() {
             url: `https://www.optavia.com/us/en/coach/${profile.optavia_id}`,
             buttonText: "View My OPTAVIA Profile",
             category: "OPTAVIA Resources",
+            sort_order: 101,
             features: [
               "Public coach profile page",
               "Share your coaching journey and story",
@@ -249,6 +302,7 @@ export function ExternalResourcesTab() {
       url: "https://www.optaviablog.com",
       buttonText: "Visit OPTAVIA Blog",
       category: "OPTAVIA Resources",
+      sort_order: 102,
       features: [
         "Lean & Green meal recipes and tips",
         "Weight loss strategies and motivation",
@@ -264,6 +318,7 @@ export function ExternalResourcesTab() {
       url: "https://www.habitsofhealth.com/",
       buttonText: "Visit Habits of Health",
       category: "Habits of Health",
+      sort_order: 100,
       features: [
         "Take the health assessment",
         "Download the LifeBook preview",
@@ -280,6 +335,7 @@ export function ExternalResourcesTab() {
       url: "https://www.optavia.com/us/en/habits-of-health",
       buttonText: "Learn the 6 Habits",
       category: "Habits of Health",
+      sort_order: 101,
       features: [
         "Six Habits of Health framework",
         "Habit tracking in the OPTAVIA app",
@@ -296,6 +352,7 @@ export function ExternalResourcesTab() {
       url: "https://www.facebook.com/optavia",
       buttonText: "Go to Facebook Page",
       category: "Social Media",
+      sort_order: 100,
       features: [
         "Latest OPTAVIA news and updates",
         "Success stories and testimonials",
@@ -311,6 +368,7 @@ export function ExternalResourcesTab() {
       url: "https://www.instagram.com/optavia",
       buttonText: "Go to Instagram Page",
       category: "Social Media",
+      sort_order: 101,
       features: [
         "Visual inspiration and recipes",
         "Transformation stories and testimonials",
@@ -326,6 +384,7 @@ export function ExternalResourcesTab() {
       url: "https://www.youtube.com/optavia",
       buttonText: "Visit YouTube Channel",
       category: "Social Media",
+      sort_order: 102,
       features: [
         "Recipe videos and cooking tutorials",
         "Coaching tips and strategies",
@@ -335,6 +394,23 @@ export function ExternalResourcesTab() {
       ],
     },
   ], [profile?.optavia_id])
+
+  // Combine database resources with static resources (DB resources take priority)
+  // Sort by category first, then by sort_order within each category
+  const resources: (Resource & { sort_order: number })[] = useMemo(() => {
+    // DB resources override static resources with the same ID
+    const dbIds = new Set(dbResourcesConverted.map(r => r.id))
+    const filteredStatic = staticResources.filter(r => !dbIds.has(r.id))
+    const combined = [...dbResourcesConverted, ...filteredStatic]
+    
+    // Sort by category, then by sort_order
+    return combined.sort((a, b) => {
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category)
+      }
+      return a.sort_order - b.sort_order
+    })
+  }, [dbResourcesConverted, staticResources])
 
   // Get pinned resources
   const pinnedResources = useMemo(() => {
@@ -346,13 +422,39 @@ export function ExternalResourcesTab() {
     return COACH_TOOLS.filter((t) => pinnedToolIds.includes(t.id))
   }, [pinnedToolIds])
 
-  // Simplified category order per Phase 4 of UX redesign
-  const categories = ["All", "Coach Tools", "OPTAVIA Portals", "Communities"]
+  // Get unique categories from all resources (including DB resources)
+  const allResourceCategories = useMemo(() => {
+    const cats = new Set(resources.map(r => r.category))
+    return Array.from(cats).sort()
+  }, [resources])
+
+  // Simplified category order per Phase 4 of UX redesign + Training if present
+  const categories = useMemo(() => {
+    const baseCategories = ["All", "Coach Tools", "OPTAVIA Portals", "Communities"]
+    // Add Training if there are training resources
+    if (allResourceCategories.includes("Training")) {
+      baseCategories.push("Training")
+    }
+    // Add any other custom categories from the database
+    allResourceCategories.forEach(cat => {
+      if (!["Community", "OPTAVIA Resources", "Habits of Health", "Social Media", "Training", "Other"].includes(cat)) {
+        if (!baseCategories.includes(cat)) {
+          baseCategories.push(cat)
+        }
+      }
+    })
+    // Add "Other" at the end if present
+    if (allResourceCategories.includes("Other") && !baseCategories.includes("Other")) {
+      baseCategories.push("Other")
+    }
+    return baseCategories
+  }, [allResourceCategories])
 
   // Memoize filtered resources with simplified category mapping
+  // Resources are already sorted by category and sort_order from the combined array
   const filteredResources = useMemo(() => {
     if (selectedCategory === "Coach Tools") return []
-    return resources.filter((resource) => {
+    const filtered = resources.filter((resource) => {
       if (selectedCategory === "All") return true
       // Map simplified categories to original categories
       if (selectedCategory === "OPTAVIA Portals") {
@@ -361,8 +463,16 @@ export function ExternalResourcesTab() {
       if (selectedCategory === "Communities") {
         return resource.category === "Community"
       }
+      if (selectedCategory === "Training") {
+        return resource.category === "Training"
+      }
+      if (selectedCategory === "Other") {
+        return resource.category === "Other"
+      }
       return resource.category === selectedCategory
     })
+    // Sort by sort_order within the filtered results
+    return filtered.sort((a, b) => a.sort_order - b.sort_order)
   }, [resources, selectedCategory])
 
   // Check if we should show coach tools
@@ -468,6 +578,18 @@ export function ExternalResourcesTab() {
             <h3 className="font-heading font-semibold text-lg text-optavia-dark mb-4 flex items-center gap-2">
               <Users className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
               Communities & Groups
+            </h3>
+          )}
+          {selectedCategory === "Training" && (
+            <h3 className="font-heading font-semibold text-lg text-optavia-dark mb-4 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+              Training Resources
+            </h3>
+          )}
+          {selectedCategory === "Other" && (
+            <h3 className="font-heading font-semibold text-lg text-optavia-dark mb-4 flex items-center gap-2">
+              <ExternalLink className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+              Other Resources
             </h3>
           )}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
