@@ -104,24 +104,47 @@ export function DashboardOverview() {
   const [showRankPromotionModal, setShowRankPromotionModal] = useState(false)
   const [promotedRank, setPromotedRank] = useState<string | null>(null)
 
-  // Load pinned items from localStorage
+  // Load pinned items from localStorage (with Safari-safe error handling)
   useEffect(() => {
-    const savedTools = localStorage.getItem("pinnedTools")
-    if (savedTools) {
+    // Safety check for localStorage availability (Safari private mode, etc.)
+    const isLocalStorageAvailable = () => {
       try {
-        setPinnedToolIds(JSON.parse(savedTools))
+        const testKey = "__test__"
+        window.localStorage.setItem(testKey, testKey)
+        window.localStorage.removeItem(testKey)
+        return true
       } catch (e) {
-        console.error("Failed to parse pinned tools:", e)
+        return false
       }
     }
 
-    const savedResources = localStorage.getItem("pinnedResources")
-    if (savedResources) {
-      try {
-        setPinnedResourceIds(JSON.parse(savedResources))
-      } catch (e) {
-        console.error("Failed to parse pinned resources:", e)
+    if (!isLocalStorageAvailable()) {
+      console.warn("localStorage not available (possibly Safari private mode)")
+      return
+    }
+
+    try {
+      const savedTools = localStorage.getItem("pinnedTools")
+      if (savedTools) {
+        const parsed = JSON.parse(savedTools)
+        if (Array.isArray(parsed)) {
+          setPinnedToolIds(parsed)
+        }
       }
+    } catch (e) {
+      console.error("Failed to parse pinned tools:", e)
+    }
+
+    try {
+      const savedResources = localStorage.getItem("pinnedResources")
+      if (savedResources) {
+        const parsed = JSON.parse(savedResources)
+        if (Array.isArray(parsed)) {
+          setPinnedResourceIds(parsed)
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse pinned resources:", e)
     }
   }, [])
 

@@ -140,43 +140,74 @@ export function ExternalResourcesTab() {
     }
   }, [categoryParam])
 
-  // Load pinned resources and tools from localStorage on mount
+  // Load pinned resources and tools from localStorage on mount (Safari-safe)
   useEffect(() => {
-    const savedResources = localStorage.getItem("pinnedResources")
-    if (savedResources) {
+    // Safety check for localStorage availability (Safari private mode, etc.)
+    const isLocalStorageAvailable = () => {
       try {
-        setPinnedIds(JSON.parse(savedResources))
+        const testKey = "__test__"
+        window.localStorage.setItem(testKey, testKey)
+        window.localStorage.removeItem(testKey)
+        return true
       } catch (e) {
-        console.error("Failed to parse pinned resources:", e)
+        return false
       }
     }
-    
-    const savedTools = localStorage.getItem("pinnedTools")
-    if (savedTools) {
-      try {
-        setPinnedToolIds(JSON.parse(savedTools))
-      } catch (e) {
-        console.error("Failed to parse pinned tools:", e)
+
+    if (!isLocalStorageAvailable()) {
+      console.warn("localStorage not available (possibly Safari private mode)")
+      return
+    }
+
+    try {
+      const savedResources = localStorage.getItem("pinnedResources")
+      if (savedResources) {
+        const parsed = JSON.parse(savedResources)
+        if (Array.isArray(parsed)) {
+          setPinnedIds(parsed)
+        }
       }
+    } catch (e) {
+      console.error("Failed to parse pinned resources:", e)
+    }
+    
+    try {
+      const savedTools = localStorage.getItem("pinnedTools")
+      if (savedTools) {
+        const parsed = JSON.parse(savedTools)
+        if (Array.isArray(parsed)) {
+          setPinnedToolIds(parsed)
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse pinned tools:", e)
     }
   }, [])
 
-  // Toggle pin status for resources
+  // Toggle pin status for resources (Safari-safe)
   const togglePin = (resourceId: string) => {
     const newPinned = pinnedIds.includes(resourceId)
       ? pinnedIds.filter((id) => id !== resourceId)
       : [...pinnedIds, resourceId]
     setPinnedIds(newPinned)
-    localStorage.setItem("pinnedResources", JSON.stringify(newPinned))
+    try {
+      localStorage.setItem("pinnedResources", JSON.stringify(newPinned))
+    } catch (e) {
+      console.warn("Failed to save pinned resources to localStorage:", e)
+    }
   }
 
-  // Toggle pin status for tools
+  // Toggle pin status for tools (Safari-safe)
   const toggleToolPin = (toolId: string) => {
     const newPinned = pinnedToolIds.includes(toolId)
       ? pinnedToolIds.filter((id) => id !== toolId)
       : [...pinnedToolIds, toolId]
     setPinnedToolIds(newPinned)
-    localStorage.setItem("pinnedTools", JSON.stringify(newPinned))
+    try {
+      localStorage.setItem("pinnedTools", JSON.stringify(newPinned))
+    } catch (e) {
+      console.warn("Failed to save pinned tools to localStorage:", e)
+    }
   }
 
   // Convert database resources to the Resource format (preserving sort_order)
