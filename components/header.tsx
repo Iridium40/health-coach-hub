@@ -143,9 +143,9 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                 variant="outline"
                 size="sm"
                 onClick={handleInviteClick}
-                className="group hidden sm:flex items-center gap-2 border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))] hover:text-white hover:border-[hsl(var(--optavia-green))] transition-colors"
+                className="group hidden sm:flex items-center gap-2 border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))] hover:border-[hsl(var(--optavia-green))] transition-colors [&:hover]:text-white"
               >
-                <UserPlus className="h-4 w-4" />
+                <UserPlus className="h-4 w-4 group-hover:text-white" />
                 <span className="hidden md:inline group-hover:text-white">Invite Coach</span>
               </Button>
             )}
