@@ -75,10 +75,23 @@ export function ZoomCalls() {
       day: 'numeric',
       year: 'numeric'
     })
-    const timeStr = eventDate.toLocaleTimeString(undefined, {
+    
+    // Get time in the event's timezone if specified
+    let timeStr = eventDate.toLocaleTimeString(undefined, {
       hour: 'numeric',
       minute: '2-digit'
     })
+    
+    // Add timezone info if event has a specific timezone
+    if (call.timezone) {
+      const eventTimeStr = eventDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: call.timezone
+      })
+      const tzAbbrev = getTimezoneAbbrev(call.timezone)
+      timeStr = `${eventTimeStr} ${tzAbbrev}`
+    }
 
     let shareText = `📅 ${call.title}\n\n`
     shareText += `🗓 ${dateStr}\n`
@@ -158,11 +171,42 @@ export function ZoomCalls() {
     })
   }
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString(undefined, {
+  const formatTime = (dateString: string, eventTimezone?: string) => {
+    const date = new Date(dateString)
+    // Show time in user's local timezone
+    const localTime = date.toLocaleTimeString(undefined, {
       hour: 'numeric',
       minute: '2-digit'
     })
+    
+    // If event has a specific timezone, also show the original timezone
+    if (eventTimezone) {
+      const originalTime = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: eventTimezone
+      })
+      const tzAbbrev = getTimezoneAbbrev(eventTimezone)
+      
+      // Check if user is in a different timezone than the event
+      const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (userTz !== eventTimezone) {
+        return `${localTime} (${originalTime} ${tzAbbrev})`
+      }
+    }
+    
+    return localTime
+  }
+
+  // Get timezone abbreviation
+  const getTimezoneAbbrev = (timezone: string): string => {
+    const abbrevMap: Record<string, string> = {
+      'America/New_York': 'ET',
+      'America/Chicago': 'CT',
+      'America/Denver': 'MT',
+      'America/Los_Angeles': 'PT',
+    }
+    return abbrevMap[timezone] || timezone
   }
 
   if (loading) {
@@ -220,7 +264,7 @@ export function ZoomCalls() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {formatTime(call.occurrence_date)} ({call.duration_minutes} min)
+                        {formatTime(call.occurrence_date, call.timezone)} {call.duration_minutes && `(${call.duration_minutes} min)`}
                       </span>
                       {call.is_recurring && call.recurrence_pattern && (
                         <span className="text-xs text-gray-500">

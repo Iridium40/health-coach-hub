@@ -65,6 +65,42 @@ export function CalendarView() {
     })
   }
 
+  // Get timezone abbreviation
+  const getTimezoneAbbrev = (timezone: string): string => {
+    const abbrevMap: Record<string, string> = {
+      'America/New_York': 'ET',
+      'America/Chicago': 'CT',
+      'America/Denver': 'MT',
+      'America/Los_Angeles': 'PT',
+    }
+    return abbrevMap[timezone] || timezone
+  }
+
+  // Format time with timezone awareness
+  const formatEventTime = (dateString: string, eventTimezone?: string) => {
+    const date = new Date(dateString)
+    const localTime = date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit'
+    })
+    
+    if (eventTimezone) {
+      const originalTime = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: eventTimezone
+      })
+      const tzAbbrev = getTimezoneAbbrev(eventTimezone)
+      
+      const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (userTz !== eventTimezone) {
+        return `${localTime} (${originalTime} ${tzAbbrev})`
+      }
+    }
+    
+    return localTime
+  }
+
   const handleShareWithClients = async (event: ExpandedZoomCall) => {
     const eventDate = new Date(event.occurrence_date)
     const dateStr = eventDate.toLocaleDateString(undefined, {
@@ -73,10 +109,22 @@ export function CalendarView() {
       day: 'numeric',
       year: 'numeric'
     })
-    const timeStr = eventDate.toLocaleTimeString(undefined, {
+    
+    // Get time in the event's timezone if specified
+    let timeStr = eventDate.toLocaleTimeString(undefined, {
       hour: 'numeric',
       minute: '2-digit'
     })
+    
+    if (event.timezone) {
+      const eventTimeStr = eventDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: event.timezone
+      })
+      const tzAbbrev = getTimezoneAbbrev(event.timezone)
+      timeStr = `${eventTimeStr} ${tzAbbrev}`
+    }
 
     let shareText = `📅 ${event.title}\n\n`
     shareText += `🗓 ${dateStr}\n`
@@ -197,11 +245,29 @@ export function CalendarView() {
     })
   }
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString(undefined, {
+  // Simple time format for compact displays
+  const formatTime = (dateString: string, eventTimezone?: string) => {
+    const date = new Date(dateString)
+    const localTime = date.toLocaleTimeString(undefined, {
       hour: 'numeric',
       minute: '2-digit'
     })
+    
+    if (eventTimezone) {
+      const originalTime = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: eventTimezone
+      })
+      const tzAbbrev = getTimezoneAbbrev(eventTimezone)
+      
+      const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (userTz !== eventTimezone) {
+        return `${localTime} (${originalTime} ${tzAbbrev})`
+      }
+    }
+    
+    return localTime
   }
 
   const isToday = (date: Date) => {
@@ -358,7 +424,7 @@ export function CalendarView() {
                         className={`w-full text-left text-[10px] sm:text-xs text-white rounded px-0.5 sm:px-1 py-0 sm:py-0.5 truncate relative ${getCallTypeColor(event.call_type)}`}
                       >
                         {getStatusIndicator(event.status)}
-                        <span className="hidden sm:inline">{formatTime(event.occurrence_date)} </span>
+                        <span className="hidden sm:inline">{formatTime(event.occurrence_date, event.timezone)} </span>
                         <span className="hidden sm:inline">{event.title}</span>
                         <span className="sm:hidden">{event.title.substring(0, 8)}{event.title.length > 8 ? "…" : ""}</span>
                       </button>
@@ -440,7 +506,7 @@ export function CalendarView() {
                           {/* Time */}
                           <div className="flex items-center gap-1 text-xs font-medium text-gray-600 mb-1">
                             <Clock className="h-3 w-3" />
-                            {formatTime(event.occurrence_date)}
+                            {formatTime(event.occurrence_date, event.timezone)}
                           </div>
                           
                           {/* Title */}
@@ -542,7 +608,7 @@ export function CalendarView() {
                 <div className="flex items-center gap-2 sm:gap-3 text-optavia-gray text-sm sm:text-base">
                   <Clock className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                   <span>
-                    {formatTime(selectedEvent.occurrence_date)} ({selectedEvent.duration_minutes} min)
+                    {formatTime(selectedEvent.occurrence_date, selectedEvent.timezone)} {selectedEvent.duration_minutes && `(${selectedEvent.duration_minutes} min)`}
                   </span>
                 </div>
 

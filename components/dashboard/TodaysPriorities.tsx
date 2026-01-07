@@ -60,8 +60,19 @@ export function TodaysPriorities({
     return [7, 14, 21, 30].includes(day)
   }).slice(0, 2)
 
+  // Get timezone abbreviation
+  const getTimezoneAbbrev = (timezone: string): string => {
+    const abbrevMap: Record<string, string> = {
+      'America/New_York': 'ET',
+      'America/Chicago': 'CT',
+      'America/Denver': 'MT',
+      'America/Los_Angeles': 'PT',
+    }
+    return abbrevMap[timezone] || timezone
+  }
+
   // Format time helper
-  const formatDateTime = (dateString: string) => {
+  const formatDateTime = (dateString: string, eventTimezone?: string) => {
     const date = new Date(dateString)
     const now = new Date()
     const tomorrow = new Date(now)
@@ -71,7 +82,22 @@ export function TodaysPriorities({
     if (date.toDateString() === now.toDateString()) dayStr = "Today"
     else if (date.toDateString() === tomorrow.toDateString()) dayStr = "Tomorrow"
 
-    const timeStr = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    let timeStr = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    
+    // Add timezone info for events with a specific timezone
+    if (eventTimezone) {
+      const originalTime = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: eventTimezone
+      })
+      const tzAbbrev = getTimezoneAbbrev(eventTimezone)
+      
+      const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (userTz !== eventTimezone) {
+        timeStr = `${timeStr} (${originalTime} ${tzAbbrev})`
+      }
+    }
     return { dayStr, timeStr }
   }
 
@@ -198,7 +224,7 @@ export function TodaysPriorities({
 
           {/* Today's Meetings */}
           {upcomingMeetings.slice(0, 2).map(meeting => {
-            const { dayStr, timeStr } = formatDateTime(meeting.scheduled_at)
+            const { dayStr, timeStr } = formatDateTime(meeting.scheduled_at, meeting.timezone)
             return (
               <div
                 key={meeting.id}

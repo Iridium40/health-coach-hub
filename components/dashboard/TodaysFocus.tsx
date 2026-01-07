@@ -132,9 +132,37 @@ export function TodaysFocus({
 
   const hasActionItems = clientsNeedingAction.length > 0 || haScheduledToday.length > 0 || meetingsToday.length > 0 || milestoneClients.length > 0 || todaysReminders.length > 0
 
-  const formatTime = (dateString: string) => {
+  // Get timezone abbreviation
+  const getTimezoneAbbrev = (timezone: string): string => {
+    const abbrevMap: Record<string, string> = {
+      'America/New_York': 'ET',
+      'America/Chicago': 'CT',
+      'America/Denver': 'MT',
+      'America/Los_Angeles': 'PT',
+    }
+    return abbrevMap[timezone] || timezone
+  }
+
+  const formatTime = (dateString: string, eventTimezone?: string) => {
     const date = new Date(dateString)
-    return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    const localTime = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    
+    // For events with a specific timezone, show both local and original time
+    if (eventTimezone) {
+      const originalTime = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: eventTimezone
+      })
+      const tzAbbrev = getTimezoneAbbrev(eventTimezone)
+      
+      const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (userTz !== eventTimezone) {
+        return `${localTime} (${originalTime} ${tzAbbrev})`
+      }
+    }
+    
+    return localTime
   }
 
   return (
@@ -253,7 +281,7 @@ export function TodaysFocus({
                       {meeting.title}
                       {meeting.is_occurrence && <span className="text-xs text-gray-400 ml-1">(recurring)</span>}
                     </div>
-                    <div className="text-xs text-gray-500">{formatTime(meeting.occurrence_date)}</div>
+                    <div className="text-xs text-gray-500">{formatTime(meeting.occurrence_date, meeting.timezone)}</div>
                   </div>
                 </div>
                 {meeting.zoom_link && (

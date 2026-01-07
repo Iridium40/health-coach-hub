@@ -127,10 +127,28 @@ export function AddToCalendar({
       month: "short",
       day: "numeric",
     })
-    const timeStr = eventStartDate.toLocaleTimeString("en-US", {
+    
+    // Format time with timezone info if available
+    let timeStr = eventStartDate.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
     })
+    
+    if (event.timezone) {
+      const abbrevMap: Record<string, string> = {
+        'America/New_York': 'ET',
+        'America/Chicago': 'CT',
+        'America/Denver': 'MT',
+        'America/Los_Angeles': 'PT',
+      }
+      const originalTime = eventStartDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: event.timezone
+      })
+      const tzAbbrev = abbrevMap[event.timezone] || event.timezone
+      timeStr = `${originalTime} ${tzAbbrev}`
+    }
 
     let message = `📅 Reminder: ${event.title}\n`
     message += `📆 ${dateStr} at ${timeStr}\n`

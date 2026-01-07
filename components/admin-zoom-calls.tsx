@@ -62,6 +62,15 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
   const [endDate, setEndDate] = useState("")
   const [location, setLocation] = useState("")
   const [isVirtual, setIsVirtual] = useState(true)
+  const [timezone, setTimezone] = useState("America/New_York") // Default to Eastern
+
+  // US Timezone options
+  const US_TIMEZONES = [
+    { value: "America/New_York", label: "Eastern Time (ET)" },
+    { value: "America/Chicago", label: "Central Time (CT)" },
+    { value: "America/Denver", label: "Mountain Time (MT)" },
+    { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+  ]
 
   // Check if user is admin (case-insensitive)
   const isAdmin = profile?.user_role?.toLowerCase() === "admin"
@@ -132,6 +141,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setEndDate("")
     setLocation("")
     setIsVirtual(true)
+    setTimezone("America/New_York")
     setEditingId(null)
     setShowForm(false)
   }
@@ -169,6 +179,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setEndDate("")
     setLocation("")
     setIsVirtual(true)
+    setTimezone("America/New_York")
     setEditingId(null)
     
     // Prefill zoom details from profile if available
@@ -217,6 +228,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setEndDate(call.end_date || "")
     setLocation(call.location || "")
     setIsVirtual(call.is_virtual !== false)
+    setTimezone(call.timezone || "America/New_York")
     setEditingId(call.id)
     setShowForm(true)
     
@@ -303,6 +315,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
       description: description || null,
       call_type: callType,
       scheduled_at: scheduledDate.toISOString(),
+      timezone,
       duration_minutes: eventType === "event" ? null : durationMinutes,
       is_recurring: isRecurring,
       recurrence_pattern: isRecurring ? recurrencePattern : null,
@@ -682,6 +695,27 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                       </div>
                     </div>
                   )}
+
+                  {/* Timezone Selector */}
+                  <div className="space-y-2">
+                    <Label htmlFor="timezone" className="text-optavia-dark flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      Time Zone
+                    </Label>
+                    <Select value={timezone} onValueChange={setTimezone}>
+                      <SelectTrigger className="border-gray-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                        {US_TIMEZONES.map(tz => (
+                          <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-optavia-gray">
+                      Select the timezone for this meeting. Times will be displayed in each user's local timezone.
+                    </p>
+                  </div>
 
                   {/* Recurring Toggle - only for meetings */}
                   {eventType === "meeting" && (
