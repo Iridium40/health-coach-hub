@@ -36,15 +36,47 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { ExternalResource } from "@/lib/types"
 
-// Predefined categories
-const CATEGORIES = [
-  "Community",
-  "OPTAVIA Resources",
-  "Habits of Health",
-  "Social Media",
+// Display categories (how they appear on the public resources page)
+const DISPLAY_CATEGORIES = [
+  "OPTAVIA Portals",
+  "Communities",
   "Training",
   "Other",
 ]
+
+// Database categories that map to display categories
+const DB_CATEGORIES = [
+  "OPTAVIA Resources",
+  "Habits of Health", 
+  "Social Media",
+  "Community",
+  "Training",
+  "Other",
+]
+
+// Map display category to database categories
+const DISPLAY_TO_DB_MAP: Record<string, string[]> = {
+  "OPTAVIA Portals": ["OPTAVIA Resources", "Habits of Health", "Social Media"],
+  "Communities": ["Community"],
+  "Training": ["Training"],
+  "Other": ["Other"],
+}
+
+// Map database category to display category
+const getDisplayCategory = (dbCategory: string): string => {
+  if (["OPTAVIA Resources", "Habits of Health", "Social Media"].includes(dbCategory)) {
+    return "OPTAVIA Portals"
+  }
+  if (dbCategory === "Community") {
+    return "Communities"
+  }
+  return dbCategory
+}
+
+// Get available database categories for a display category
+const getDbCategoriesForDisplay = (displayCategory: string): string[] => {
+  return DISPLAY_TO_DB_MAP[displayCategory] || [displayCategory]
+}
 
 export function AdminResources({ onClose }: { onClose?: () => void }) {
   const { user, profile } = useUserData()
@@ -279,19 +311,25 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
       return
     }
 
-    const categoryResources = resources
-      .filter(r => r.category === resourceToMove.category)
+    // Get the display category for this resource
+    const displayCat = getDisplayCategory(resourceToMove.category)
+    // Get all database categories that belong to this display category
+    const dbCategories = getDbCategoriesForDisplay(displayCat)
+
+    // Get all resources in this display category group
+    const displayCategoryResources = resources
+      .filter(r => dbCategories.includes(r.category))
       .sort((a, b) => a.sort_order - b.sort_order)
 
-    const currentIndex = categoryResources.findIndex(r => r.id === resourceId)
+    const currentIndex = displayCategoryResources.findIndex(r => r.id === resourceId)
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
 
-    if (newIndex < 0 || newIndex >= categoryResources.length) {
+    if (newIndex < 0 || newIndex >= displayCategoryResources.length) {
       setSavingOrder(false)
       return
     }
 
-    const updatedResources = Array.from(categoryResources)
+    const updatedResources = Array.from(displayCategoryResources)
     const [removed] = updatedResources.splice(currentIndex, 1)
     updatedResources.splice(newIndex, 0, removed)
 
@@ -314,8 +352,8 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
     setSavingOrder(false)
   }
 
-  // Get unique categories from resources
-  const availableCategories = ["All", ...Array.from(new Set(resources.map(r => r.category))).sort()]
+  // Get unique display categories from resources (matching the public resources page)
+  const availableCategories = ["All", ...DISPLAY_CATEGORIES]
 
   // Filter resources
   const filteredResources = resources.filter(resource => {
@@ -323,16 +361,21 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
       resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       resource.url.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = filterCategory === "All" || resource.category === filterCategory
+    
+    // Match by display category
+    if (filterCategory === "All") return matchesSearch
+    const dbCategories = getDbCategoriesForDisplay(filterCategory)
+    const matchesCategory = dbCategories.includes(resource.category)
     return matchesSearch && matchesCategory
   })
 
-  // Group by category
+  // Group by display category (matching the public resources page)
   const groupedResources = filteredResources.reduce((acc, resource) => {
-    if (!acc[resource.category]) {
-      acc[resource.category] = []
+    const displayCat = getDisplayCategory(resource.category)
+    if (!acc[displayCat]) {
+      acc[displayCat] = []
     }
-    acc[resource.category].push(resource)
+    acc[displayCat].push(resource)
     return acc
   }, {} as Record<string, ExternalResource[]>)
 
@@ -407,11 +450,19 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                        {CATEGORIES.map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
+                        {/* OPTAVIA Portals group */}
+                        <SelectItem value="OPTAVIA Resources">OPTAVIA Resources → OPTAVIA Portals</SelectItem>
+                        <SelectItem value="Habits of Health">Habits of Health → OPTAVIA Portals</SelectItem>
+                        <SelectItem value="Social Media">Social Media → OPTAVIA Portals</SelectItem>
+                        {/* Communities group */}
+                        <SelectItem value="Community">Community → Communities</SelectItem>
+                        {/* Training */}
+                        <SelectItem value="Training">Training</SelectItem>
+                        {/* Other */}
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-optavia-gray">Shows which section this will appear in on the Resources page</p>
                   </div>
                 </div>
 
@@ -629,13 +680,16 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
           </Card>
         ) : (
           <div className="space-y-6">
-            {Object.entries(groupedResources)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([categoryName, categoryResources]) => (
-                <div key={categoryName} className="space-y-2">
+            {/* Sort by the display category order to match public resources page */}
+            {DISPLAY_CATEGORIES
+              .filter(displayCat => groupedResources[displayCat])
+              .map((displayCat) => {
+                const categoryResources = groupedResources[displayCat]
+                return (
+                <div key={displayCat} className="space-y-2">
                   <h3 className="font-semibold text-optavia-dark flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {categoryName}
+                    <Badge variant="outline" className="text-xs bg-[hsl(var(--optavia-green-light))] border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green-dark))]">
+                      {displayCat}
                     </Badge>
                     <span className="text-sm text-optavia-gray font-normal">
                       ({categoryResources.length} resource{categoryResources.length !== 1 ? "s" : ""})
@@ -686,6 +740,9 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                                       <h4 className="font-medium text-optavia-dark truncate">
                                         {resource.title}
                                       </h4>
+                                      <Badge variant="outline" className="text-xs border-gray-300 text-gray-500">
+                                        {resource.category}
+                                      </Badge>
                                       {!resource.is_active && (
                                         <Badge variant="secondary" className="text-xs bg-gray-200">
                                           Hidden
@@ -776,7 +833,7 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                       ))}
                   </div>
                 </div>
-              ))}
+              )})}
           </div>
         )}
       </div>
