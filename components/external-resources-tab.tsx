@@ -40,14 +40,6 @@ interface Resource {
 // Coach Tools definitions
 const COACH_TOOLS = [
   {
-    id: "health-assessment",
-    title: "Setting Your Clients Up for Success",
-    description: "Complete checklist for launching new clients including initial order, kickoff videos, FAQ texts, and ongoing check-ins.",
-    icon: ClipboardList,
-    component: HealthAssessment,
-    expandMode: "dialog" as const,
-  },
-  {
     id: "client-onboarding",
     title: "Client Onboarding Tool",
     description: "Streamline new client onboarding with templates, checklists, and quick-copy messages.",
@@ -61,6 +53,22 @@ const COACH_TOOLS = [
     description: "Quick solutions and scripts for common client issues and challenges.",
     icon: Wrench,
     component: ClientTroubleshootingDialog,
+    expandMode: "dialog" as const,
+  },
+  {
+    id: "social-media-generator",
+    title: "Social Media Post Generator",
+    description: "Build prompts for ChatGPT to generate 3 unique social media post ideas instantly.",
+    icon: Share2,
+    component: SocialMediaPromptGenerator,
+    expandMode: "dialog" as const,
+  },
+  {
+    id: "optavia-reference",
+    title: "Condiments Quick Reference Guide",
+    description: "Comprehensive guide to healthy fats, salad dressings, condiments, and portion sizes for the 5 & 1 Plan.",
+    icon: BookOpen,
+    component: OPTAVIAReferenceGuide,
     expandMode: "dialog" as const,
   },
   {
@@ -85,19 +93,11 @@ const COACH_TOOLS = [
     component: MetabolicHealthInfo,
   },
   {
-    id: "social-media-generator",
-    title: "Social Media Post Generator",
-    description: "Build prompts for ChatGPT to generate 3 unique social media post ideas instantly.",
-    icon: Share2,
-    component: SocialMediaPromptGenerator,
-    expandMode: "dialog" as const,
-  },
-  {
-    id: "optavia-reference",
-    title: "Condiments Quick Reference Guide",
-    description: "Comprehensive guide to healthy fats, salad dressings, condiments, and portion sizes for the 5 & 1 Plan.",
-    icon: BookOpen,
-    component: OPTAVIAReferenceGuide,
+    id: "health-assessment",
+    title: "Setting Your Clients Up for Success",
+    description: "Complete checklist for launching new clients including initial order, kickoff videos, FAQ texts, and ongoing check-ins.",
+    icon: ClipboardList,
+    component: HealthAssessment,
     expandMode: "dialog" as const,
   },
 ]
