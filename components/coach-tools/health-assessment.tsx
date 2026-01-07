@@ -37,15 +37,15 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   { id: "video-2", title: "LEAN AND GREEN VIDEO", link: "https://vimeo.com/414057972", linkText: "https://vimeo.com/414057972", section: "videos", isBold: true },
   
   // FAQ Texts Section (prior to start date)
-  { id: "faq-1", title: "WELCOME AND 9 TIPS", link: "https://docs.google.com/document/d/1VpxT5ZtM7kHv5kM4jH6WkQvY7MzrPw2Z/edit", linkText: "WELCOME AND 9 TIPS", section: "faq-texts", isBold: true },
-  { id: "faq-2", title: "Digital Guides (Please ask client to save to phone and/or print)", section: "faq-texts", isBold: true },
-  { id: "faq-3", title: "THE DAY BEFORE THE START DAY, SEND THE", link: "https://docs.google.com/document/d/1VpxT5ZtM7kHv5kM4jH6WkQvY7MzrPw2Z/edit", linkText: "METABOLIC RESET DAY BEFORE TEXT", section: "faq-texts" },
-  { id: "faq-4", title: "DAY ONE, BEGIN SENDING", link: "https://docs.google.com/document/d/1VpxT5ZtM7kHv5kM4jH6WkQvY7MzrPw2Z/edit", linkText: "THE DAILY METABOLIC HEALTH TEXTS", section: "faq-texts" },
+  { id: "faq-1", title: "WELCOME AND 9 TIPS", link: "https://docs.google.com/document/d/1x9k469K6XvuQ8rcPdgR3z4i9iXKLxBvSIR_77UuDgpM/edit?usp=sharing", linkText: "WELCOME AND 9 TIPS", section: "faq-texts", isBold: true },
+  { id: "faq-2", title: "Digital Guides (Please ask client to save to phone and/or print)", link: "https://docs.google.com/document/d/1TtZoQcKzTT77PZP0XNlMH-e8HiYzwKhS1UL8ZW5BcT8/edit?usp=sharing", linkText: "Digital Guides", section: "faq-texts", isBold: true },
+  { id: "faq-3", title: "THE DAY BEFORE THE START DAY, SEND THE", link: "https://docs.google.com/document/d/1V4vgLqx6-0uE9ZRfIp7024tTCB5NoqjHa0YAbV0_RlU/edit?usp=sharing", linkText: "METABOLIC RESET DAY BEFORE TEXT", section: "faq-texts" },
+  { id: "faq-4", title: "DAY ONE, BEGIN SENDING", link: "https://docs.google.com/document/d/1gtH2fYDKLA6f3sv6-yxFUM8b6rLBqp8jF5R7h4ec6i4/edit?usp=sharing", linkText: "THE DAILY METABOLIC HEALTH TEXTS", section: "faq-texts" },
   
   // Daily/Weekly Check-ins
-  { id: "checkin-1", title: "3-5 minute daily check-in call Days 1-5 using", link: "https://docs.google.com/document/d/1VpxT5ZtM7kHv5kM4jH6WkQvY7MzrPw2Z/edit", linkText: "DAILY CHECK IN QUESTIONS", tip: "EXACTLY as written", section: "check-ins" },
+  { id: "checkin-1", title: "3-5 minute daily check-in call Days 1-5 using", link: "https://docs.google.com/document/d/1HLqL_l7IELKgjlx5d3SBuXi2xdyBSaawJ5JmcKDoGHM/edit?usp=sharing", linkText: "DAILY CHECK IN QUESTIONS", tip: "EXACTLY as written", section: "check-ins" },
   { id: "checkin-2", title: "Week 1 Celebration Call", section: "check-ins", isBold: true },
-  { id: "checkin-3", title: "OPTIONAL- send", link: "https://docs.google.com/document/d/1VpxT5ZtM7kHv5kM4jH6WkQvY7MzrPw2Z/edit", linkText: "Day 10-30 Metabolic Health Texts", section: "check-ins" },
+  { id: "checkin-3", title: "OPTIONAL- send", link: "https://docs.google.com/document/d/1G9YtI07xIvazS4KZcCkLlB4N_E1axueXVeV4R0Na4Yc/edit?usp=sharing", linkText: "Day 10-30 Metabolic Health Texts", section: "check-ins" },
   { id: "checkin-4", title: "Weekly 5-10 minute check-in call weeks 1-4", section: "check-ins" },
   { id: "checkin-5", title: "Weekly check-in after month 1", section: "check-ins" },
   { id: "checkin-6", title: "Invite Client to VIP Call (can be as early as Week 2, check with your mentorship to clarify)", section: "check-ins" },
