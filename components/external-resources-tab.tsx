@@ -13,13 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Pin, X, ExternalLink, Droplets, Dumbbell, Activity, ClipboardList, Users, Wrench, Share2, BookOpen, Search } from "lucide-react"
+import { Pin, X, ExternalLink, Droplets, Dumbbell, Activity, Users, Wrench, Share2, BookOpen, Search } from "lucide-react"
 import { SearchWithHistory } from "@/components/search-with-history"
 import { ToolCard } from "@/components/coach-tools/tool-card"
 import { WaterCalculator } from "@/components/coach-tools/water-calculator"
 import { ExerciseGuide } from "@/components/coach-tools/exercise-guide"
 import { MetabolicHealthInfo } from "@/components/coach-tools/metabolic-health-info"
-import { HealthAssessment } from "@/components/coach-tools/health-assessment"
 import { ClientOnboardingDialog } from "@/components/coach-tools/client-onboarding-dialog"
 import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
 import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
@@ -91,14 +90,6 @@ const COACH_TOOLS = [
     description: "Key information about metabolic health, talking points, and how OPTAVIA supports wellness.",
     icon: Activity,
     component: MetabolicHealthInfo,
-  },
-  {
-    id: "health-assessment",
-    title: "Setting Your Clients Up for Success",
-    description: "Complete checklist for launching new clients including initial order, kickoff videos, FAQ texts, and ongoing check-ins.",
-    icon: ClipboardList,
-    component: HealthAssessment,
-    expandMode: "dialog" as const,
   },
 ]
 

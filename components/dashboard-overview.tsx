@@ -12,7 +12,7 @@ import {
   Video, Calendar, Clock, Users, ChevronRight,
   BookOpen, UtensilsCrossed, Wrench, ExternalLink, Award,
   CheckCircle, Sparkles, Star, GraduationCap, Link2, Pin,
-  ClipboardList, Droplets, Dumbbell, Activity, Share2, Bookmark,
+  Droplets, Dumbbell, Activity, Share2, Bookmark,
   Info, Trophy, Heart
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -48,7 +48,6 @@ import { getProgramDay } from "@/hooks/use-clients"
 import { WaterCalculator } from "@/components/coach-tools/water-calculator"
 import { ExerciseGuide } from "@/components/coach-tools/exercise-guide"
 import { MetabolicHealthInfo } from "@/components/coach-tools/metabolic-health-info"
-import { HealthAssessment } from "@/components/coach-tools/health-assessment"
 import { ClientOnboardingDialog } from "@/components/coach-tools/client-onboarding-dialog"
 import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
 import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
@@ -56,7 +55,6 @@ import { OPTAVIAReferenceGuide } from "@/components/coach-tools/optavia-referenc
 
 // Coach Tools definitions
 const COACH_TOOLS: { id: string; title: string; icon: LucideIcon; component: React.ComponentType }[] = [
-  { id: "health-assessment", title: "Setting Your Clients Up for Success", icon: ClipboardList, component: HealthAssessment },
   { id: "client-onboarding", title: "Client Onboarding Tool", icon: Users, component: ClientOnboardingDialog },
   { id: "client-troubleshooting", title: "Client Troubleshooting Guide", icon: Wrench, component: ClientTroubleshootingDialog },
   { id: "water-calculator", title: "Water Intake Calculator", icon: Droplets, component: WaterCalculator },
