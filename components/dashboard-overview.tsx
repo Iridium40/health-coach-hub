@@ -12,7 +12,8 @@ import {
   Video, Calendar, Clock, Users, ChevronRight,
   BookOpen, UtensilsCrossed, Wrench, ExternalLink, Award,
   CheckCircle, Sparkles, Star, GraduationCap, Link2, Pin,
-  ClipboardList, Droplets, Dumbbell, Activity, Share2, Bookmark
+  ClipboardList, Droplets, Dumbbell, Activity, Share2, Bookmark,
+  Info
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { useProspects } from "@/hooks/use-prospects"
@@ -29,6 +30,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { Progress } from "@/components/ui/progress"
 
 // Dashboard Components
@@ -254,10 +261,27 @@ export function DashboardOverview() {
         <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2 text-optavia-dark">
-                <Pin className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
-                Quick Links
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 text-optavia-dark">
+                  <Pin className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+                  Quick Links
+                </CardTitle>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="text-gray-400 hover:text-gray-600">
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
+                      <p className="font-semibold text-gray-700 mb-1">Quick Links</p>
+                      <p className="text-sm text-gray-600">
+                        Your pinned coach tools, external resource links, and bookmarked training resources from the Resources and Training pages.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <Link href="/resources">
                 <Button variant="ghost" size="sm" className="text-[hsl(var(--optavia-green))] hover:bg-green-50 -mr-2 text-xs">
                   Manage
