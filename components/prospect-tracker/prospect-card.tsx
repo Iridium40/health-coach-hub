@@ -38,7 +38,6 @@ interface ProspectCardProps {
   onDelete: (id: string) => void
   onEdit: (prospect: Prospect) => void
   onScheduleHA: (prospect: Prospect) => void
-  onSendHA: (prospect: Prospect) => void
   onSendHASMS: (prospect: Prospect) => void
   onClearHA: (prospectId: string) => void
   onToast: (options: { title: string; description: string; variant?: "destructive" }) => void
@@ -52,7 +51,6 @@ export function ProspectCard({
   onDelete,
   onEdit,
   onScheduleHA,
-  onSendHA,
   onSendHASMS,
   onClearHA,
   onToast,
@@ -221,30 +219,18 @@ export function ProspectCard({
             </SelectContent>
           </Select>
 
-          {/* Health Assessment Controls */}
+          {/* Schedule HA Button */}
           {prospect.status !== "converted" && prospect.status !== "coach" && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onSendHA(prospect)}
-                className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
-                title="Send HA Invite"
-              >
-                <Send className="h-4 w-4 mr-1" />
-                <span className="text-xs sm:text-sm">Send HA</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onScheduleHA(prospect)}
-                className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
-                title="Schedule HA"
-              >
-                <CalendarPlus className="h-4 w-4 mr-1" />
-                <span className="text-xs sm:text-sm">Schedule</span>
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onScheduleHA(prospect)}
+              className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+              title="Schedule HA"
+            >
+              <CalendarPlus className="h-4 w-4 mr-1" />
+              <span className="text-xs sm:text-sm">Schedule</span>
+            </Button>
           )}
         </div>
 

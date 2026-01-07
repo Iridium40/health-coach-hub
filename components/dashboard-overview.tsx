@@ -49,7 +49,6 @@ import { WaterCalculator } from "@/components/coach-tools/water-calculator"
 import { ExerciseGuide } from "@/components/coach-tools/exercise-guide"
 import { MetabolicHealthInfo } from "@/components/coach-tools/metabolic-health-info"
 import { HealthAssessment } from "@/components/coach-tools/health-assessment"
-import { ShareHALink } from "@/components/coach-tools/share-ha-link"
 import { ClientOnboardingDialog } from "@/components/coach-tools/client-onboarding-dialog"
 import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
 import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
@@ -57,8 +56,7 @@ import { OPTAVIAReferenceGuide } from "@/components/coach-tools/optavia-referenc
 
 // Coach Tools definitions
 const COACH_TOOLS: { id: string; title: string; icon: LucideIcon; component: React.ComponentType }[] = [
-  { id: "share-ha-link", title: "Share Health Assessment", icon: Share2, component: ShareHALink },
-  { id: "health-assessment", title: "Health Assessment Call Checklist", icon: ClipboardList, component: HealthAssessment },
+  { id: "health-assessment", title: "Setting Your Clients Up for Success", icon: ClipboardList, component: HealthAssessment },
   { id: "client-onboarding", title: "Client Onboarding Tool", icon: Users, component: ClientOnboardingDialog },
   { id: "client-troubleshooting", title: "Client Troubleshooting Guide", icon: Wrench, component: ClientTroubleshootingDialog },
   { id: "water-calculator", title: "Water Intake Calculator", icon: Droplets, component: WaterCalculator },

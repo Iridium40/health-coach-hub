@@ -1061,44 +1061,27 @@ Talking Points:
                       </SelectContent>
                     </Select>
 
-                    {/* Health Assessment Controls */}
+                    {/* Schedule HA Button */}
                     {prospect.status !== "converted" && prospect.status !== "coach" && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSchedulingProspect(prospect)
-                            setProspectEmail((prospect as any).email || "")
-                            setProspectPhone((prospect as any).phone || "")
-                            setShowHASendModal(true)
-                          }}
-                          className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
-                          title="Send HA Invite"
-                        >
-                          <Send className="h-4 w-4 mr-1" />
-                          <span className="text-xs sm:text-sm">Send HA</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSchedulingProspect(prospect)
-                            setHaDate(prospect.status === "ha_scheduled" && prospect.next_action ? prospect.next_action : today)
-                            setHaHour(10)
-                            setHaMinute("00")
-                            setHaAmPm("AM")
-                            setProspectEmail((prospect as any).email || "")
-                            setProspectPhone((prospect as any).phone || "")
-                            setShowHAScheduleModal(true)
-                          }}
-                          className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
-                          title="Schedule HA"
-                        >
-                          <CalendarPlus className="h-4 w-4 mr-1" />
-                          <span className="text-xs sm:text-sm">Schedule</span>
-                        </Button>
-                      </>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSchedulingProspect(prospect)
+                          setHaDate(prospect.status === "ha_scheduled" && prospect.next_action ? prospect.next_action : today)
+                          setHaHour(10)
+                          setHaMinute("00")
+                          setHaAmPm("AM")
+                          setProspectEmail((prospect as any).email || "")
+                          setProspectPhone((prospect as any).phone || "")
+                          setShowHAScheduleModal(true)
+                        }}
+                        className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+                        title="Schedule HA"
+                      >
+                        <CalendarPlus className="h-4 w-4 mr-1" />
+                        <span className="text-xs sm:text-sm">Schedule</span>
+                      </Button>
                     )}
                   </div>
 
