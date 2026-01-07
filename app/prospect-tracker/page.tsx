@@ -986,12 +986,11 @@ Talking Points:
                               onClick={() => {
                                 updateProspect(prospect.id, { 
                                   ha_scheduled_at: null, 
-                                  next_action: null,
-                                  status: "converted" 
+                                  next_action: null
                                 })
                                 toast({
-                                  title: "🎉 HA Completed!",
-                                  description: "Great job! Prospect marked as converted.",
+                                  title: "✅ HA Completed!",
+                                  description: "Scheduled HA has been cleared.",
                                 })
                               }}
                               className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"

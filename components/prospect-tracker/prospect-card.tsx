@@ -62,11 +62,10 @@ export function ProspectCard({
     await onUpdateProspect(prospect.id, {
       ha_scheduled_at: null,
       next_action: null,
-      status: "converted",
     })
     onToast({
-      title: "🎉 HA Completed!",
-      description: "Great job! Prospect marked as converted.",
+      title: "✅ HA Completed!",
+      description: "Scheduled HA has been cleared.",
     })
   }
 
