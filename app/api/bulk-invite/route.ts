@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
         expiresAt.setDate(expiresAt.getDate() + 30) // 30 days expiration
         
         // Create invite record
-        const { error: insertError } = await supabase
+        const { data: inviteData, error: insertError } = await supabase
           .from("invites")
           .insert({
             invite_key: inviteKey,
@@ -274,7 +274,10 @@ export async function POST(request: NextRequest) {
             coach_rank: coachRank,
             expires_at: expiresAt.toISOString(),
             is_active: true,
+            email_status: "sent",
           })
+          .select("id")
+          .single()
         
         if (insertError) {
           results.push({
@@ -296,7 +299,7 @@ export async function POST(request: NextRequest) {
         )
         
         // Send email
-        const { error: emailError } = await resend.emails.send({
+        const { data: emailData, error: emailError } = await resend.emails.send({
           from: "Coaching Amplifier <onboarding@coachingamplifier.com>",
           to: [email],
           subject,
@@ -312,6 +315,14 @@ export async function POST(request: NextRequest) {
             error: `Email failed: ${emailError.message}`
           })
         } else {
+          // Store Resend message ID for webhook correlation
+          if (emailData?.id && inviteData?.id) {
+            await supabase
+              .from("invites")
+              .update({ resend_message_id: emailData.id })
+              .eq("id", inviteData.id)
+          }
+          
           results.push({
             email,
             full_name: fullName,
