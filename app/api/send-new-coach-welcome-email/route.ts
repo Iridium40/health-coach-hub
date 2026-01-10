@@ -3,52 +3,30 @@ import { NextRequest, NextResponse } from "next/server"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// Resend Audience and Segment IDs for Coaching Amplifier
-const RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID
+// Resend Segment ID for Coaching Amplifier audience tracking
 const RESEND_SEGMENT_ID = process.env.RESEND_SEGMENT_ID
 
 /**
- * Add contact to Resend audience and segment for marketing purposes
+ * Add contact to Resend segment for marketing purposes
  */
-async function addContactToResendSegment(
-  email: string,
-  fullName: string
-): Promise<void> {
+async function addContactToResendSegment(email: string): Promise<void> {
   try {
-    if (!RESEND_AUDIENCE_ID || !RESEND_SEGMENT_ID) {
+    if (!RESEND_SEGMENT_ID) {
       return
     }
 
-    const nameParts = fullName.trim().split(" ")
-    const firstName = nameParts[0] || ""
-    const lastName = nameParts.slice(1).join(" ") || ""
-
-    // Create contact in audience
-    const { data: contactData } = await resend.contacts.create({
-      audienceId: RESEND_AUDIENCE_ID,
+    // Add contact to segment using the SDK's built-in method
+    const { data: segmentData, error: segmentError } = await resend.contacts.segments.add({
       email: email,
-      firstName: firstName,
-      lastName: lastName,
-      unsubscribed: false,
+      segmentId: RESEND_SEGMENT_ID,
     })
 
-    // Add to segment
-    const contactId = contactData?.id
-    if (contactId) {
-      await fetch(
-        `https://api.resend.com/segments/${RESEND_SEGMENT_ID}/contacts`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-      )
+    if (segmentError) {
+      console.warn(`Failed to add ${email} to segment:`, segmentError.message)
+      return
     }
 
-    console.log(`Added ${email} to Coaching Amplifier segment`)
+    console.log(`Added ${email} to Coaching Amplifier segment`, segmentData)
   } catch (error: any) {
     console.warn(`Failed to add ${email} to segment:`, error.message)
   }
@@ -715,7 +693,7 @@ You've got this! Your transformation journey continues... 💚
     }
 
     // Add contact to Resend segment for marketing/audience tracking
-    await addContactToResendSegment(to, fullName)
+    await addContactToResendSegment(to)
 
     return NextResponse.json({ success: true, data })
   } catch (error: any) {
