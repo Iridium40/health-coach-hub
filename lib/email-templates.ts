@@ -53,8 +53,8 @@ export function getEmailHeader(title: string, subtitle?: string): string {
       }
     </style>
     <div class="email-header" style="background-color: #ffffff; padding: 30px 20px; text-align: center; border-bottom: 3px solid #2d5016;">
-      <img src="${logoUrl}" alt="Coaching Amplifier" class="email-logo" style="max-width: 300px; height: auto; margin-bottom: 20px; display: block;" />
-      <img src="${darkLogoUrl}" alt="Coaching Amplifier" class="email-logo-dark" style="max-width: 300px; height: auto; margin-bottom: 20px; margin-left: auto; margin-right: auto;" />
+      <img src="${logoUrl}" alt="Coaching Amplifier" class="email-logo" style="max-width: 300px; height: auto; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;" />
+      <img src="${darkLogoUrl}" alt="Coaching Amplifier" class="email-logo-dark" style="max-width: 300px; height: auto; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;" />
       ${subtitle ? `<p class="email-header-text" style="color: #666; font-size: 16px; margin: 10px 0 0 0;">${subtitle}</p>` : ""}
     </div>
   `
