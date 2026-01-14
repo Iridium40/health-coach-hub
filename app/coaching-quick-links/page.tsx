@@ -10,17 +10,18 @@ import { ArrowLeft } from "lucide-react"
 const DOC_ID = "1rMvUSWUDvxEy7pTHKt5JmiLLtG6wrMaQpKVOgcCXmn0"
 const COACHING_QUICK_LINKS_EDIT_URL = `https://docs.google.com/document/d/${DOC_ID}/edit?tab=t.0`
 const COACHING_QUICK_LINKS_PREVIEW_URL = `https://docs.google.com/document/d/${DOC_ID}/preview`
+const COACHING_QUICK_LINKS_MOBILE_URL = `https://docs.google.com/document/d/${DOC_ID}/mobilebasic`
 
 export default function CoachingQuickLinksPage() {
   // Mobile-friendly rendering: Google's /edit UI is cramped in an iframe on small screens.
-  // Use /preview on mobile while staying fully inside the app.
+  // Use /mobilebasic on mobile while staying fully inside the app (continuous scroll, less whitespace).
   const [iframeSrc, setIframeSrc] = useState(COACHING_QUICK_LINKS_EDIT_URL)
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 640px)")
 
     const update = () => {
-      setIframeSrc(mq.matches ? COACHING_QUICK_LINKS_PREVIEW_URL : COACHING_QUICK_LINKS_EDIT_URL)
+      setIframeSrc(mq.matches ? COACHING_QUICK_LINKS_MOBILE_URL : COACHING_QUICK_LINKS_EDIT_URL)
     }
 
     update()
@@ -81,6 +82,7 @@ export default function CoachingQuickLinksPage() {
                 className="w-full h-full"
                 referrerPolicy="no-referrer"
                 allow="clipboard-read; clipboard-write"
+                scrolling="yes"
               />
             </div>
           </div>
