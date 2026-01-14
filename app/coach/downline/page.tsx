@@ -298,16 +298,6 @@ export default function DownlineProgressPage() {
                           <h3 className="font-semibold text-lg text-optavia-dark truncate">
                             {coach.full_name || coach.email || "Unknown"}
                           </h3>
-                          <div className="flex flex-wrap items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              {getRankLabel(coach.coach_rank)}
-                            </Badge>
-                            {coach.is_new_coach && (
-                              <Badge className="bg-green-100 text-green-700 text-xs">
-                                New Coach
-                              </Badge>
-                            )}
-                          </div>
                           {coach.email && (
                             <p className="text-xs text-gray-500 mt-1 truncate">{coach.email}</p>
                           )}

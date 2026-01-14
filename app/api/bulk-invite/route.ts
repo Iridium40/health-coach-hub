@@ -9,26 +9,13 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 // Resend Segment ID for Coaching Amplifier audience tracking
 const RESEND_SEGMENT_ID = process.env.RESEND_SEGMENT_ID
 
-// Valid coach ranks
-const VALID_RANKS = [
-  "Coach",
-  "SC",
-  "MG",
-  "AD",
-  "DR",
-  "ED",
-  "IED",
-  "FIBC",
-  "IGD",
-  "FIBL",
-  "IND",
-  "IPD"
-]
+// Default coach rank for all invited coaches
+const DEFAULT_COACH_RANK = "IPD"
 
 interface BulkInviteEntry {
   full_name: string
   email: string
-  coach_rank: string
+  coach_rank?: string // Optional, defaults to IPD
 }
 
 interface InviteResult {
@@ -100,10 +87,6 @@ function validateEntry(entry: BulkInviteEntry): string | null {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(entry.email.trim())) {
     return "Invalid email format"
-  }
-  
-  if (!entry.coach_rank || !VALID_RANKS.includes(entry.coach_rank.trim())) {
-    return `Invalid coach rank. Must be one of: ${VALID_RANKS.join(", ")}`
   }
   
   return null
@@ -247,7 +230,7 @@ export async function POST(request: NextRequest) {
     for (const entry of entries) {
       const fullName = entry.full_name?.trim() || ""
       const email = entry.email?.trim().toLowerCase() || ""
-      const coachRank = entry.coach_rank?.trim() || ""
+      const coachRank = entry.coach_rank?.trim() || DEFAULT_COACH_RANK
       
       // Validate entry
       const validationError = validateEntry({ full_name: fullName, email, coach_rank: coachRank })

@@ -117,7 +117,8 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
         }
 
         // Get coach rank, full name, and optavia ID from invite
-        const coachRank = data.coach_rank || "Coach"
+        // Default all coaches to IPD rank
+        const coachRank = data.coach_rank || "IPD"
         const fullName = data.invited_full_name
         const optaviaId = data.optavia_id || null
 
@@ -246,7 +247,7 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
         .from("profiles")
         .update({
           coach_rank: inviteData.coachRank,
-          is_new_coach: inviteData.coachRank === "Coach",
+          is_new_coach: false, // All coaches default to IPD, no special "new coach" handling
           optavia_id: inviteData.optaviaId,
           sponsor_id: sponsorId,
         })

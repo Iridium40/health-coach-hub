@@ -5,20 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { useUserData } from "@/contexts/user-data-context"
 import { useToast } from "@/hooks/use-toast"
 import { useAdminChanges } from "@/hooks/use-admin-changes"
 import { AdminSaveButton } from "@/components/admin-save-button"
 import { createClient } from "@/lib/supabase/client"
 import { generateInviteKey, createInviteLink } from "@/lib/invites"
-import { sendInviteEmail, sendNewCoachWelcomeEmail } from "@/lib/email"
+import { sendInviteEmail } from "@/lib/email"
 import { Badge } from "@/components/ui/badge"
 import { X, Copy, Check, UserPlus, History, Clock, UserCheck, UserX, AlertTriangle } from "lucide-react"
 import Link from "next/link"
@@ -60,12 +53,11 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
 
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
-  const [coachRank, setCoachRank] = useState("")
   const [optaviaId, setOptaviaId] = useState("")
   const [loading, setLoading] = useState(false)
   
-  // New coaches are those with rank "Coach" - they get welcome email with onboarding resources
-  const isNewCoach = coachRank === "Coach"
+  // All coaches default to IPD rank
+  const defaultCoachRank = "IPD"
   const [generatedInvites, setGeneratedInvites] = useState<GeneratedInvite[]>([])
   const [inviteHistory, setInviteHistory] = useState<InviteHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
@@ -191,15 +183,6 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
       return
     }
 
-    if (!coachRank) {
-      toast({
-        title: "Error",
-        description: "Coach rank is required",
-        variant: "destructive",
-      })
-      return
-    }
-
     setLoading(true)
 
     try {
@@ -214,7 +197,7 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
           invited_by: user.id,
           invited_email: email,
           invited_full_name: fullName,
-          coach_rank: coachRank,
+          coach_rank: defaultCoachRank,
           optavia_id: optaviaId || null,
           expires_at: expiresAt.toISOString(),
           is_active: true,
@@ -232,83 +215,39 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
         id: data.id,
         fullName: fullName || "",
         email: email,
-        coachRank: coachRank || "",
+        coachRank: defaultCoachRank,
         inviteLink: link,
         createdAt: new Date().toISOString(),
       }
 
       setGeneratedInvites((prev) => [newInvite, ...prev])
 
-      // Always send invite email
-      let inviteEmailSent = false
-      let welcomeEmailSent = false
-
+      // Send invite email
       const emailResult = await sendInviteEmail({
         to: email,
         fullName: fullName,
-        coachRank: coachRank,
+        coachRank: defaultCoachRank,
         inviteLink: link,
         invitedBy: profile?.full_name || user.email || "an admin",
       })
-      inviteEmailSent = emailResult.success
-
-      // Send welcome email if this is a new coach
-      if (isNewCoach) {
-        const welcomeResult = await sendNewCoachWelcomeEmail({
-          to: email,
-          fullName: fullName,
-          coachRank: coachRank,
-          inviteLink: link,
-          invitedBy: profile?.full_name || user.email || "an admin",
-        })
-        welcomeEmailSent = welcomeResult.success
-      }
 
       // Show appropriate toast message
-      if (isNewCoach) {
-        if (inviteEmailSent && welcomeEmailSent) {
-          toast({
-            title: "Success",
-            description: "Invite and welcome emails sent successfully",
-          })
-        } else if (inviteEmailSent) {
-          toast({
-            title: "Partial Success",
-            description: "Invite sent, but welcome email failed. The new coach can still access onboarding resources.",
-            variant: "default",
-          })
-        } else if (welcomeEmailSent) {
-          toast({
-            title: "Partial Success",
-            description: "Welcome email sent, but invite email failed. Copy the link manually.",
-            variant: "default",
-          })
-        } else {
-          toast({
-            title: "Invite Created",
-            description: "Invite generated but emails failed. Copy the link manually.",
-            variant: "default",
-          })
-        }
+      if (emailResult.success) {
+        toast({
+          title: "Success",
+          description: "Invite link generated and email sent successfully",
+        })
       } else {
-        if (inviteEmailSent) {
-          toast({
-            title: "Success",
-            description: "Invite link generated and email sent successfully",
-          })
-        } else {
-          toast({
-            title: "Invite Created",
-            description: "Invite generated but email failed. Copy the link manually.",
-            variant: "default",
-          })
-        }
+        toast({
+          title: "Invite Created",
+          description: "Invite generated but email failed. Copy the link manually.",
+          variant: "default",
+        })
       }
 
       // Reset form
       setFullName("")
       setEmail("")
-      setCoachRank("")
       setOptaviaId("")
       trackChange()
 
@@ -448,34 +387,6 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="coachRank" className="text-optavia-dark">Coach Rank *</Label>
-              <Select value={coachRank} onValueChange={setCoachRank} required>
-                <SelectTrigger id="coachRank" className="w-full border-2 border-gray-300 text-optavia-dark bg-white hover:border-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))] focus:ring-[hsl(var(--optavia-green-light))]">
-                  <SelectValue placeholder="Select coach rank" />
-                </SelectTrigger>
-                <SelectContent className="bg-white text-optavia-dark">
-                  <SelectItem value="Coach">Coach</SelectItem>
-                  <SelectItem value="SC">Senior Coach (SC)</SelectItem>
-                  <SelectItem value="MG">Manager (MG)</SelectItem>
-                  <SelectItem value="AD">Associate Director (AD)</SelectItem>
-                  <SelectItem value="DR">Director (DR)</SelectItem>
-                  <SelectItem value="ED">Executive Director (ED)</SelectItem>
-                  <SelectItem value="IED">Integrated Executive Director (IED)</SelectItem>
-                  <SelectItem value="FIBC">Fully Integrated Business Coach (FIBC)</SelectItem>
-                  <SelectItem value="IGD">Integrated Global Director (IGD)</SelectItem>
-                  <SelectItem value="FIBL">Fully Integrated Business Leader (FIBL)</SelectItem>
-                  <SelectItem value="IND">Integrated National Director (IND)</SelectItem>
-                  <SelectItem value="IPD">Integrated Presidential Director (IPD)</SelectItem>
-                </SelectContent>
-              </Select>
-              {coachRank === "Coach" && (
-                <p className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                  ✨ New coaches receive a welcome email with onboarding resources
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="optaviaId" className="text-optavia-dark">Optavia ID <span className="text-gray-400 font-normal">(optional)</span></Label>
               <Input
                 id="optaviaId"
@@ -499,7 +410,7 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
 
             <Button
               onClick={handleGenerateInvite}
-              disabled={loading || !fullName || !email || !coachRank}
+              disabled={loading || !fullName || !email}
               className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
             >
               {loading ? "Generating..." : "Generate Invite Link"}
@@ -531,11 +442,6 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
                     <p className="text-sm font-medium text-optavia-dark">
                       <span className="text-optavia-gray">Email:</span> {invite.email}
                     </p>
-                    {invite.coachRank && (
-                      <p className="text-sm font-medium text-optavia-dark">
-                        <span className="text-optavia-gray">Coach Rank:</span> {invite.coachRank}
-                      </p>
-                    )}
                   </div>
                   <div className="flex gap-2">
                     <Input
@@ -618,11 +524,6 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
                                 <StatusIcon className="h-3 w-3" />
                                 {status.label}
                               </Badge>
-                              {invite.coach_rank && (
-                                <Badge variant="outline" className="text-xs">
-                                  {invite.coach_rank}
-                                </Badge>
-                              )}
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">

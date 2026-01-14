@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+
 import { useToast } from "@/hooks/use-toast"
 import { 
   Download, 
@@ -33,26 +34,12 @@ import {
   AlertTitle,
 } from "@/components/ui/alert"
 
-// Valid coach ranks
-const VALID_RANKS = [
-  "Coach",
-  "SC",
-  "MG",
-  "AD",
-  "DR",
-  "ED",
-  "IED",
-  "FIBC",
-  "IGD",
-  "FIBL",
-  "IND",
-  "IPD"
-]
+// Default coach rank for all coaches
+const DEFAULT_COACH_RANK = "IPD"
 
 interface ParsedEntry {
   full_name: string
   email: string
-  coach_rank: string
   isValid: boolean
   errors: string[]
   rowNumber: number
@@ -135,10 +122,6 @@ export function BulkInviteManager() {
       }
     }
     
-    if (!entry.coach_rank || !VALID_RANKS.includes(entry.coach_rank.trim())) {
-      errors.push(`Invalid coach rank. Must be one of: ${VALID_RANKS.join(", ")}`)
-    }
-    
     return errors
   }
 
@@ -162,12 +145,11 @@ export function BulkInviteManager() {
     
     const fullNameIndex = headers.findIndex(h => h === "full_name" || h === "fullname" || h === "name")
     const emailIndex = headers.findIndex(h => h === "email")
-    const rankIndex = headers.findIndex(h => h === "coach_rank" || h === "coachrank" || h === "rank")
     
-    if (fullNameIndex === -1 || emailIndex === -1 || rankIndex === -1) {
+    if (fullNameIndex === -1 || emailIndex === -1) {
       toast({
         title: "Invalid CSV Format",
-        description: "CSV must have columns: full_name, email, coach_rank",
+        description: "CSV must have columns: full_name, email",
         variant: "destructive",
       })
       return []
@@ -179,12 +161,11 @@ export function BulkInviteManager() {
     for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i])
       
-      if (values.length < 3) continue
+      if (values.length < 2) continue
       
       const entry = {
         full_name: values[fullNameIndex]?.trim() || "",
         email: values[emailIndex]?.trim().toLowerCase() || "",
-        coach_rank: values[rankIndex]?.trim() || "",
       }
       
       const errors = validateEntry(entry)
@@ -341,7 +322,7 @@ export function BulkInviteManager() {
           entries: validEntries.map(e => ({
             full_name: e.full_name,
             email: e.email,
-            coach_rank: e.coach_rank,
+            coach_rank: DEFAULT_COACH_RANK,
           }))
         }),
       })
@@ -401,18 +382,7 @@ export function BulkInviteManager() {
               Download CSV Template
             </Button>
             <div className="text-sm text-optavia-gray">
-              <p>Template includes columns: <code className="bg-gray-100 px-1 rounded">full_name</code>, <code className="bg-gray-100 px-1 rounded">email</code>, <code className="bg-gray-100 px-1 rounded">coach_rank</code></p>
-            </div>
-          </div>
-          
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-optavia-dark mb-2">Valid Coach Ranks:</p>
-            <div className="flex flex-wrap gap-2">
-              {VALID_RANKS.map(rank => (
-                <Badge key={rank} variant="outline" className="text-xs">
-                  {rank}
-                </Badge>
-              ))}
+              <p>Template includes columns: <code className="bg-gray-100 px-1 rounded">full_name</code>, <code className="bg-gray-100 px-1 rounded">email</code></p>
             </div>
           </div>
         </CardContent>
@@ -527,7 +497,6 @@ export function BulkInviteManager() {
                       <TableHead>Status</TableHead>
                       <TableHead>Full Name</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Coach Rank</TableHead>
                       <TableHead>Errors</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -549,11 +518,6 @@ export function BulkInviteManager() {
                         </TableCell>
                         <TableCell className="font-medium">{entry.full_name || "-"}</TableCell>
                         <TableCell className="text-sm">{entry.email || "-"}</TableCell>
-                        <TableCell>
-                          <Badge variant={entry.isValid ? "outline" : "destructive"} className="text-xs">
-                            {entry.coach_rank || "-"}
-                          </Badge>
-                        </TableCell>
                         <TableCell className="text-xs text-red-600">
                           {entry.errors.length > 0 ? entry.errors.join("; ") : "-"}
                         </TableCell>
