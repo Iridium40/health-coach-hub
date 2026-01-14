@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 
@@ -39,7 +38,7 @@ export default function CoachingQuickLinksPage() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="h-[100dvh] flex flex-col bg-white">
       <Header activeTab="dashboard" />
 
       <main className="flex-1 bg-white flex flex-col min-h-0 overflow-hidden">
@@ -62,12 +61,6 @@ export default function CoachingQuickLinksPage() {
                   This opens inside the app (no redirect, no new tab).
                 </p>
               </div>
-
-              <div className="ml-auto hidden sm:flex items-center gap-2">
-                <a href={COACHING_QUICK_LINKS_EDIT_URL} className="text-xs text-[hsl(var(--optavia-green))] hover:underline">
-                  Open in Google Docs
-                </a>
-              </div>
             </div>
           </div>
         </div>
@@ -87,16 +80,7 @@ export default function CoachingQuickLinksPage() {
             </div>
           </div>
         </div>
-
-        <p className="hidden sm:block container mx-auto px-4 pb-4 text-xs text-optavia-gray">
-          If the document doesn’t load, Google may be blocking embedding for this doc.
-        </p>
       </main>
-
-      {/* Hide footer on mobile to maximize viewer space */}
-      <div className="hidden md:block">
-        <Footer />
-      </div>
     </div>
   )
 }
