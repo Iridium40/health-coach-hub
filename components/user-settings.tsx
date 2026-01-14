@@ -9,8 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useUserData } from "@/contexts/user-data-context"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
-import { Upload, X, Trophy, UserCheck } from "lucide-react"
-import { BadgeDisplay } from "@/components/badge-display"
+import { Upload, X, UserCheck } from "lucide-react"
 
 interface SponsorInfo {
   id: string
@@ -30,7 +29,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
     completedResources,
     bookmarks,
     favoriteRecipes,
-    badges,
     updateProfile,
     refreshData,
   } = useUserData()
@@ -294,13 +292,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>
-                {/* Badge Status */}
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
-                  <Trophy className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
-                  <span className="text-sm font-semibold text-optavia-dark">
-                    {badges.length} {badges.length === 1 ? "Badge" : "Badges"}
-                  </span>
-                </div>
               </div>
               <div className="flex flex-col gap-2 flex-1 w-full sm:w-auto items-center sm:items-start">
                 <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
@@ -472,15 +463,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
           </CardContent>
         </Card>
 
-        {/* Achievements */}
-        <BadgeDisplay 
-          badges={badges.map(badge => ({
-            id: badge.id,
-            category: badge.category || "",
-            badgeType: badge.badge_type,
-            earnedAt: badge.earned_at,
-          }))} 
-        />
       </div>
     </div>
   )
