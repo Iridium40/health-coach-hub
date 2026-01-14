@@ -160,7 +160,13 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
     setUrl(resource.url)
     setButtonText(resource.button_text)
     setCategory(resource.category)
-    setFeatures(resource.features || [])
+    // Handle both legacy array format and new JSONB object format
+    const featuresTags = Array.isArray(resource.features) 
+      ? resource.features 
+      : (resource.features?.tags && Array.isArray(resource.features.tags))
+        ? resource.features.tags 
+        : []
+    setFeatures(featuresTags)
     setIsActive(resource.is_active)
     setIsDynamic(resource.is_dynamic)
     setShowCondition(resource.show_condition || "")
@@ -223,7 +229,8 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
       url,
       button_text: buttonText,
       category,
-      features,
+      // Save features as JSONB object with tags array
+      features: features.length > 0 ? { tags: features } : null,
       is_active: isActive,
       is_dynamic: isDynamic,
       show_condition: showCondition || null,
@@ -777,28 +784,39 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                                   </div>
                                 </div>
 
-                                {/* Features */}
-                                {resource.features && resource.features.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-2">
-                                    {resource.features.slice(0, 3).map((feature, i) => (
-                                      <Badge 
-                                        key={i} 
-                                        variant="secondary" 
-                                        className="text-xs bg-gray-100 text-optavia-gray font-normal"
-                                      >
-                                        {feature}
-                                      </Badge>
-                                    ))}
-                                    {resource.features.length > 3 && (
-                                      <Badge 
-                                        variant="secondary" 
-                                        className="text-xs bg-gray-100 text-optavia-gray font-normal"
-                                      >
-                                        +{resource.features.length - 3} more
-                                      </Badge>
-                                    )}
-                                  </div>
-                                )}
+                                {/* Features/Tags */}
+                                {(() => {
+                                  // Handle both legacy array format and new JSONB object format
+                                  const tags = Array.isArray(resource.features) 
+                                    ? resource.features 
+                                    : (resource.features?.tags && Array.isArray(resource.features.tags))
+                                      ? resource.features.tags 
+                                      : []
+                                  
+                                  if (tags.length === 0) return null
+                                  
+                                  return (
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      {tags.slice(0, 3).map((tag, i) => (
+                                        <Badge 
+                                          key={i} 
+                                          variant="secondary" 
+                                          className="text-xs bg-gray-100 text-optavia-gray font-normal"
+                                        >
+                                          {tag}
+                                        </Badge>
+                                      ))}
+                                      {tags.length > 3 && (
+                                        <Badge 
+                                          variant="secondary" 
+                                          className="text-xs bg-gray-100 text-optavia-gray font-normal"
+                                        >
+                                          +{tags.length - 3} more
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  )
+                                })()}
                               </div>
                             </div>
                           </CardContent>
