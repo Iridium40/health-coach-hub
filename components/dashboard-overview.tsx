@@ -259,6 +259,17 @@ export function DashboardOverview() {
         <p className="text-optavia-gray text-base sm:text-lg">
           {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
+        <div className="mt-4 flex justify-center">
+          <Link href="/coaching-quick-links">
+            <Button
+              className="group bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))]/90 text-white font-bold tracking-wide shadow-lg hover:shadow-xl transition-all ring-2 ring-[hsl(var(--optavia-green))]/25"
+              size="lg"
+            >
+              <Link2 className="h-5 w-5 mr-2 text-white/95 group-hover:text-white" />
+              COACHING QUICK LINKS
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Announcements */}
