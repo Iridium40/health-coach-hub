@@ -24,8 +24,8 @@ interface HeaderProps {
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
   onInviteClick?: () => void
-  activeTab?: "dashboard" | "training" | "resources" | "recipes" | "calendar"
-  onTabChange?: (tab: "dashboard" | "training" | "resources" | "recipes" | "calendar") => void
+  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar"
+  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar") => void
 }
 
 export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab, onTabChange }: HeaderProps) {
@@ -48,10 +48,11 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   }
 
   // Determine active tab from pathname if not provided
-  const getActiveTab = (): "dashboard" | "training" | "resources" | "recipes" | "calendar" => {
+  const getActiveTab = (): "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" => {
     if (activeTab) return activeTab
     if (pathname?.startsWith("/dashboard") || pathname === "/") return "dashboard"
     if (pathname?.startsWith("/training")) return "training"
+    if (pathname?.startsWith("/metabolic-reset-events")) return "metabolic-reset-events"
     if (pathname?.startsWith("/resources")) return "resources"
     if (pathname?.startsWith("/recipes")) return "recipes"
     if (pathname?.startsWith("/calendar")) return "calendar"
@@ -61,10 +62,11 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   const currentActiveTab = getActiveTab()
 
   // Full nav items - filtered based on org_id
-  // Order: Calendar, Training, Resources, Recipes, Dashboard (My Business is separate dropdown at end)
+  // Order: Calendar, Training, Metabolic Reset Events, Resources, Recipes, Dashboard (My Business is separate dropdown at end)
   const allNavItems = [
     { id: "calendar" as const, label: "Calendar", href: "/calendar", fullAccessOnly: true },
     { id: "training" as const, label: "Training", href: "/training", fullAccessOnly: false },
+    { id: "metabolic-reset-events" as const, label: "Metabolic Reset Events", href: "/metabolic-reset-events", fullAccessOnly: false },
     { id: "resources" as const, label: "Resources", href: "/resources", fullAccessOnly: true },
     { id: "recipes" as const, label: "Recipes", href: "/recipes", fullAccessOnly: true },
     { id: "dashboard" as const, label: "Dashboard", href: "/dashboard", fullAccessOnly: true },
