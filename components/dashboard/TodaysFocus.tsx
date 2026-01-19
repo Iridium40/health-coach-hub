@@ -52,6 +52,8 @@ interface TodaysFocusProps {
   toggleTouchpoint: (clientId: string, field: "am_done" | "pm_done") => Promise<boolean> | void
   completeClientCheckIn?: (client: any) => Promise<void> | void
   logProspectFollowUp?: (prospect: any, daysUntilNext?: number) => Promise<void> | void
+  dismissMilestone?: (clientId: string, programDay: number) => void
+  isMilestoneDismissed?: (clientId: string, programDay: number) => boolean
   onCelebrateClick?: (client: any) => void
 }
 
@@ -67,6 +69,8 @@ export function TodaysFocus({
   toggleTouchpoint,
   completeClientCheckIn,
   logProspectFollowUp,
+  dismissMilestone,
+  isMilestoneDismissed,
   onCelebrateClick,
 }: TodaysFocusProps) {
   const {
@@ -137,11 +141,13 @@ export function TodaysFocus({
     return meetingDate >= todayStart && meetingDate <= todayEnd
   }).slice(0, 3)
 
-  // Get milestone clients
+  // Get milestone clients (hide ones dismissed today)
   const milestoneClients = clients.filter(c => {
     if (c.status !== "active") return false
     const day = getProgramDay(c.start_date)
-    return [7, 14, 21, 30].includes(day)
+    if (![7, 14, 21, 30].includes(day)) return false
+    if (isMilestoneDismissed?.(c.id, day)) return false
+    return true
   }).slice(0, 2)
 
   const hasActionItems = clientsNeedingAction.length > 0 || haScheduledToday.length > 0 || meetingsToday.length > 0 || milestoneClients.length > 0 || todaysReminders.length > 0
@@ -450,13 +456,29 @@ export function TodaysFocus({
                       <div className="text-xs text-yellow-600">{phase.label}</div>
                     </div>
                   </div>
-                  <Button 
-                    size="sm" 
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs h-7"
-                    onClick={() => onCelebrateClick?.(client)}
-                  >
-                    🎉 Celebrate!
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7 px-3"
+                      onClick={() => {
+                        dismissMilestone?.(client.id, programDay)
+                      }}
+                    >
+                      Dismiss
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs h-7"
+                      onClick={() => {
+                        // Clear it from the dashboard once you take action
+                        dismissMilestone?.(client.id, programDay)
+                        onCelebrateClick?.(client)
+                      }}
+                    >
+                      🎉 Celebrate!
+                    </Button>
+                  </div>
                 </div>
               )
             })}

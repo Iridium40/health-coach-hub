@@ -127,6 +127,7 @@ export function DashboardOverview() {
   const [showMilestoneModal, setShowMilestoneModal] = useState(false)
   const [showRankPromotionModal, setShowRankPromotionModal] = useState(false)
   const [promotedRank, setPromotedRank] = useState<string | null>(null)
+  const [dismissedMilestoneKeys, setDismissedMilestoneKeys] = useState<Set<string>>(new Set())
 
   // Load pinned items from localStorage (with Safari-safe error handling)
   useEffect(() => {
@@ -171,6 +172,39 @@ export function DashboardOverview() {
       console.error("Failed to parse pinned resources:", e)
     }
   }, [])
+
+  // Milestone dismissals (per day) so "Celebrate!" cards can be cleared
+  useEffect(() => {
+    try {
+      const todayKey = new Date().toISOString().split("T")[0]
+      const raw = localStorage.getItem(`dismissedMilestones_${todayKey}`)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) setDismissedMilestoneKeys(new Set(parsed))
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const dismissMilestoneForToday = (clientId: string, programDay: number) => {
+    const todayKey = new Date().toISOString().split("T")[0]
+    const key = `${clientId}:${programDay}`
+    setDismissedMilestoneKeys((prev) => {
+      const next = new Set(prev)
+      next.add(key)
+      try {
+        localStorage.setItem(`dismissedMilestones_${todayKey}`, JSON.stringify(Array.from(next)))
+      } catch {
+        // ignore
+      }
+      return next
+    })
+  }
+
+  const isMilestoneDismissedToday = (clientId: string, programDay: number) => {
+    return dismissedMilestoneKeys.has(`${clientId}:${programDay}`)
+  }
 
   // Get pinned tools and resources
   const pinnedTools = useMemo(() => {
@@ -360,6 +394,8 @@ export function DashboardOverview() {
           toggleTouchpoint={toggleTouchpoint}
           completeClientCheckIn={completeDashboardClientCheckIn}
           logProspectFollowUp={logDashboardProspectFollowUp}
+          dismissMilestone={dismissMilestoneForToday}
+          isMilestoneDismissed={isMilestoneDismissedToday}
           onCelebrateClick={(client) => {
             setMilestoneClient(client)
             setShowMilestoneModal(true)
