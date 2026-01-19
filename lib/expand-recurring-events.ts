@@ -13,7 +13,10 @@ export interface ExpandedZoomCall extends ZoomCall {
  * Expands recurring events into individual occurrences based on their recurrence pattern.
  * Non-recurring events are returned as-is with occurrence_date set to their scheduled_at.
  */
-export function expandRecurringEvents(events: ZoomCall[]): ExpandedZoomCall[] {
+export function expandRecurringEvents(
+  events: ZoomCall[],
+  options?: { rangeStart?: Date; rangeEnd?: Date }
+): ExpandedZoomCall[] {
   const expandedEvents: ExpandedZoomCall[] = []
 
   for (const event of events) {
@@ -29,7 +32,7 @@ export function expandRecurringEvents(events: ZoomCall[]): ExpandedZoomCall[] {
     }
 
     // Generate occurrences for recurring events
-    const occurrences = generateOccurrences(event)
+    const occurrences = generateOccurrences(event, options?.rangeStart, options?.rangeEnd)
     expandedEvents.push(...occurrences)
   }
 
@@ -42,12 +45,13 @@ export function expandRecurringEvents(events: ZoomCall[]): ExpandedZoomCall[] {
 /**
  * Generates all occurrences for a recurring event from its start date to end date.
  */
-function generateOccurrences(event: ZoomCall): ExpandedZoomCall[] {
+function generateOccurrences(event: ZoomCall, rangeStart?: Date, rangeEnd?: Date): ExpandedZoomCall[] {
   const occurrences: ExpandedZoomCall[] = []
   
   const startDate = new Date(event.scheduled_at)
   const endDate = new Date(event.recurrence_end_date!)
   const targetDay = getDayNumber(event.recurrence_day!)
+  const cappedEndDate = rangeEnd && rangeEnd < endDate ? new Date(rangeEnd) : endDate
   
   // Get the time portion from the original scheduled_at
   const hours = startDate.getHours()
@@ -60,9 +64,33 @@ function generateOccurrences(event: ZoomCall): ExpandedZoomCall[] {
   while (currentDate.getDay() !== targetDay) {
     currentDate.setDate(currentDate.getDate() + 1)
   }
+
+  // If we have a rangeStart, advance to the first occurrence on/after it
+  if (rangeStart) {
+    const rs = new Date(rangeStart)
+    rs.setHours(0, 0, 0, 0)
+    while (currentDate < rs) {
+      switch (event.recurrence_pattern) {
+        case "weekly":
+          currentDate.setDate(currentDate.getDate() + 7)
+          break
+        case "biweekly":
+          currentDate.setDate(currentDate.getDate() + 14)
+          break
+        case "monthly":
+          currentDate.setMonth(currentDate.getMonth() + 1)
+          while (currentDate.getDay() !== targetDay) {
+            currentDate.setDate(currentDate.getDate() + 1)
+          }
+          break
+        default:
+          currentDate.setDate(currentDate.getDate() + 7)
+      }
+    }
+  }
   
   // Generate occurrences until end date
-  while (currentDate <= endDate) {
+  while (currentDate <= cappedEndDate) {
     // Create occurrence date with the original time
     const occurrenceDate = new Date(currentDate)
     occurrenceDate.setHours(hours, minutes, 0, 0)

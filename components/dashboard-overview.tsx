@@ -239,7 +239,7 @@ export function DashboardOverview() {
       // Fetch all upcoming/live meetings to expand recurring ones
       const { data, error } = await supabase
         .from("zoom_calls")
-        .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_at,updated_at")
+        .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,recurrence_end_date,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_at,updated_at")
         .in("status", ["upcoming", "live"])
         // Include recurring templates regardless of scheduled_at, and non-recurring calls scheduled today.
         .or(`is_recurring.eq.true,and(scheduled_at.gte.${todayStartIso},scheduled_at.lte.${todayEndIso})`)
@@ -247,7 +247,7 @@ export function DashboardOverview() {
 
       if (!error && data) {
         // Expand recurring events and filter for today
-        const expandedEvents = expandRecurringEvents(data)
+        const expandedEvents = expandRecurringEvents(data, { rangeStart: todayStart, rangeEnd: todayEnd })
         const todaysEvents = getEventsForDate(expandedEvents, today)
         setUpcomingMeetings(todaysEvents.slice(0, 5))
       }
