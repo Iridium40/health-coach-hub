@@ -73,7 +73,9 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     try {
       const [loadedModules, loadedRecipes] = await Promise.all([
         getModules(),
-        getRecipes(true), // Force refresh to get latest images
+        // IMPORTANT: avoid force-refresh on every mount; this amplifies load on Supabase at scale.
+        // Use the in-memory cache in `lib/supabase/data.ts` and provide a manual refresh via `refreshContent`.
+        getRecipes(),
       ])
       setModules(loadedModules)
       setRecipes(loadedRecipes)

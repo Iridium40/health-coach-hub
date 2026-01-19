@@ -89,28 +89,27 @@ export function useTrainingResources(user?: User | null, userRank?: string | nul
     setError(null)
 
     try {
-      // Load categories - sorted by sort_order
-      const { data: catData, error: catError } = await supabase
-        .from("training_categories")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true })
+      // Load categories + resources in parallel to reduce time-to-interactive.
+      const [catResult, resResult] = await Promise.all([
+        supabase
+          .from("training_categories")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("training_resources")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true }),
+      ])
 
-      if (catError) throw catError
-      // Ensure categories are sorted by sort_order (belt and suspenders)
-      const sortedCategories = (catData || []).sort((a, b) => a.sort_order - b.sort_order)
+      if (catResult.error) throw catResult.error
+      if (resResult.error) throw resResult.error
+
+      // Ensure ordering (belt and suspenders)
+      const sortedCategories = (catResult.data || []).sort((a, b) => a.sort_order - b.sort_order)
+      const sortedResources = (resResult.data || []).sort((a, b) => a.sort_order - b.sort_order)
       setCategories(sortedCategories)
-
-      // Load resources - sorted by sort_order within category
-      const { data: resData, error: resError } = await supabase
-        .from("training_resources")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true })
-
-      if (resError) throw resError
-      // Ensure resources are sorted by sort_order (belt and suspenders)
-      const sortedResources = (resData || []).sort((a, b) => a.sort_order - b.sort_order)
       setResources(sortedResources)
 
       // Load completions if user is logged in

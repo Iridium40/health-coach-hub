@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -41,17 +42,42 @@ import { Progress } from "@/components/ui/progress"
 // Dashboard Components
 import { CoachTip, PipelineSnapshot, TodaysPriorities, RankProgressCard, QuickActions, NextTrainingCard } from "@/components/dashboard/index"
 import { TodaysFocus } from "@/components/dashboard/TodaysFocus"
-import { MilestoneActionModal } from "@/components/milestone-action-modal"
 import { getProgramDay } from "@/hooks/use-clients"
 
-// Coach Tools imports
-import { WaterCalculator } from "@/components/coach-tools/water-calculator"
-import { ExerciseGuide } from "@/components/coach-tools/exercise-guide"
-import { MetabolicHealthInfo } from "@/components/coach-tools/metabolic-health-info"
-import { ClientOnboardingDialog } from "@/components/coach-tools/client-onboarding-dialog"
-import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
-import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
-import { OPTAVIAReferenceGuide } from "@/components/coach-tools/optavia-reference-guide"
+// Lazy-load heavy modals/tools to reduce initial dashboard JS (big win at scale)
+const MilestoneActionModal = dynamic(
+  () => import("@/components/milestone-action-modal").then((m) => m.MilestoneActionModal),
+  { ssr: false }
+)
+
+const WaterCalculator = dynamic(
+  () => import("@/components/coach-tools/water-calculator").then((m) => m.WaterCalculator),
+  { ssr: false }
+)
+const ExerciseGuide = dynamic(
+  () => import("@/components/coach-tools/exercise-guide").then((m) => m.ExerciseGuide),
+  { ssr: false }
+)
+const MetabolicHealthInfo = dynamic(
+  () => import("@/components/coach-tools/metabolic-health-info").then((m) => m.MetabolicHealthInfo),
+  { ssr: false }
+)
+const ClientOnboardingDialog = dynamic(
+  () => import("@/components/coach-tools/client-onboarding-dialog").then((m) => m.ClientOnboardingDialog),
+  { ssr: false }
+)
+const ClientTroubleshootingDialog = dynamic(
+  () => import("@/components/coach-tools/client-troubleshooting-dialog").then((m) => m.ClientTroubleshootingDialog),
+  { ssr: false }
+)
+const SocialMediaPromptGenerator = dynamic(
+  () => import("@/components/social-media-prompt-generator").then((m) => m.SocialMediaPromptGenerator),
+  { ssr: false }
+)
+const OPTAVIAReferenceGuide = dynamic(
+  () => import("@/components/coach-tools/optavia-reference-guide").then((m) => m.OPTAVIAReferenceGuide),
+  { ssr: false }
+)
 
 // Coach Tools definitions
 const COACH_TOOLS: { id: string; title: string; icon: LucideIcon; component: React.ComponentType }[] = [
