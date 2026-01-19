@@ -89,62 +89,127 @@ export function useClients() {
   
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [page, setPage] = useState(0)
+
+  // Server-side stats (RPC) so we don't need to load all rows for counts
+  const [stats, setStats] = useState({
+    active: 0,
+    paused: 0,
+    completed: 0,
+    needsAttention: 0,
+    coachProspects: 0,
+    milestonesToday: 0,
+  })
+  const [statsLoading, setStatsLoading] = useState(true)
 
   const today = new Date().toISOString().split('T')[0]
+  const PAGE_SIZE = 200
+
+  const applyDailyTouchpointView = useCallback((rows: Client[]): Client[] => {
+    // Avoid daily "reset" write bursts:
+    // If the stored touchpoint date isn't today, treat AM/PM as not done for the UI,
+    // but do NOT write to the database.
+    return rows.map((c) => {
+      if (c.last_touchpoint_date !== today) {
+        return { ...c, am_done: false, pm_done: false }
+      }
+      return c
+    })
+  }, [today])
+
+  const loadStats = useCallback(async () => {
+    if (!user) {
+      setStatsLoading(false)
+      setStats({
+        active: 0,
+        paused: 0,
+        completed: 0,
+        needsAttention: 0,
+        coachProspects: 0,
+        milestonesToday: 0,
+      })
+      return
+    }
+
+    setStatsLoading(true)
+    try {
+      const { data } = await supabase.rpc("get_client_stats")
+      if (data && typeof data === "object") {
+        setStats((prev) => ({
+          ...prev,
+          active: Number((data as any).active ?? prev.active),
+          paused: Number((data as any).paused ?? prev.paused),
+          completed: Number((data as any).completed ?? prev.completed),
+          needsAttention: Number((data as any).needsAttention ?? prev.needsAttention),
+          coachProspects: Number((data as any).coachProspects ?? prev.coachProspects),
+          // milestonesToday stays client-side (needs program-day calc)
+        }))
+      }
+    } catch (e) {
+      // Fallback: keep existing stats (client-side computed from loaded rows below)
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [user, supabase])
 
   // Load clients and reset touchpoints if needed
-  const loadClients = useCallback(async () => {
+  const loadClients = useCallback(async (opts?: { append?: boolean }) => {
     if (!user) {
       setClients([])
       setLoading(false)
       return
     }
 
-    setLoading(true)
+    const append = Boolean(opts?.append)
+    if (append) setLoadingMore(true)
+    else setLoading(true)
     setError(null)
+
+    const nextPage = append ? page + 1 : 0
+    const from = nextPage * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
 
     const { data, error: fetchError } = await supabase
       .from('clients')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+      .range(from, to)
 
     if (fetchError) {
       setError(fetchError.message)
       setLoading(false)
+      setLoadingMore(false)
       return
     }
 
-    // Reset touchpoints for new day
-    const clientsWithReset = (data || []).map(client => {
-      if (client.last_touchpoint_date !== today) {
-        return {
-          ...client,
-          am_done: false,
-          pm_done: false,
-          last_touchpoint_date: today
-        }
-      }
-      return client
-    })
+    const normalized = applyDailyTouchpointView(data || [])
 
-    // Update any clients that need touchpoint reset in the database
-    const clientsNeedingReset = (data || []).filter(c => c.last_touchpoint_date !== today)
-    if (clientsNeedingReset.length > 0) {
-      await supabase
-        .from('clients')
-        .update({ am_done: false, pm_done: false, last_touchpoint_date: today })
-        .in('id', clientsNeedingReset.map(c => c.id))
-    }
+    setHasMore((data || []).length === PAGE_SIZE)
+    setPage(nextPage)
+    setClients((prev) => (append ? [...prev, ...normalized] : normalized))
 
-    setClients(clientsWithReset)
     setLoading(false)
-  }, [user, supabase, today])
+    setLoadingMore(false)
+
+    // Maintain a client-side milestone count (requires program day calc)
+    setStats((prev) => ({
+      ...prev,
+      milestonesToday: normalized.filter(c => {
+        if (c.status !== 'active') return false
+        const day = getProgramDay(c.start_date)
+        return [7, 14, 21, 30].includes(day)
+      }).length,
+    }))
+  }, [user, supabase, page, PAGE_SIZE, applyDailyTouchpointView])
 
   // Initial load
   useEffect(() => {
     loadClients()
+    loadStats()
   }, [loadClients])
 
   // Add client
@@ -176,6 +241,7 @@ export function useClients() {
 
     // Optimistic update
     setClients(prev => [data, ...prev])
+    loadStats()
     return data
   }, [user, supabase, today])
 
@@ -198,8 +264,9 @@ export function useClients() {
     setClients(prev => prev.map(c => 
       c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c
     ))
+    loadStats()
     return true
-  }, [user, supabase])
+  }, [user, supabase, loadStats])
 
   // Delete client
   const deleteClient = useCallback(async (id: string): Promise<boolean> => {
@@ -218,16 +285,20 @@ export function useClients() {
 
     // Optimistic update
     setClients(prev => prev.filter(c => c.id !== id))
+    loadStats()
     return true
-  }, [user, supabase])
+  }, [user, supabase, loadStats])
 
   // Toggle touchpoint
   const toggleTouchpoint = useCallback(async (id: string, type: 'am_done' | 'pm_done'): Promise<boolean> => {
     const client = clients.find(c => c.id === id)
     if (!client) return false
 
-    return updateClient(id, { 
-      [type]: !client[type],
+    // If touchpoints are from a previous day, treat them as false for toggling.
+    const effectiveValue = client.last_touchpoint_date === today ? client[type] : false
+
+    return updateClient(id, {
+      [type]: !effectiveValue,
       last_touchpoint_date: today
     })
   }, [clients, updateClient, today])
@@ -252,7 +323,7 @@ export function useClients() {
     if (client.status !== 'active') return false
     
     // If already checked in today, no attention needed
-    if (client.am_done) return false
+    if (client.last_touchpoint_date === today && client.am_done) return false
     
     const now = new Date()
     const todayStr = now.toISOString().split('T')[0]
@@ -279,21 +350,20 @@ export function useClients() {
     }
     
     return false
-  }, [])
+  }, [today])
 
-  // Get stats
-  const stats = {
-    active: clients.filter(c => c.status === 'active').length,
-    paused: clients.filter(c => c.status === 'paused').length,
-    completed: clients.filter(c => c.status === 'completed').length,
-    needsAttention: clients.filter(c => c.status === 'active' && needsAttention(c)).length,
-    coachProspects: clients.filter(c => c.is_coach_prospect && c.status === 'active').length,
-    milestonesToday: clients.filter(c => {
-      if (c.status !== 'active') return false
-      const day = getProgramDay(c.start_date)
-      return [7, 14, 21, 30].includes(day)
-    }).length
-  }
+  // If RPC isn't available yet, keep stats in sync from loaded rows.
+  useEffect(() => {
+    if (statsLoading) return
+    setStats((prev) => ({
+      ...prev,
+      active: prev.active || clients.filter(c => c.status === 'active').length,
+      paused: prev.paused || clients.filter(c => c.status === 'paused').length,
+      completed: prev.completed || clients.filter(c => c.status === 'completed').length,
+      needsAttention: prev.needsAttention || clients.filter(c => c.status === 'active' && needsAttention(c)).length,
+      coachProspects: prev.coachProspects || clients.filter(c => c.is_coach_prospect && c.status === 'active').length,
+    }))
+  }, [clients, needsAttention, statsLoading])
 
   // Get filtered and sorted clients
   const getFilteredClients = useCallback((
@@ -315,6 +385,7 @@ export function useClients() {
   return {
     clients,
     loading,
+    loadingMore,
     error,
     stats,
     addClient,
@@ -327,6 +398,12 @@ export function useClients() {
     getFilteredClients,
     getProgramDay,
     getDayPhase,
-    refresh: loadClients
+    hasMore,
+    loadMore: () => loadClients({ append: true }),
+    refresh: () => {
+      setPage(0)
+      return loadClients({ append: false })
+    },
+    refreshStats: loadStats,
   }
 }

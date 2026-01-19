@@ -93,6 +93,9 @@ export default function ClientTrackerPage() {
   const {
     clients,
     loading,
+    hasMore,
+    loadMore,
+    loadingMore,
     stats,
     addClient,
     updateClient,
@@ -1090,6 +1093,20 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               </Card>
             )
           })}
+
+          {/* Pagination: load additional rows without fetching the full table up front */}
+          {hasMore && (
+            <div className="pt-2 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => loadMore()}
+                disabled={loadingMore}
+                className="w-full sm:w-auto"
+              >
+                {loadingMore ? "Loading..." : `Load more clients (${clients.length} loaded)`}
+              </Button>
+            </div>
+          )}
 
           {filteredClients.length === 0 && (
             <Card>

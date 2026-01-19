@@ -103,6 +103,9 @@ export default function ProspectTrackerPage() {
   const {
     prospects,
     loading,
+    hasMore,
+    loadMore,
+    loadingMore,
     stats,
     addProspect,
     updateProspect,
@@ -160,7 +163,31 @@ export default function ProspectTrackerPage() {
   
   // Clear HA confirmation state
   const [showClearHAConfirm, setShowClearHAConfirm] = useState(false)
+  const [showConfirmFollowUp, setShowConfirmFollowUp] = useState(false)
+  const [followUpProspectId, setFollowUpProspectId] = useState<string | null>(null)
   const [prospectToClearHA, setProspectToClearHA] = useState<string | null>(null)
+  const confirmFollowUpDone = async () => {
+    if (!followUpProspectId) return
+    const todayDate = new Date()
+    const todayStr = todayDate.toISOString().split("T")[0]
+    const next = new Date(todayDate)
+    next.setDate(next.getDate() + 3)
+    const nextStr = next.toISOString().split("T")[0]
+
+    await updateProspect(followUpProspectId, {
+      last_action: todayStr,
+      next_action: nextStr,
+      action_type: "follow_up" as any,
+    })
+
+    toast({
+      title: "✅ Follow-up logged",
+      description: "Moved next follow-up out a few days.",
+    })
+
+    setShowConfirmFollowUp(false)
+    setFollowUpProspectId(null)
+  }
 
   const [newProspect, setNewProspect] = useState({
     label: "",
@@ -493,6 +520,7 @@ Talking Points:
   }
 
   return (
+    <>
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
 
@@ -1031,6 +1059,22 @@ Talking Points:
                               In {daysUntil} days
                             </Badge>
                           )}
+
+                          {/* Log Follow-up Done (clears "overdue" trigger) */}
+                          {isOverdue && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setFollowUpProspectId(prospect.id)
+                                setShowConfirmFollowUp(true)
+                              }}
+                              className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
+                              title="Mark follow-up as done"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>
@@ -1127,6 +1171,20 @@ Talking Points:
               </Card>
             )
           })}
+
+          {/* Pagination: load additional rows without fetching the full table up front */}
+          {hasMore && (
+            <div className="pt-2 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => loadMore()}
+                disabled={loadingMore}
+                className="w-full sm:w-auto"
+              >
+                {loadingMore ? "Loading..." : `Load more prospects (${prospects.length} loaded)`}
+              </Button>
+            </div>
+          )}
 
           {filteredProspects.length === 0 && (
             <Card>
@@ -1624,5 +1682,30 @@ Talking Points:
 
       <Footer />
     </div>
+
+    {/* Confirm Follow-up Done */}
+    <AlertDialog open={showConfirmFollowUp} onOpenChange={setShowConfirmFollowUp}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirm follow-up</AlertDialogTitle>
+          <AlertDialogDescription>
+            Mark this follow-up as done? This will clear the overdue alert and move the next follow-up out a few days.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel
+            onClick={() => {
+              setFollowUpProspectId(null)
+            }}
+          >
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={() => { void confirmFollowUpDone() }}>
+            Confirm
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

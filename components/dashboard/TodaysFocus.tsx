@@ -1,11 +1,21 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   GraduationCap,
   ChevronRight,
@@ -39,7 +49,9 @@ interface TodaysFocusProps {
   upcomingMeetings: ExpandedZoomCall[]
   loadingMeetings: boolean
   needsAttention: (client: any) => boolean
-  toggleTouchpoint: (clientId: string, field: "am_done" | "pm_done") => void
+  toggleTouchpoint: (clientId: string, field: "am_done" | "pm_done") => Promise<boolean> | void
+  completeClientCheckIn?: (client: any) => Promise<void> | void
+  logProspectFollowUp?: (prospect: any, daysUntilNext?: number) => Promise<void> | void
   onCelebrateClick?: (client: any) => void
 }
 
@@ -53,6 +65,8 @@ export function TodaysFocus({
   loadingMeetings,
   needsAttention,
   toggleTouchpoint,
+  completeClientCheckIn,
+  logProspectFollowUp,
   onCelebrateClick,
 }: TodaysFocusProps) {
   const {
@@ -131,6 +145,51 @@ export function TodaysFocus({
   }).slice(0, 2)
 
   const hasActionItems = clientsNeedingAction.length > 0 || haScheduledToday.length > 0 || meetingsToday.length > 0 || milestoneClients.length > 0 || todaysReminders.length > 0
+
+  // Overdue follow-ups (prospects)
+  const overdueProspects = prospects
+    .filter(p => {
+      if (!p.next_action || ["converted", "coach", "not_interested", "not_closed"].includes(p.status)) return false
+      return new Date(p.next_action) < new Date(today)
+    })
+    .slice(0, 2)
+
+  // Confirmation dialogs (prevents accidental clears)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmKind, setConfirmKind] = useState<"client_checkin" | "prospect_followup" | null>(null)
+  const [confirmClient, setConfirmClient] = useState<any | null>(null)
+  const [confirmProspect, setConfirmProspect] = useState<any | null>(null)
+
+  const openConfirmClient = (client: any) => {
+    setConfirmKind("client_checkin")
+    setConfirmClient(client)
+    setConfirmProspect(null)
+    setConfirmOpen(true)
+  }
+
+  const openConfirmProspect = (prospect: any) => {
+    setConfirmKind("prospect_followup")
+    setConfirmProspect(prospect)
+    setConfirmClient(null)
+    setConfirmOpen(true)
+  }
+
+  const runConfirmAction = async () => {
+    if (confirmKind === "client_checkin" && confirmClient) {
+      if (completeClientCheckIn) {
+        await completeClientCheckIn(confirmClient)
+      } else {
+        await toggleTouchpoint(confirmClient.id, "am_done")
+      }
+    }
+    if (confirmKind === "prospect_followup" && confirmProspect) {
+      await logProspectFollowUp?.(confirmProspect, 3)
+    }
+    setConfirmOpen(false)
+    setConfirmKind(null)
+    setConfirmClient(null)
+    setConfirmProspect(null)
+  }
 
   // Get timezone abbreviation
   const getTimezoneAbbrev = (timezone: string): string => {
@@ -323,7 +382,7 @@ export function TodaysFocus({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => toggleTouchpoint(client.id, "am_done")}
+                    onClick={() => openConfirmClient(client)}
                     className={`h-7 text-xs px-3 ${client.am_done ? "bg-green-100 text-green-700 border-green-300" : "text-green-600 border-green-200"}`}
                   >
                     {client.am_done ? (
@@ -332,12 +391,46 @@ export function TodaysFocus({
                         Done
                       </>
                     ) : (
-                      "Check In"
+                      "Mark Done"
                     )}
                   </Button>
                 </div>
               )
             })}
+
+            {/* Overdue Prospect Follow-ups */}
+            {overdueProspects.map(prospect => (
+              <div
+                key={`overdue-${prospect.id}`}
+                className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-red-200"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                    <Clock className="h-4 w-4 text-red-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm text-gray-900">{prospect.label}</div>
+                    <div className="text-xs text-red-600">Overdue follow-up</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openConfirmProspect(prospect)}
+                    className="h-7 text-xs px-3 text-green-700 border-green-200 hover:bg-green-50"
+                  >
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Done
+                  </Button>
+                  <Link href="/prospect-tracker">
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-3 text-red-600 border-red-200 hover:bg-red-50">
+                      View
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
 
             {/* Milestone Celebrations */}
             {milestoneClients.map(client => {
@@ -412,6 +505,30 @@ export function TodaysFocus({
             <p className="text-xs text-gray-500 mt-0.5">Great job staying on top of your business.</p>
           </div>
         )}
+
+        {/* Confirm dialogs */}
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {confirmKind === "client_checkin" ? "Confirm touchpoint" : "Confirm follow-up"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirmKind === "client_checkin" && confirmClient
+                  ? `Mark today's check-in as done for "${confirmClient.label}"? This will clear it from your dashboard tasks.`
+                  : confirmKind === "prospect_followup" && confirmProspect
+                    ? `Confirm you've followed up with "${confirmProspect.label}"? We'll move their next follow-up out a few days.`
+                    : "Confirm this action?"}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { void runConfirmAction() }}>
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   )

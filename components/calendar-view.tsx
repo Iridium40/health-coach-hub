@@ -38,13 +38,38 @@ export function CalendarView() {
       return
     }
     loadZoomCalls()
-  }, [user])
+  }, [user, viewMode, currentDate])
 
   const loadZoomCalls = async () => {
+    // Fetch only the window we need + recurring templates (huge perf win vs loading the whole table)
+    const start = new Date(currentDate)
+    const end = new Date(currentDate)
+
+    if (viewMode === "week") {
+      // 1 week back, 3 weeks forward
+      start.setDate(start.getDate() - 7)
+      end.setDate(end.getDate() + 21)
+    } else {
+      // Month view: from week before month to week after month
+      start.setDate(1)
+      start.setMonth(start.getMonth(), 1)
+      start.setHours(0, 0, 0, 0)
+      start.setDate(start.getDate() - 7)
+
+      end.setMonth(end.getMonth() + 1, 0) // last day of current month
+      end.setHours(23, 59, 59, 999)
+      end.setDate(end.getDate() + 7)
+    }
+
+    const startIso = start.toISOString()
+    const endIso = end.toISOString()
+
     const { data, error } = await supabase
       .from("zoom_calls")
-      .select("*")
+      .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_at,updated_at")
       .in("status", ["upcoming", "live", "completed"])
+      // Include recurring templates regardless of scheduled_at, and non-recurring calls inside the window.
+      .or(`is_recurring.eq.true,and(scheduled_at.gte.${startIso},scheduled_at.lte.${endIso})`)
       .order("scheduled_at", { ascending: true })
 
     if (!error && data) {

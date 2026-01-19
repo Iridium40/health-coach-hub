@@ -85,38 +85,111 @@ export function useProspects() {
   
   const [prospects, setProspects] = useState<Prospect[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [page, setPage] = useState(0)
+
+  const [stats, setStats] = useState({
+    total: 0,
+    new: 0,
+    interested: 0,
+    haScheduled: 0,
+    converted: 0,
+    coaches: 0,
+    notInterested: 0,
+    notClosed: 0,
+    recycled: 0,
+    overdue: 0,
+  })
+  const [statsLoading, setStatsLoading] = useState(true)
+
+  const PAGE_SIZE = 200
+
+  const loadStats = useCallback(async () => {
+    if (!user) {
+      setStatsLoading(false)
+      setStats({
+        total: 0,
+        new: 0,
+        interested: 0,
+        haScheduled: 0,
+        converted: 0,
+        coaches: 0,
+        notInterested: 0,
+        notClosed: 0,
+        recycled: 0,
+        overdue: 0,
+      })
+      return
+    }
+
+    setStatsLoading(true)
+    try {
+      const { data } = await supabase.rpc("get_prospect_stats")
+      if (data && typeof data === "object") {
+        setStats({
+          total: Number((data as any).total ?? 0),
+          new: Number((data as any).new ?? 0),
+          interested: Number((data as any).interested ?? 0),
+          haScheduled: Number((data as any).haScheduled ?? 0),
+          converted: Number((data as any).converted ?? 0),
+          coaches: Number((data as any).coaches ?? 0),
+          notInterested: Number((data as any).notInterested ?? 0),
+          notClosed: Number((data as any).notClosed ?? 0),
+          recycled: Number((data as any).recycled ?? 0),
+          overdue: Number((data as any).overdue ?? 0),
+        })
+      }
+    } catch (e) {
+      // Fallback: keep existing stats (client-side computed from loaded rows below)
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [user, supabase])
 
   // Load prospects
-  const loadProspects = useCallback(async () => {
+  const loadProspects = useCallback(async (opts?: { append?: boolean }) => {
     if (!user) {
       setProspects([])
       setLoading(false)
       return
     }
 
-    setLoading(true)
+    const append = Boolean(opts?.append)
+    if (append) setLoadingMore(true)
+    else setLoading(true)
     setError(null)
+
+    const nextPage = append ? page + 1 : 0
+    const from = nextPage * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
 
     const { data, error: fetchError } = await supabase
       .from('prospects')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+      .range(from, to)
 
     if (fetchError) {
       setError(fetchError.message)
       setLoading(false)
+      setLoadingMore(false)
       return
     }
 
-    setProspects(data || [])
+    setHasMore((data || []).length === PAGE_SIZE)
+    setPage(nextPage)
+    setProspects((prev) => (append ? [...prev, ...(data || [])] : (data || [])))
     setLoading(false)
-  }, [user, supabase])
+    setLoadingMore(false)
+  }, [user, supabase, page, PAGE_SIZE])
 
   // Initial load
   useEffect(() => {
     loadProspects()
+    loadStats()
   }, [loadProspects])
 
   // Add prospect
@@ -149,8 +222,9 @@ export function useProspects() {
 
     // Optimistic update
     setProspects(prev => [data, ...prev])
+    loadStats()
     return data
-  }, [user, supabase])
+  }, [user, supabase, loadStats])
 
   // Update prospect
   const updateProspect = useCallback(async (id: string, updates: UpdateProspect): Promise<boolean> => {
@@ -177,8 +251,9 @@ export function useProspects() {
     setProspects(prev => prev.map(p => 
       p.id === id ? { ...p, ...updateData, updated_at: new Date().toISOString() } : p
     ))
+    loadStats()
     return true
-  }, [user, supabase])
+  }, [user, supabase, loadStats])
 
   // Delete prospect
   const deleteProspect = useCallback(async (id: string): Promise<boolean> => {
@@ -197,8 +272,9 @@ export function useProspects() {
 
     // Optimistic update
     setProspects(prev => prev.filter(p => p.id !== id))
+    loadStats()
     return true
-  }, [user, supabase])
+  }, [user, supabase, loadStats])
 
   // Log action (update last_action and set next_action)
   const logAction = useCallback(async (id: string, daysUntilNext: number = 3): Promise<boolean> => {
@@ -212,22 +288,26 @@ export function useProspects() {
     })
   }, [updateProspect])
 
-  // Get stats
-  const stats = {
-    total: prospects.filter(p => !['not_interested', 'not_closed'].includes(p.status)).length,
-    new: prospects.filter(p => p.status === 'new').length,
-    interested: prospects.filter(p => p.status === 'interested').length,
-    haScheduled: prospects.filter(p => p.status === 'ha_scheduled').length,
-    converted: prospects.filter(p => p.status === 'converted').length,
-    coaches: prospects.filter(p => p.status === 'coach').length,
-    notInterested: prospects.filter(p => p.status === 'not_interested').length,
-    notClosed: prospects.filter(p => p.status === 'not_closed').length,
-    recycled: prospects.filter(p => ['not_interested', 'not_closed'].includes(p.status)).length,
-    overdue: prospects.filter(p => {
-      if (!p.next_action || ['converted', 'coach', 'not_interested', 'not_closed'].includes(p.status)) return false
-      return new Date(p.next_action) < new Date(new Date().toISOString().split('T')[0])
-    }).length
-  }
+  // If RPC isn't available yet, keep stats in sync from loaded rows.
+  useEffect(() => {
+    if (statsLoading) return
+    setStats((prev) => ({
+      ...prev,
+      total: prev.total || prospects.filter(p => !['not_interested', 'not_closed'].includes(p.status)).length,
+      new: prev.new || prospects.filter(p => p.status === 'new').length,
+      interested: prev.interested || prospects.filter(p => p.status === 'interested').length,
+      haScheduled: prev.haScheduled || prospects.filter(p => p.status === 'ha_scheduled').length,
+      converted: prev.converted || prospects.filter(p => p.status === 'converted').length,
+      coaches: prev.coaches || prospects.filter(p => p.status === 'coach').length,
+      notInterested: prev.notInterested || prospects.filter(p => p.status === 'not_interested').length,
+      notClosed: prev.notClosed || prospects.filter(p => p.status === 'not_closed').length,
+      recycled: prev.recycled || prospects.filter(p => ['not_interested', 'not_closed'].includes(p.status)).length,
+      overdue: prev.overdue || prospects.filter(p => {
+        if (!p.next_action || ['converted', 'coach', 'not_interested', 'not_closed'].includes(p.status)) return false
+        return new Date(p.next_action) < new Date(new Date().toISOString().split('T')[0])
+      }).length,
+    }))
+  }, [prospects, statsLoading])
 
   // Get filtered and sorted prospects
   const getFilteredProspects = useCallback((
@@ -267,6 +347,7 @@ export function useProspects() {
   return {
     prospects,
     loading,
+    loadingMore,
     error,
     stats,
     addProspect,
@@ -275,6 +356,12 @@ export function useProspects() {
     logAction,
     getFilteredProspects,
     getDaysUntil,
-    refresh: loadProspects
+    hasMore,
+    loadMore: () => loadProspects({ append: true }),
+    refresh: () => {
+      setPage(0)
+      return loadProspects({ append: false })
+    },
+    refreshStats: loadStats,
   }
 }

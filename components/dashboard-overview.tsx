@@ -105,8 +105,8 @@ export function DashboardOverview() {
   const supabase = createClient()
 
   // CRM hooks
-  const { prospects, stats: prospectStats } = useProspects()
-  const { clients, stats: clientStats, toggleTouchpoint, needsAttention } = useClients()
+  const { prospects, stats: prospectStats, updateProspect } = useProspects()
+  const { clients, stats: clientStats, toggleTouchpoint, needsAttention, updateClient } = useClients()
 
   // Training resources progress - pass user rank to properly filter accessible categories
   const { progress: trainingProgress, resources: trainingResources } = useTrainingResources(user, profile?.coach_rank || null)
@@ -195,12 +195,20 @@ export function DashboardOverview() {
 
     const loadMeetings = async () => {
       const today = new Date()
+      const todayStart = new Date(today)
+      todayStart.setHours(0, 0, 0, 0)
+      const todayEnd = new Date(today)
+      todayEnd.setHours(23, 59, 59, 999)
+      const todayStartIso = todayStart.toISOString()
+      const todayEndIso = todayEnd.toISOString()
 
       // Fetch all upcoming/live meetings to expand recurring ones
       const { data, error } = await supabase
         .from("zoom_calls")
-        .select("*")
+        .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_at,updated_at")
         .in("status", ["upcoming", "live"])
+        // Include recurring templates regardless of scheduled_at, and non-recurring calls scheduled today.
+        .or(`is_recurring.eq.true,and(scheduled_at.gte.${todayStartIso},scheduled_at.lte.${todayEndIso})`)
         .order("scheduled_at", { ascending: true })
 
       if (!error && data) {
@@ -275,6 +283,43 @@ export function DashboardOverview() {
     }
   }, [rankData, nextRank, gaps])
 
+  const completeDashboardClientCheckIn = async (client: any) => {
+    // If the "needs attention" is caused by an overdue scheduled check-in, clear the schedule so the alert goes away.
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    if (client.next_scheduled_at) {
+      const scheduled = new Date(client.next_scheduled_at)
+      const scheduledDay = new Date(scheduled)
+      scheduledDay.setHours(0, 0, 0, 0)
+      if (scheduledDay.getTime() <= todayStart.getTime()) {
+        await updateClient(client.id, {
+          next_scheduled_at: null,
+          recurring_frequency: null,
+          recurring_day: null,
+          recurring_time: null,
+        })
+      }
+    }
+
+    // Marks today's touchpoint as done (and sets last_touchpoint_date to today in the hook)
+    await toggleTouchpoint(client.id, "am_done")
+  }
+
+  const logDashboardProspectFollowUp = async (prospect: any, daysUntilNext = 3) => {
+    const today = new Date()
+    const todayStr = today.toISOString().split("T")[0]
+    const nextDate = new Date(today)
+    nextDate.setDate(nextDate.getDate() + daysUntilNext)
+    const nextStr = nextDate.toISOString().split("T")[0]
+
+    await updateProspect(prospect.id, {
+      last_action: todayStr,
+      next_action: nextStr,
+      action_type: "follow_up" as any,
+    })
+  }
+
   return (
     <div className="container mx-auto px-4 py-4 sm:py-8">
       {/* Welcome Section */}
@@ -313,6 +358,8 @@ export function DashboardOverview() {
           loadingMeetings={loadingMeetings}
           needsAttention={needsAttention}
           toggleTouchpoint={toggleTouchpoint}
+          completeClientCheckIn={completeDashboardClientCheckIn}
+          logProspectFollowUp={logDashboardProspectFollowUp}
           onCelebrateClick={(client) => {
             setMilestoneClient(client)
             setShowMilestoneModal(true)
