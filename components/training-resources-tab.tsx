@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/select"
 import { Search, ExternalLink, FileText, Video, Palette, Link2, ChevronDown, ChevronRight, CheckCircle, Circle, Bookmark } from "lucide-react"
 import { EmbeddedContentViewer } from "@/components/embedded-content-viewer"
-import { TrainingContextualResources } from "@/components/resources"
 import { useToast } from "@/hooks/use-toast"
 
 export function TrainingResourcesTab() {
@@ -435,10 +434,6 @@ export function TrainingResourcesTab() {
                       })}
                     </div>
                     
-                    {/* Related External Resources for this category */}
-                    <div className="p-3 bg-white border-t">
-                      <TrainingContextualResources trainingCategory={category} />
-                    </div>
                   </div>
                 )}
               </div>
