@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { BookOpen } from 'lucide-react';
 import { ResourceCard } from './ResourceCard';
@@ -24,6 +24,10 @@ interface Resource {
     tags?: string[];
   };
 }
+
+// Simple in-memory cache for resources by category
+const resourceCache = new Map<string, { resources: Resource[], timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Mapping of training categories (from database) to resource categories and tags
 const TRAINING_TO_RESOURCE_MAPPING: Record<string, { categories: string[], tags: string[] }> = {
@@ -84,70 +88,109 @@ export function TrainingContextualResources({
   trainingTags = []
 }: TrainingContextualResourcesProps) {
   const [resources, setResources] = useState<Resource[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const supabaseRef = useRef(createClient());
+  const isMountedRef = useRef(true);
 
-  useEffect(() => {
-    fetchRelevantResources();
+  // Create a stable cache key
+  const cacheKey = useMemo(() => {
+    return `${trainingCategory}:${trainingTags.sort().join(',')}`;
   }, [trainingCategory, trainingTags]);
 
-  const fetchRelevantResources = async () => {
-    setIsLoading(true);
+  useEffect(() => {
+    isMountedRef.current = true;
     
-    try {
+    const fetchRelevantResources = async () => {
       const mapping = TRAINING_TO_RESOURCE_MAPPING[trainingCategory];
       
       if (!mapping) {
         setResources([]);
-        setIsLoading(false);
+        setHasLoaded(true);
         return;
       }
 
-      // Get resources from relevant categories
-      const { data, error } = await supabase
-        .from('external_resources')
-        .select('*')
-        .in('category', mapping.categories)
-        .eq('is_active', true)
-        .order('sort_order');
+      // Check cache first
+      const cached = resourceCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        setResources(cached.resources);
+        setHasLoaded(true);
+        return;
+      }
 
-      if (error) throw error;
+      // Only show loading if we don't have cached data
+      setIsLoading(true);
+      
+      try {
+        // Get resources from relevant categories
+        const { data, error } = await supabaseRef.current
+          .from('external_resources')
+          .select('*')
+          .in('category', mapping.categories)
+          .eq('is_active', true)
+          .order('sort_order');
 
-      // Filter by tags if available
-      const filtered = (data || []).filter((resource) => {
-        // If no features, still include if it matches the category
-        if (!resource.features) return true;
-        
-        const features = resource.features as Resource['features'];
-        // Ensure tags is always an array
-        const resourceTags = Array.isArray(features.tags) ? features.tags : [];
-        
-        // If resource has no tags, include it (it's in the category)
-        if (resourceTags.length === 0) return true;
-        
-        // Check if any of the mapping tags match resource tags
-        const hasMatchingTag = mapping.tags.some(tag => 
-          resourceTags.includes(tag)
-        );
-        
-        // Also check against provided training tags
-        const hasTrainingTag = trainingTags.length > 0 
-          ? trainingTags.some(tag => resourceTags.includes(tag))
-          : true;
-        
-        return hasMatchingTag || hasTrainingTag;
-      });
+        if (error) throw error;
 
-      // Limit to top 6 most relevant
-      setResources(filtered.slice(0, 6));
-    } catch (error) {
-      console.error('Error fetching resources:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        // Filter by tags if available
+        const filtered = (data || []).filter((resource) => {
+          // If no features, still include if it matches the category
+          if (!resource.features) return true;
+          
+          const features = resource.features as Resource['features'];
+          // Ensure tags is always an array
+          const resourceTags = Array.isArray(features.tags) ? features.tags : [];
+          
+          // If resource has no tags, include it (it's in the category)
+          if (resourceTags.length === 0) return true;
+          
+          // Check if any of the mapping tags match resource tags
+          const hasMatchingTag = mapping.tags.some(tag => 
+            resourceTags.includes(tag)
+          );
+          
+          // Also check against provided training tags
+          const hasTrainingTag = trainingTags.length > 0 
+            ? trainingTags.some(tag => resourceTags.includes(tag))
+            : true;
+          
+          return hasMatchingTag || hasTrainingTag;
+        });
 
-  if (isLoading) {
+        // Limit to top 6 most relevant
+        const result = filtered.slice(0, 6);
+        
+        // Update cache
+        resourceCache.set(cacheKey, { resources: result, timestamp: Date.now() });
+        
+        if (isMountedRef.current) {
+          setResources(result);
+        }
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+      } finally {
+        if (isMountedRef.current) {
+          setIsLoading(false);
+          setHasLoaded(true);
+        }
+      }
+    };
+
+    fetchRelevantResources();
+    
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [trainingCategory, trainingTags, cacheKey]);
+
+  // Don't render anything until we've loaded at least once
+  // This prevents the flicker when expanding modules
+  if (!hasLoaded) {
+    return null;
+  }
+
+  // Show loading only if we're fetching and have no cached resources to display
+  if (isLoading && resources.length === 0) {
     return (
       <div className="animate-pulse space-y-2">
         <div className="h-4 bg-gray-200 rounded w-1/3"></div>
