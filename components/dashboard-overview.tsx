@@ -249,7 +249,18 @@ export function DashboardOverview() {
         // Expand recurring events and filter for today
         const expandedEvents = expandRecurringEvents(data, { rangeStart: todayStart, rangeEnd: todayEnd })
         const todaysEvents = getEventsForDate(expandedEvents, today)
-        setUpcomingMeetings(todaysEvents.slice(0, 5))
+        
+        // Filter out meetings that ended more than 30 minutes ago
+        const now = new Date()
+        const pastCutoff = new Date(now.getTime() - 30 * 60 * 1000)
+        const upcomingOrRecentEvents = todaysEvents.filter(m => {
+          const meetingDate = new Date(m.occurrence_date)
+          const duration = m.duration_minutes || 60
+          const meetingEndTime = new Date(meetingDate.getTime() + duration * 60 * 1000)
+          return meetingEndTime > pastCutoff
+        })
+        
+        setUpcomingMeetings(upcomingOrRecentEvents.slice(0, 5))
       }
       setLoadingMeetings(false)
     }

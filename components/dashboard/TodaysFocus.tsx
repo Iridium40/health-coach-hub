@@ -89,10 +89,14 @@ export function TodaysFocus({
   ).slice(0, 3)
 
   const today = new Date().toISOString().split("T")[0]
+  const now = new Date()
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
   const todayEnd = new Date()
   todayEnd.setHours(23, 59, 59, 999)
+  
+  // Buffer time: hide events that ended more than 30 minutes ago
+  const pastCutoff = new Date(now.getTime() - 30 * 60 * 1000)
 
   // Get training recommendation
   const trainingRecommendation = useMemo(() => {
@@ -128,17 +132,21 @@ export function TodaysFocus({
     .filter(c => c.status === "active" && needsAttention(c))
     .slice(0, 3)
 
-  // Get HAs scheduled for today
-  const haScheduledToday = prospects.filter(p => 
-    p.ha_scheduled_at && 
-    new Date(p.ha_scheduled_at) >= todayStart && 
-    new Date(p.ha_scheduled_at) <= todayEnd
-  ).slice(0, 3)
+  // Get HAs scheduled for today (exclude ones that ended more than 30 min ago)
+  // Assume HA duration is 45 minutes
+  const haScheduledToday = prospects.filter(p => {
+    if (!p.ha_scheduled_at) return false
+    const haTime = new Date(p.ha_scheduled_at)
+    const haEndTime = new Date(haTime.getTime() + 45 * 60 * 1000)
+    return haTime >= todayStart && haTime <= todayEnd && haEndTime > pastCutoff
+  }).slice(0, 3)
 
-  // Get meetings today (already filtered by date in parent, use occurrence_date)
+  // Get meetings today (exclude ones that ended more than 30 min ago)
   const meetingsToday = upcomingMeetings.filter(m => {
     const meetingDate = new Date(m.occurrence_date)
-    return meetingDate >= todayStart && meetingDate <= todayEnd
+    const duration = m.duration_minutes || 60
+    const meetingEndTime = new Date(meetingDate.getTime() + duration * 60 * 1000)
+    return meetingDate >= todayStart && meetingDate <= todayEnd && meetingEndTime > pastCutoff
   }).slice(0, 3)
 
   // Get milestone clients (hide ones dismissed today)
