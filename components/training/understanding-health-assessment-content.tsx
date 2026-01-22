@@ -761,7 +761,7 @@ export function UnderstandingHealthAssessmentContent() {
                       <div className="ml-10 mt-4 space-y-4 relative">
                         {section.haFlow.map((item, i) => (
                           <div key={i} className="flex gap-4 relative">
-                            {i < section.haFlow.length - 1 && (
+                            {i < (section.haFlow?.length ?? 0) - 1 && (
                               <div className="absolute left-[18px] top-11 w-0.5 h-full bg-gray-300" />
                             )}
                             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[hsl(var(--optavia-green))] to-[hsl(var(--optavia-green-dark))] text-white flex items-center justify-center font-bold text-sm flex-shrink-0 z-10">

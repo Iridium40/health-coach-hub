@@ -64,6 +64,11 @@ interface Lesson {
         }
       }>
       important?: string[]
+      contactCoach?: {
+        icon: string
+        title: string
+        message: string
+      }
     }>
     keyTakeaways: string[]
   }

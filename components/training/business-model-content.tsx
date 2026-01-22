@@ -131,6 +131,11 @@ interface Section {
   vocabularyTerms?: VocabularyTerm[]
   acronyms?: Acronym[]
   languageTips?: LanguageTip[]
+  contactCoach?: {
+    icon: string
+    title: string
+    message: string
+  }
 }
 
 interface Lesson {

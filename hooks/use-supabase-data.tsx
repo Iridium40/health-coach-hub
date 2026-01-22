@@ -164,52 +164,63 @@ export function useSupabaseData(user: User | null) {
       if (!user || !profile) return
 
       const earnedBadges = getEarnedBadges(completedResourceIds, isNewCoach)
+      if (earnedBadges.length === 0) return
 
-      for (const badge of earnedBadges) {
-        // Check if badge already exists
-        const { data: existingBadge } = await supabase
-          .from("user_badges")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("badge_type", badge.badgeType)
-          .eq("category", badge.category)
-          .single()
+      // Batch check: fetch all existing badges for this user in one query
+      const { data: existingBadges } = await supabase
+        .from("user_badges")
+        .select("badge_type, category")
+        .eq("user_id", user.id)
 
-        // If badge doesn't exist, award it
-        if (!existingBadge) {
-          const { error } = await supabase.from("user_badges").insert({
-            user_id: user.id,
-            badge_type: badge.badgeType,
-            category: badge.category,
-          })
+      const existingBadgeSet = new Set(
+        (existingBadges || []).map(b => `${b.badge_type}:${b.category}`)
+      )
 
-          if (!error) {
-            // Reload badges to update UI
-            const { data: badgesData } = await supabase
-              .from("user_badges")
-              .select("*")
-              .eq("user_id", user.id)
-              .order("earned_at", { ascending: false })
+      // Filter to only badges that don't exist yet
+      const newBadges = earnedBadges.filter(
+        badge => !existingBadgeSet.has(`${badge.badgeType}:${badge.category}`)
+      )
 
-            if (badgesData) {
-              setBadges(badgesData)
-            }
+      if (newBadges.length === 0) return
 
-            // Send badge award email if user has email and email notifications enabled
-            if (profile.email && notificationSettings?.email_notifications) {
-              const badgeInfo = badgeConfig[badge.category]
-              if (badgeInfo) {
-                await sendBadgeEmail({
-                  to: profile.email,
-                  fullName: profile.full_name || "Coach",
-                  badgeName: badgeInfo.name,
-                  badgeCategory: badge.category,
-                  badgeDescription: badgeInfo.description,
-                })
-              }
-            }
+      // Award all new badges in parallel
+      const insertPromises = newBadges.map(badge =>
+        supabase.from("user_badges").insert({
+          user_id: user.id,
+          badge_type: badge.badgeType,
+          category: badge.category,
+        })
+      )
+
+      await Promise.all(insertPromises)
+
+      // Reload badges once to update UI
+      const { data: badgesData } = await supabase
+        .from("user_badges")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("earned_at", { ascending: false })
+
+      if (badgesData) {
+        setBadges(badgesData)
+      }
+
+      // Send badge award emails for new badges (in parallel)
+      if (profile.email && notificationSettings?.email_notifications) {
+        const emailPromises = newBadges.map(badge => {
+          const badgeInfo = badgeConfig[badge.category]
+          if (badgeInfo) {
+            return sendBadgeEmail({
+              to: profile.email!,
+              fullName: profile.full_name || "Coach",
+              badgeName: badgeInfo.name,
+              badgeCategory: badge.category,
+              badgeDescription: badgeInfo.description,
+            })
           }
-        }
+          return Promise.resolve()
+        })
+        await Promise.all(emailPromises)
       }
     },
     [user, profile, notificationSettings, supabase]

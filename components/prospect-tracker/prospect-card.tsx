@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, memo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -53,7 +53,7 @@ interface ProspectCardProps {
   onToast: (options: { title: string; description: string; variant?: "destructive" }) => void
 }
 
-export function ProspectCard({
+export const ProspectCard = memo(function ProspectCard({
   prospect,
   daysUntil,
   onUpdateStatus,
@@ -309,4 +309,4 @@ export function ProspectCard({
       </CardContent>
     </Card>
   )
-}
+})

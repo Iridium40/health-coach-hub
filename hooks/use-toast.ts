@@ -179,7 +179,7 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, []) // Fixed: removed `state` dependency to prevent memory leak from re-subscriptions
 
   return {
     ...state,

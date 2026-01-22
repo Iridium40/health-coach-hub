@@ -355,20 +355,17 @@ export function useTrainingResourcesAdmin() {
 
   // Reorder resources within a category
   const reorderResources = async (categoryName: string, resourceIds: string[]) => {
-    // Update sort_order for each resource in the new order
-    const updates = resourceIds.map((id, index) => ({
-      id,
-      sort_order: index + 1,
-    }))
-
-    for (const update of updates) {
-      const { error } = await supabase
+    // Update sort_order for each resource in the new order using Promise.all for performance
+    const updates = resourceIds.map((id, index) => 
+      supabase
         .from("training_resources")
-        .update({ sort_order: update.sort_order })
-        .eq("id", update.id)
+        .update({ sort_order: index + 1 })
+        .eq("id", id)
+    )
 
-      if (error) throw error
-    }
+    const results = await Promise.all(updates)
+    const error = results.find(r => r.error)?.error
+    if (error) throw error
 
     await reload()
   }

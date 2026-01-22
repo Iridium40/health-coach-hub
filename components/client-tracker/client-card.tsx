@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, memo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -41,7 +41,7 @@ interface ClientCardProps {
   needsAttention: (client: Client) => boolean
 }
 
-export function ClientCard({
+export const ClientCard = memo(function ClientCard({
   client,
   onToggleTouchpoint,
   onToggleCoachProspect,
@@ -311,4 +311,4 @@ export function ClientCard({
       </CardContent>
     </Card>
   )
-}
+})

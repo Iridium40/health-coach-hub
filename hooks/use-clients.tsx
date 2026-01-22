@@ -210,7 +210,7 @@ export function useClients() {
   useEffect(() => {
     loadClients()
     loadStats()
-  }, [loadClients])
+  }, [loadClients, loadStats])
 
   // Add client
   const addClient = useCallback(async (newClient: NewClient): Promise<Client | null> => {

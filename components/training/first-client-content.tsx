@@ -50,6 +50,7 @@ interface AdditionalVideo {
   title: string
   description: string
   whenToSend: string
+  comingSoon?: boolean
 }
 
 interface SuccessTip {
@@ -89,7 +90,7 @@ interface Callout {
 
 interface Section {
   title: string
-  timing?: string
+  timing?: string | Array<{ when: string; why: string }>
   icon?: string
   description?: string
   checklist?: ChecklistItem[]
@@ -703,7 +704,7 @@ export function FirstClientContent() {
                         <span className="w-7 h-7 rounded-full bg-gradient-to-br from-[hsl(var(--optavia-green))] to-[hsl(var(--optavia-green-dark))] text-white flex items-center justify-center text-sm font-bold">{idx + 1}</span>
                       )}
                       {section.title}
-                      {section.timing && !section.checklist && <Badge variant="secondary" className="ml-2 text-xs">{section.timing}</Badge>}
+                      {section.timing && !section.checklist && typeof section.timing === 'string' && <Badge variant="secondary" className="ml-2 text-xs">{section.timing}</Badge>}
                     </h3>
 
                     {section.description && <p className="text-base leading-relaxed text-optavia-gray mb-4">{section.description}</p>}
@@ -711,7 +712,7 @@ export function FirstClientContent() {
                     {/* Checklist */}
                     {section.checklist && (
                       <div className="mb-4">
-                        {section.timing && (
+                        {section.timing && typeof section.timing === 'string' && (
                           <Badge variant="outline" className="mb-3 text-xs bg-green-50 text-green-700 border-green-300">
                             {section.timing}
                           </Badge>

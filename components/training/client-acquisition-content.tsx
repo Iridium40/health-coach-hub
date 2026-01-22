@@ -661,7 +661,7 @@ export function ClientAcquisitionContent() {
                       <div className="space-y-4">
                         {section.flowSteps.map((flow, i) => (
                           <div key={i} className="flex gap-4 relative">
-                            {i < section.flowSteps.length - 1 && <div className="absolute left-[45px] top-20 w-0.5 h-[calc(100%-20px)] bg-gray-200" />}
+                            {i < (section.flowSteps?.length ?? 0) - 1 && <div className="absolute left-[45px] top-20 w-0.5 h-[calc(100%-20px)] bg-gray-200" />}
                             <div className="w-24 text-center flex-shrink-0">
                               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[hsl(var(--optavia-green))] to-[hsl(var(--optavia-green-dark))] text-white flex items-center justify-center font-bold mx-auto mb-2">{i + 1}</div>
                               <div className="text-xs text-optavia-gray">{flow.duration}</div>

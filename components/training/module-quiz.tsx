@@ -148,8 +148,8 @@ export function ModuleQuiz({ moduleId, moduleTitle, questions, onComplete }: Mod
     localStorage.removeItem(`quiz-${moduleId}`)
   }
 
-  const calculateScore = () => {
-    return answers.reduce((score, answer, index) => {
+  const calculateScore = (): number => {
+    return answers.reduce((score: number, answer, index) => {
       if (answer === questions[index].correctAnswer) {
         return score + 1
       }
