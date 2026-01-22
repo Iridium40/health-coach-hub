@@ -1291,7 +1291,7 @@ Talking Points:
                 <Label>Source</Label>
                 <Select
                   value={editingProspect.source}
-                  onValueChange={(value) => setEditingProspect({ ...editingProspect, source: value })}
+                  onValueChange={(value) => setEditingProspect({ ...editingProspect, source: value as ProspectSource })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1328,14 +1328,16 @@ Talking Points:
             </Button>
             <Button
               onClick={async () => {
-                await updateProspect(editingProspect.id, {
-                  label: editingProspect.label,
-                  source: editingProspect.source,
-                  notes: editingProspect.notes,
-                  next_action: editingProspect.next_action,
-                })
-                setShowEditModal(false)
-                setEditingProspect(null)
+                if (editingProspect) {
+                  await updateProspect(editingProspect.id, {
+                    label: editingProspect.label,
+                    source: editingProspect.source,
+                    notes: editingProspect.notes,
+                    next_action: editingProspect.next_action,
+                  })
+                  setShowEditModal(false)
+                  setEditingProspect(null)
+                }
               }}
               className="bg-[hsl(var(--optavia-green))]"
             >

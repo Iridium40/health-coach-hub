@@ -35,7 +35,7 @@ export function RankProgressCard({
   // Calculate progress percentage toward next rank
   let progressPercent = 100
   if (nextReqs && gaps) {
-    const totalNeeded = (nextReqs.clients || 0) + (nextReqs.coaches || 0) + (nextReqs.qualifyingLegs || 0)
+    const totalNeeded = (nextReqs.minClients || 0) + (nextReqs.frontlineCoaches || 0) + (nextReqs.qualifyingLegs || 0)
     const totalHave = activeClients + frontlineCoaches + qualifyingLegs
     const totalGaps = gaps.clients + gaps.coaches + gaps.qualifyingLegs
     if (totalNeeded > 0) {
@@ -93,7 +93,7 @@ export function RankProgressCard({
                     <span className="text-gray-700">
                       Need <strong className="text-amber-700">{gaps.clients}</strong> more client{gaps.clients > 1 ? 's' : ''}
                     </span>
-                    <span className="text-xs text-gray-400">({activeClients}/{nextReqs.clients})</span>
+                    <span className="text-xs text-gray-400">({activeClients}/{nextReqs.minClients})</span>
                   </div>
                 )}
                 {gaps && gaps.coaches > 0 && (
@@ -102,7 +102,7 @@ export function RankProgressCard({
                     <span className="text-gray-700">
                       Need <strong className="text-amber-700">{gaps.coaches}</strong> more coach{gaps.coaches > 1 ? 'es' : ''}
                     </span>
-                    <span className="text-xs text-gray-400">({frontlineCoaches}/{nextReqs.coaches})</span>
+                    <span className="text-xs text-gray-400">({frontlineCoaches}/{nextReqs.frontlineCoaches})</span>
                   </div>
                 )}
                 {gaps && gaps.qualifyingLegs > 0 && (

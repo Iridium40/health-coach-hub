@@ -159,9 +159,9 @@ export function usePipeline() {
 
     // Check prospects for overdue follow-ups and upcoming HAs
     prospects.forEach(p => {
-      // Overdue follow-up
-      if (p.follow_up_date) {
-        const followUpDate = new Date(p.follow_up_date)
+      // Overdue follow-up - use next_action date
+      if (p.next_action) {
+        const followUpDate = new Date(p.next_action)
         followUpDate.setHours(0, 0, 0, 0)
         
         if (followUpDate < today) {
@@ -177,8 +177,8 @@ export function usePipeline() {
       }
 
       // HA scheduled today or soon
-      if (p.status === "ha_scheduled" && p.ha_scheduled_date) {
-        const haDate = new Date(p.ha_scheduled_date)
+      if (p.status === "ha_scheduled" && p.ha_scheduled_at) {
+        const haDate = new Date(p.ha_scheduled_at)
         haDate.setHours(0, 0, 0, 0)
         const diffDays = Math.floor((haDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
         
@@ -206,8 +206,8 @@ export function usePipeline() {
 
     // Check clients needing touchpoints
     clients.forEach(c => {
-      if (c.status === "active" && c.last_contact) {
-        const lastContact = new Date(c.last_contact)
+      if (c.status === "active" && c.last_touchpoint_date) {
+        const lastContact = new Date(c.last_touchpoint_date)
         const daysSinceContact = Math.floor((today.getTime() - lastContact.getTime()) / (1000 * 60 * 60 * 24))
         
         if (daysSinceContact >= 7) {

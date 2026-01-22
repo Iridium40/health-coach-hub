@@ -66,7 +66,7 @@ export function CalendarView() {
 
     const { data, error } = await supabase
       .from("zoom_calls")
-      .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,recurrence_end_date,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_at,updated_at")
+      .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,recurrence_end_date,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_by,created_at,updated_at")
       .in("status", ["upcoming", "live", "completed"])
       // Include recurring templates regardless of scheduled_at, and non-recurring calls inside the window.
       .or(`is_recurring.eq.true,and(scheduled_at.gte.${startIso},scheduled_at.lte.${endIso})`)

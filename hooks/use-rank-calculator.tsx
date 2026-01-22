@@ -132,6 +132,7 @@ export interface ProspectPipeline {
   new: number
   interested: number
   ha_scheduled: number
+  ha_done: number
 }
 
 export interface ClientStats {

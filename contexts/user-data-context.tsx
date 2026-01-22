@@ -36,8 +36,8 @@ interface UserDataContextType {
   toggleCompletedResource: (resourceId: string) => Promise<void>
   toggleBookmark: (resourceId: string) => Promise<void>
   toggleFavoriteRecipe: (recipeId: string) => Promise<void>
-  updateProfile: (updates: Partial<UserProfile>) => Promise<{ data?: UserProfile; error?: Error }>
-  updateNotificationSettings: (updates: Partial<NotificationSettings>) => Promise<{ data?: NotificationSettings; error?: Error }>
+  updateProfile: (updates: Partial<UserProfile>) => Promise<{ data?: UserProfile | null; error?: Error | null }>
+  updateNotificationSettings: (updates: Partial<NotificationSettings>) => Promise<{ data?: NotificationSettings | null; error?: Error | null }>
   refreshData: (forceRefresh?: boolean) => Promise<void>
   refreshContent: () => Promise<void>
 }

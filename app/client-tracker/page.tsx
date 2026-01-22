@@ -263,7 +263,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       setScheduleAmPm("AM")
     }
     setRecurringFrequency(client.recurring_frequency || "none")
-    setClientEmail(client.email || "")
+    setClientEmail("")  // Clients don't store email (privacy-first CRM)
     setClientPhone(client.phone || "")
     setShowScheduleModal(true)
   }

@@ -23,7 +23,7 @@ interface TrainingTabProps {
   userData: UserData
   setUserData: (data: UserData) => void
   onSelectModule: (module: Module) => void
-  modules: Module[]
+  modules?: Module[]
 }
 
 export const TrainingTab = memo(function TrainingTab({ userData, setUserData, onSelectModule, modules }: TrainingTabProps) {
@@ -39,7 +39,7 @@ export const TrainingTab = memo(function TrainingTab({ userData, setUserData, on
     const academy: Module[] = []
     const regular: Module[] = []
     
-    modules.forEach((module) => {
+    ;(modules ?? []).forEach((module) => {
       // Filter by new coach status for regular modules
       if (userData.isNewCoach && !module.forNewCoach && !isAcademyModule(module.id)) {
         return // Skip this regular module if user is new coach

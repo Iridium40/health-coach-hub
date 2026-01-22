@@ -20,7 +20,7 @@ interface RecipesTabProps {
   setUserData: (data: UserData) => void
   toggleFavoriteRecipe?: (recipeId: string) => Promise<void>
   onSelectRecipe: (recipe: Recipe) => void
-  recipes: Recipe[]
+  recipes?: Recipe[]
 }
 
 // Memoized categories - static array
@@ -33,7 +33,7 @@ export const RecipesTab = memo(function RecipesTab({ userData, setUserData, togg
 
   // Memoize filtered recipes
   const filteredRecipes = useMemo(() => 
-    recipes.filter((recipe) => {
+    (recipes ?? []).filter((recipe) => {
       // Check if favorites filter is selected
       if (selectedCategory === "Favorites") {
         if (!userData.favoriteRecipes.includes(recipe.id)) {
@@ -60,7 +60,7 @@ export const RecipesTab = memo(function RecipesTab({ userData, setUserData, togg
   // Generate search suggestions from recipe titles and common ingredients
   const searchSuggestions = useMemo(() => {
     const suggestions: Set<string> = new Set()
-    recipes.forEach((recipe) => {
+    ;(recipes ?? []).forEach((recipe) => {
       suggestions.add(recipe.title)
       // Add common ingredient keywords (first word of each ingredient)
       recipe.ingredients.forEach((ing) => {

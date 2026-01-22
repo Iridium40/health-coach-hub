@@ -23,6 +23,9 @@ export interface UserProfile {
   notification_phone: string | null
   org_id: number | null
   last_sign_in_at: string | null
+  zoom_link: string | null
+  zoom_meeting_id: string | null
+  zoom_passcode: string | null
   created_at: string
   updated_at: string
 }

@@ -109,7 +109,7 @@ export function ShareProfile() {
             <Mail className="mr-2 h-4 w-4" />
             <span>Send Email</span>
           </DropdownMenuItem>
-          {typeof window !== "undefined" && navigator.share && (
+          {typeof window !== "undefined" && typeof navigator.share === "function" && (
             <DropdownMenuItem onClick={handleShareNative}>
               <Share2 className="mr-2 h-4 w-4" />
               <span>Share...</span>

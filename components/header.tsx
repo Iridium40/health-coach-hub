@@ -24,8 +24,8 @@ interface HeaderProps {
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
   onInviteClick?: () => void
-  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar"
-  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar") => void
+  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "admin" | "my-business" | "favorites" | "notifications" | "team"
+  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "admin" | "my-business" | "favorites" | "notifications" | "team") => void
 }
 
 export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab, onTabChange }: HeaderProps) {
@@ -48,7 +48,8 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   }
 
   // Determine active tab from pathname if not provided
-  const getActiveTab = (): "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" => {
+  type TabType = "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "admin" | "my-business" | "favorites" | "notifications" | "team"
+  const getActiveTab = (): TabType => {
     if (activeTab) return activeTab
     if (pathname?.startsWith("/dashboard") || pathname === "/") return "dashboard"
     if (pathname?.startsWith("/training")) return "training"

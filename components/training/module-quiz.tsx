@@ -90,20 +90,20 @@ export function ModuleQuiz({ moduleId, moduleTitle, questions, onComplete }: Mod
     } else {
       // Quiz complete
       setIsComplete(true)
-      const score = calculateScore()
-      const percentage = Math.round((score / questions.length) * 100)
+      const finalScore = calculateScore()
+      const percentage = Math.round((finalScore / questions.length) * 100)
       const passed = percentage >= 70
       
       // Save to localStorage
       localStorage.setItem(`quiz-${moduleId}`, JSON.stringify({
         completed: true,
         answers,
-        score,
+        score: finalScore,
         elapsedTime,
         completedAt: new Date().toISOString()
       }))
 
-      onComplete?.(score, questions.length)
+      onComplete?.(finalScore, questions.length)
 
       // Call API to save completion and send celebration email
       if (user?.id) {
@@ -115,7 +115,7 @@ export function ModuleQuiz({ moduleId, moduleTitle, questions, onComplete }: Mod
               userId: user.id,
               moduleId,
               moduleTitle,
-              score,
+              score: finalScore,
               totalQuestions: questions.length,
               percentage,
               passed,

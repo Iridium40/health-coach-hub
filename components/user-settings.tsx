@@ -51,7 +51,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
     } else {
       // Reset to defaults if profile is null
       setFullName("")
-      setCoachRank("")
       setOptaviaId("")
       setPhoneNumber("")
     }

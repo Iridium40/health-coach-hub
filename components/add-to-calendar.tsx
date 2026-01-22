@@ -77,7 +77,7 @@ export function AddToCalendar({
     try {
       const result = await sendCalendarInviteEmail({
         to: userEmail,
-        toName: userName,
+        toName: userName ?? undefined,
         fromEmail: userEmail,
         fromName: "Coaching Amplifier",
         eventTitle: event.title,

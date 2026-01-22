@@ -163,7 +163,7 @@ export function QuickActions({
                 className={`w-full min-h-[120px] p-4 rounded-lg border transition-all cursor-pointer flex flex-col justify-center items-center text-center ${action.bgClass}`}
               >
                 <div className={`${action.iconClass} mb-2`}>
-                  {React.cloneElement(action.icon as React.ReactElement, { className: "h-8 w-8" })}
+                  {React.cloneElement(action.icon as React.ReactElement<{ className?: string }>, { className: "h-8 w-8" })}
                 </div>
                 <p className="text-sm font-medium text-optavia-dark leading-tight">{action.label}</p>
                 <p className="text-xs text-gray-500 mt-1">{action.description}</p>

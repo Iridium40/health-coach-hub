@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Lock, CheckCircle2 } from "lucide-react"
@@ -26,7 +26,7 @@ export default function AcademyModulePage() {
   const { user, profile, authLoading } = useUserData()
   const [module, setModule] = useState<Module | null>(null)
   const [loading, setLoading] = useState(true)
-  const [moduleContent, setModuleContent] = useState<JSX.Element | null>(null)
+  const [moduleContent, setModuleContent] = useState<ReactNode | null>(null)
   const [quizPassed, setQuizPassed] = useState<boolean | null>(null)
   const [quizLoading, setQuizLoading] = useState(true)
   const [resourceId, setResourceId] = useState<string>("")

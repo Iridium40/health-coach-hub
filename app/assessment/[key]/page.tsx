@@ -45,24 +45,27 @@ export default function HealthAssessmentPage({ params }: { params: Promise<{ key
 
     // Fetch coach profile to get their name and avatar
     const supabase = createClient()
-    supabase
-      .from("profiles")
-      .select("full_name, email, avatar_url")
-      .eq("email", email)
-      .single()
-      .then(({ data, error }) => {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("full_name, email, avatar_url")
+          .eq("email", email)
+          .single()
+        
         if (data) {
           setCoachName(data.full_name || email)
           setCoachAvatar(data.avatar_url)
         } else {
           setCoachName(email)
         }
-        setLoading(false)
-      })
-      .catch(() => {
+      } catch {
         setCoachName(email)
+      } finally {
         setLoading(false)
-      })
+      }
+    }
+    fetchProfile()
   }, [assessmentKey])
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {

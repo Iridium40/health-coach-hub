@@ -139,7 +139,7 @@ export function ModuleQuiz({
             const nextModule = ACADEMY_MODULES.find(m => m.id === currentModuleId)?.next
             const nextModuleData = ACADEMY_MODULES.find(m => m.id === nextModule)
 
-            if (nextModuleData) {
+            if (nextModuleData && nextModule) {
               const nextModuleNumber = parseInt(nextModule.replace('module-', ''), 10)
               const rankDisplayName = getRankDisplayName(nav.nextRequiredRank)
 

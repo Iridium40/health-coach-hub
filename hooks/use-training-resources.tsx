@@ -402,7 +402,7 @@ export function useTrainingResourcesAdmin() {
         supabase
           .from("training_resources")
           .update({ sort_order: i + 1 })
-          .eq("id", reordered[i].id)
+          .eq("id", reordered[i].id) as unknown as Promise<any>
       )
     }
     
@@ -478,7 +478,7 @@ export function useTrainingResourcesAdmin() {
         supabase
           .from("training_categories")
           .update({ sort_order: i + 1 })
-          .eq("id", reordered[i].id)
+          .eq("id", reordered[i].id) as unknown as Promise<any>
       )
     }
     

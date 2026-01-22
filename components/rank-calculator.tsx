@@ -63,6 +63,7 @@ export function RankCalculator() {
     new: prospects.filter(p => p.status === "new" && !p.ha_scheduled_at).length,
     interested: prospects.filter(p => p.status === "interested" && !p.ha_scheduled_at).length,
     ha_scheduled: prospects.filter(p => p.ha_scheduled_at && !["converted", "coach"].includes(p.status)).length,
+    ha_done: prospects.filter(p => p.status === "converted").length,
   }), [prospects])
 
   // Build client stats from actual data
