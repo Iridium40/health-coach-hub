@@ -486,9 +486,17 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 Track daily touchpoints and milestones
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               <Button
-                className="bg-[#f88221] border-[#f88221] text-white hover:bg-[#e07520]"
+                onClick={() => setShowAddModal(true)}
+                className="bg-white text-[hsl(var(--optavia-green))] hover:bg-white/90 order-first sm:order-last"
+              >
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Client</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+              <Button
+                className="bg-[#f88221] border-[#f88221] text-white hover:bg-[#e07520] hidden sm:flex"
                 onClick={() => setShowGuideModal(true)}
               >
                 <GraduationCap className="h-4 w-4 mr-2" />
@@ -496,17 +504,10 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               </Button>
               <Link href="/prospect-tracker">
                 <Button variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
-                  <Users className="h-4 w-4 mr-2" />
-                  100's List
+                  <Users className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">100's List</span>
                 </Button>
               </Link>
-              <Button
-                onClick={() => setShowAddModal(true)}
-                className="bg-white text-[hsl(var(--optavia-green))] hover:bg-white/90"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Client
-              </Button>
             </div>
           </div>
         </div>
