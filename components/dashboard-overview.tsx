@@ -671,6 +671,9 @@ export function DashboardOverview() {
         return (
           <Dialog open={showRankPromotionModal} onOpenChange={setShowRankPromotionModal}>
             <DialogContent className="max-w-md text-center">
+              <DialogHeader className="sr-only">
+                <DialogTitle>Rank Promotion Celebration</DialogTitle>
+              </DialogHeader>
               <div className="py-6">
                 <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-amber-400 via-yellow-400 to-amber-600 rounded-full flex items-center justify-center shadow-2xl animate-bounce">
                   <Trophy className="h-12 w-12 text-white" />

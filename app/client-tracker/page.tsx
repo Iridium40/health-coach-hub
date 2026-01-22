@@ -1495,6 +1495,9 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       {/* Client Milestone Celebration Modal */}
       <Dialog open={showMilestoneModal} onOpenChange={setShowMilestoneModal}>
         <DialogContent className="max-w-md text-center">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Client Milestone Celebration</DialogTitle>
+          </DialogHeader>
           <div className="py-6">
             <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
               <Trophy className="h-10 w-10 text-white" />
