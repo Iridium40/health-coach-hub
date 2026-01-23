@@ -217,6 +217,7 @@ export function DashboardOverview() {
 
   // Get bookmarked training resources
   const bookmarkedTrainingResources = useMemo(() => {
+    if (!trainingResources) return []
     const bookmarkedIds = getBookmarkedIds()
     return trainingResources.filter(r => bookmarkedIds.includes(r.id))
   }, [trainingResources, getBookmarkedIds])
@@ -285,6 +286,7 @@ export function DashboardOverview() {
 
   // Get popular recipes
   const popularRecipes = useMemo(() => {
+    if (!recipes || !favoriteRecipes) return []
     const unfavoritedRecipes = recipes.filter(r => !favoriteRecipes.includes(r.id))
     const sortedByPopularity = [...unfavoritedRecipes].sort((a, b) =>
       (b.favoriteCount || 0) - (a.favoriteCount || 0)
@@ -543,17 +545,17 @@ export function DashboardOverview() {
           const todayEnd = new Date()
           todayEnd.setHours(23, 59, 59, 999)
           
-          const overdueProspects = prospects.filter(p => {
+          const overdueProspects = prospects ? prospects.filter(p => {
             if (!p.next_action || ["converted", "coach", "not_interested"].includes(p.status)) return false
             return new Date(p.next_action) < new Date(today)
-          }).length
+          }).length : 0
           
-          const haScheduledToday = prospects.filter(p => 
+          const haScheduledToday = prospects ? prospects.filter(p => 
             p.status === "ha_scheduled" && 
             p.ha_scheduled_at && 
             new Date(p.ha_scheduled_at) >= todayStart && 
             new Date(p.ha_scheduled_at) <= todayEnd
-          ).length
+          ).length : 0
           
           return (
             <QuickActions
