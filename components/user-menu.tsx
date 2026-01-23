@@ -115,7 +115,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
             {/* Training-only orgs only see Training management */}
             {isTrainingOnly ? (
               <DropdownMenuItem 
-                onClick={() => router.push("/admin/training")}
+                onSelect={() => router.push("/admin/training")}
                 className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
               >
                 <BookOpen className="mr-2 h-4 w-4" />
@@ -124,63 +124,63 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
             ) : (
               <>
                 <DropdownMenuItem 
-                  onClick={handleAnnouncementsClick}
+                  onSelect={handleAnnouncementsClick}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <Bell className="mr-2 h-4 w-4" />
                   <span>Announcements</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={handleReportsClick}
+                  onSelect={handleReportsClick}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <BarChart3 className="mr-2 h-4 w-4" />
                   <span>Reports</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => router.push("/admin/recipes")}
+                  onSelect={() => router.push("/admin/recipes")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <UtensilsCrossed className="mr-2 h-4 w-4" />
                   <span>Recipes</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => router.push("/admin/zoom-calls")}
+                  onSelect={() => router.push("/admin/zoom-calls")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <CalendarDays className="mr-2 h-4 w-4" />
                   <span>Events</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => router.push("/admin/training")}
+                  onSelect={() => router.push("/admin/training")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span>Training</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => router.push("/admin/resources")}
+                  onSelect={() => router.push("/admin/resources")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <Link2 className="mr-2 h-4 w-4" />
                   <span>Resources</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => router.push("/admin/touchpoints")}
+                  onSelect={() => router.push("/admin/touchpoints")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   <span>Touchpoints</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => router.push("/admin/invite")}
+                  onSelect={() => router.push("/admin/invite")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <UserPlus className="mr-2 h-4 w-4" />
                   <span>Invite Coach</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => router.push("/admin/bulk-invite")}
+                  onSelect={() => router.push("/admin/bulk-invite")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <Users className="mr-2 h-4 w-4" />
@@ -198,7 +198,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
           Settings
         </DropdownMenuLabel>
         <DropdownMenuItem 
-          onClick={handleSettingsClick}
+          onSelect={handleSettingsClick}
           className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
         >
           <User className="mr-2 h-4 w-4" />
@@ -207,7 +207,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
         {/* Favorites - Hidden for training-only orgs */}
         {!isTrainingOnly && (
           <DropdownMenuItem 
-            onClick={() => router.push("/favorites")}
+            onSelect={() => router.push("/favorites")}
             className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
           >
             <Star className="mr-2 h-4 w-4" />
@@ -215,7 +215,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
           </DropdownMenuItem>
         )}
         <DropdownMenuItem 
-          onClick={handleNotificationsClick}
+          onSelect={handleNotificationsClick}
           className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
         >
           <BellRing className="mr-2 h-4 w-4" />
@@ -224,7 +224,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
         {/* Zoom Room - Hidden for training-only orgs */}
         {!isTrainingOnly && (
           <DropdownMenuItem 
-            onClick={() => router.push("/zoom-settings")}
+            onSelect={() => router.push("/zoom-settings")}
             className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
           >
             <Video className="mr-2 h-4 w-4" />
@@ -234,7 +234,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
         
         <DropdownMenuSeparator className="bg-gray-200" />
         <DropdownMenuItem 
-          onClick={handleSignOut} 
+          onSelect={handleSignOut} 
           disabled={loading}
           className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
         >
