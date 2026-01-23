@@ -1,9 +1,32 @@
+"use client"
+
+import Link from "next/link"
+import Image from "next/image"
+import { Footer } from "@/components/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft } from "lucide-react"
 
 export default function CookiesPage() {
   return (
-    <div className="min-h-screen bg-white py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* Simple public header */}
+      <header className="bg-white border-b border-gray-200 py-4">
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Login
+          </Link>
+          <Image
+            src="/branding/ca_logo.png"
+            alt="Coaching Amplifier"
+            width={150}
+            height={50}
+            className="h-8 w-auto"
+          />
+        </div>
+      </header>
+      <div className="flex-1 py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
         <Card>
           <CardHeader>
             <CardTitle className="text-3xl font-heading">Cookie Usage Policy</CardTitle>
@@ -114,7 +137,9 @@ export default function CookiesPage() {
             </section>
           </CardContent>
         </Card>
+        </div>
       </div>
+      <Footer />
     </div>
   )
 }

@@ -1,14 +1,30 @@
 "use client"
 
-import { Header } from "@/components/header"
+import Link from "next/link"
+import Image from "next/image"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronRight, FileText, DollarSign, Scale, Heart, Brain, Shield, AlertTriangle } from "lucide-react"
+import { ChevronRight, FileText, DollarSign, Scale, Heart, Brain, Shield, AlertTriangle, ArrowLeft } from "lucide-react"
 
 export default function TermsOfServicePage() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100">
-      <Header activeTab="training" />
+      {/* Simple public header */}
+      <header className="bg-white border-b border-gray-200 py-4">
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Login
+          </Link>
+          <Image
+            src="/branding/ca_logo.png"
+            alt="Coaching Amplifier"
+            width={150}
+            height={50}
+            className="h-8 w-auto"
+          />
+        </div>
+      </header>
       <main className="flex-1">
         {/* Header */}
         <div className="bg-gradient-to-r from-[hsl(var(--optavia-green))] to-[#008542] text-white py-8">
