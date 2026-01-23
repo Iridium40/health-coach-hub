@@ -14,6 +14,7 @@ export interface Bookmark {
 export function useBookmarks(user: User | null) {
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   // Load user's bookmarks
@@ -25,20 +26,24 @@ export function useBookmarks(user: User | null) {
     }
 
     try {
-      const { data, error } = await supabase
+      setError(null)
+      const { data, error: fetchError } = await supabase
         .from("user_bookmarks")
         .select("resource_id")
         .eq("user_id", user.id)
 
-      if (error) {
-        console.error("Error loading bookmarks:", error)
+      if (fetchError) {
+        console.error("Error loading bookmarks:", fetchError)
+        setError(fetchError.message || "Failed to load bookmarks")
         return
       }
 
       const bookmarkSet = new Set(data?.map((b) => b.resource_id) || [])
       setBookmarks(bookmarkSet)
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to load bookmarks"
       console.error("Error loading bookmarks:", err)
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -61,16 +66,18 @@ export function useBookmarks(user: User | null) {
     const wasBookmarked = bookmarks.has(resourceId)
 
     try {
+      setError(null)
       if (wasBookmarked) {
         // Remove bookmark
-        const { error } = await supabase
+        const { error: deleteError } = await supabase
           .from("user_bookmarks")
           .delete()
           .eq("user_id", user.id)
           .eq("resource_id", resourceId)
 
-        if (error) {
-          console.error("Error removing bookmark:", error)
+        if (deleteError) {
+          console.error("Error removing bookmark:", deleteError)
+          setError(deleteError.message || "Failed to remove bookmark")
           return false
         }
 
@@ -82,15 +89,16 @@ export function useBookmarks(user: User | null) {
         })
       } else {
         // Add bookmark
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from("user_bookmarks")
           .insert({
             user_id: user.id,
             resource_id: resourceId,
           })
 
-        if (error) {
-          console.error("Error adding bookmark:", error)
+        if (insertError) {
+          console.error("Error adding bookmark:", insertError)
+          setError(insertError.message || "Failed to add bookmark")
           return false
         }
 
@@ -104,7 +112,9 @@ export function useBookmarks(user: User | null) {
 
       return true
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to toggle bookmark"
       console.error("Error toggling bookmark:", err)
+      setError(errorMsg)
       return false
     }
   }, [user, bookmarks, supabase])
@@ -117,6 +127,7 @@ export function useBookmarks(user: User | null) {
   return {
     bookmarks,
     loading,
+    error,
     isBookmarked,
     toggleBookmark,
     getBookmarkedIds,

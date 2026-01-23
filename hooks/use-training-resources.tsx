@@ -100,7 +100,8 @@ export function useTrainingResources(user?: User | null, userRank?: string | nul
           .from("training_resources")
           .select("*")
           .eq("is_active", true)
-          .order("sort_order", { ascending: true }),
+          .order("sort_order", { ascending: true })
+          .limit(500), // Limit to prevent performance issues at scale
       ])
 
       if (catResult.error) throw catResult.error

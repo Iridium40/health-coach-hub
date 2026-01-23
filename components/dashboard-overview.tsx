@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -187,7 +187,7 @@ export function DashboardOverview() {
     }
   }, [])
 
-  const dismissMilestoneForToday = (clientId: string, programDay: number) => {
+  const dismissMilestoneForToday = useCallback((clientId: string, programDay: number) => {
     const todayKey = new Date().toISOString().split("T")[0]
     const key = `${clientId}:${programDay}`
     setDismissedMilestoneKeys((prev) => {
@@ -200,11 +200,11 @@ export function DashboardOverview() {
       }
       return next
     })
-  }
+  }, [])
 
-  const isMilestoneDismissedToday = (clientId: string, programDay: number) => {
+  const isMilestoneDismissedToday = useCallback((clientId: string, programDay: number) => {
     return dismissedMilestoneKeys.has(`${clientId}:${programDay}`)
-  }
+  }, [dismissedMilestoneKeys])
 
   // Get pinned tools and resources
   const pinnedTools = useMemo(() => {
@@ -328,7 +328,7 @@ export function DashboardOverview() {
     }
   }, [rankData, nextRank, gaps])
 
-  const completeDashboardClientCheckIn = async (client: any) => {
+  const completeDashboardClientCheckIn = useCallback(async (client: any) => {
     // If the "needs attention" is caused by an overdue scheduled check-in, clear the schedule so the alert goes away.
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
@@ -349,9 +349,9 @@ export function DashboardOverview() {
 
     // Marks today's touchpoint as done (and sets last_touchpoint_date to today in the hook)
     await toggleTouchpoint(client.id, "am_done")
-  }
+  }, [updateClient, toggleTouchpoint])
 
-  const logDashboardProspectFollowUp = async (prospect: any, daysUntilNext = 3) => {
+  const logDashboardProspectFollowUp = useCallback(async (prospect: any, daysUntilNext = 3) => {
     const today = new Date()
     const todayStr = today.toISOString().split("T")[0]
     const nextDate = new Date(today)
@@ -363,7 +363,7 @@ export function DashboardOverview() {
       next_action: nextStr,
       action_type: "follow_up" as any,
     })
-  }
+  }, [updateProspect])
 
   return (
     <div className="container mx-auto px-4 py-4 sm:py-8">

@@ -127,46 +127,61 @@ export function TodaysFocus({
 
   const isTrainingComplete = !trainingRecommendation && progress.total > 0 && progress.completed >= progress.total
 
-  // Get clients needing touchpoints (limited)
-  const clientsNeedingAction = clients
-    .filter(c => c.status === "active" && needsAttention(c))
-    .slice(0, 3)
+  // Get clients needing touchpoints (limited) - memoized for performance
+  const clientsNeedingAction = useMemo(() => 
+    clients
+      .filter(c => c.status === "active" && needsAttention(c))
+      .slice(0, 3),
+    [clients, needsAttention]
+  )
 
-  // Get HAs scheduled for today (exclude ones that ended more than 30 min ago)
+  // Get HAs scheduled for today (exclude ones that ended more than 30 min ago) - memoized
   // Assume HA duration is 45 minutes
-  const haScheduledToday = prospects.filter(p => {
-    if (!p.ha_scheduled_at) return false
-    const haTime = new Date(p.ha_scheduled_at)
-    const haEndTime = new Date(haTime.getTime() + 45 * 60 * 1000)
-    return haTime >= todayStart && haTime <= todayEnd && haEndTime > pastCutoff
-  }).slice(0, 3)
+  const haScheduledToday = useMemo(() => 
+    prospects.filter(p => {
+      if (!p.ha_scheduled_at) return false
+      const haTime = new Date(p.ha_scheduled_at)
+      const haEndTime = new Date(haTime.getTime() + 45 * 60 * 1000)
+      return haTime >= todayStart && haTime <= todayEnd && haEndTime > pastCutoff
+    }).slice(0, 3),
+    [prospects, todayStart, todayEnd, pastCutoff]
+  )
 
-  // Get meetings today (exclude ones that ended more than 30 min ago)
-  const meetingsToday = upcomingMeetings.filter(m => {
-    const meetingDate = new Date(m.occurrence_date)
-    const duration = m.duration_minutes || 60
-    const meetingEndTime = new Date(meetingDate.getTime() + duration * 60 * 1000)
-    return meetingDate >= todayStart && meetingDate <= todayEnd && meetingEndTime > pastCutoff
-  }).slice(0, 3)
+  // Get meetings today (exclude ones that ended more than 30 min ago) - memoized
+  const meetingsToday = useMemo(() => 
+    upcomingMeetings.filter(m => {
+      const meetingDate = new Date(m.occurrence_date)
+      const duration = m.duration_minutes || 60
+      const meetingEndTime = new Date(meetingDate.getTime() + duration * 60 * 1000)
+      return meetingDate >= todayStart && meetingDate <= todayEnd && meetingEndTime > pastCutoff
+    }).slice(0, 3),
+    [upcomingMeetings, todayStart, todayEnd, pastCutoff]
+  )
 
-  // Get milestone clients (hide ones dismissed today)
-  const milestoneClients = clients.filter(c => {
-    if (c.status !== "active") return false
-    const day = getProgramDay(c.start_date)
-    if (![7, 14, 21, 30].includes(day)) return false
-    if (isMilestoneDismissed?.(c.id, day)) return false
-    return true
-  }).slice(0, 2)
+  // Get milestone clients (hide ones dismissed today) - memoized
+  const milestoneClients = useMemo(() => 
+    clients.filter(c => {
+      if (c.status !== "active") return false
+      const day = getProgramDay(c.start_date)
+      if (![7, 14, 21, 30].includes(day)) return false
+      if (isMilestoneDismissed?.(c.id, day)) return false
+      return true
+    }).slice(0, 2),
+    [clients, isMilestoneDismissed]
+  )
 
   const hasActionItems = clientsNeedingAction.length > 0 || haScheduledToday.length > 0 || meetingsToday.length > 0 || milestoneClients.length > 0 || todaysReminders.length > 0
 
-  // Overdue follow-ups (prospects)
-  const overdueProspects = prospects
-    .filter(p => {
-      if (!p.next_action || ["converted", "coach", "not_interested", "not_closed"].includes(p.status)) return false
-      return new Date(p.next_action) < new Date(today)
-    })
-    .slice(0, 2)
+  // Overdue follow-ups (prospects) - memoized
+  const overdueProspects = useMemo(() => 
+    prospects
+      .filter(p => {
+        if (!p.next_action || ["converted", "coach", "not_interested", "not_closed"].includes(p.status)) return false
+        return new Date(p.next_action) < new Date(today)
+      })
+      .slice(0, 2),
+    [prospects, today]
+  )
 
   // Confirmation dialogs (prevents accidental clears)
   const [confirmOpen, setConfirmOpen] = useState(false)

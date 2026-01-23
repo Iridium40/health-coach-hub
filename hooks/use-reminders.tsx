@@ -75,8 +75,13 @@ export function useReminders() {
         .order('due_date', { ascending: true })
 
       if (fetchError) {
-        // Table might not exist yet - fail silently
-        setError(null)
+        console.error("Error loading reminders:", fetchError)
+        // Only suppress error if table doesn't exist (code 42P01)
+        if (fetchError.code === '42P01') {
+          setError(null)
+        } else {
+          setError(fetchError.message || "Failed to load reminders")
+        }
         setReminders([])
         setLoading(false)
         return
@@ -85,7 +90,9 @@ export function useReminders() {
       setReminders(data || [])
       setLoading(false)
     } catch (err) {
-      // Silently handle if table doesn't exist
+      const errorMsg = err instanceof Error ? err.message : "Failed to load reminders"
+      console.error("Error loading reminders:", err)
+      setError(errorMsg)
       setReminders([])
       setLoading(false)
     }

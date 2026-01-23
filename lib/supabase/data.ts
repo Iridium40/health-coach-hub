@@ -138,6 +138,7 @@ async function loadRecipesFromSupabase(): Promise<Recipe[]> {
     .from("recipes")
     .select("*")
     .order("title", { ascending: true })
+    .limit(1000) // Limit to prevent performance issues at scale
 
   if (error) {
     console.log("Recipes table not found in Supabase, using static data. Error:", error.message)

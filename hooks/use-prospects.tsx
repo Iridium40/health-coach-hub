@@ -186,11 +186,15 @@ export function useProspects() {
     setLoadingMore(false)
   }, [user, supabase, page, PAGE_SIZE])
 
+  // Combined load function to prevent double fetches
+  const loadData = useCallback(async () => {
+    await Promise.all([loadProspects(), loadStats()])
+  }, [loadProspects, loadStats])
+
   // Initial load
   useEffect(() => {
-    loadProspects()
-    loadStats()
-  }, [loadProspects])
+    loadData()
+  }, [loadData])
 
   // Add prospect
   const addProspect = useCallback(async (newProspect: NewProspect): Promise<Prospect | null> => {

@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { AlertCircle, Trophy } from "lucide-react"
@@ -24,19 +25,32 @@ interface PipelineSnapshotProps {
 }
 
 export function PipelineSnapshot({ clients, clientStats, prospects, prospectStats }: PipelineSnapshotProps) {
-  const now = new Date()
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+  const now = useMemo(() => new Date(), [])
+  const todayStart = useMemo(() => {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    return date
+  }, [])
 
   // Count all prospects with HA scheduled (based on ha_scheduled_at field, not status)
-  // Exclude converted/coach prospects
-  const haScheduled = prospects.filter(p => 
-    p.ha_scheduled_at && !["converted", "coach"].includes(p.status)
+  // Exclude converted/coach prospects - memoized for performance
+  const haScheduled = useMemo(() => 
+    prospects.filter(p => 
+      p.ha_scheduled_at && !["converted", "coach"].includes(p.status)
+    ),
+    [prospects]
   )
 
-  // Determine upcoming vs overdue based on ha_scheduled_at
-  const upcomingHA = haScheduled.filter(p => new Date(p.ha_scheduled_at!) >= now)
-  const overdueHA = haScheduled.filter(p => new Date(p.ha_scheduled_at!) < now)
+  // Determine upcoming vs overdue based on ha_scheduled_at - memoized
+  const upcomingHA = useMemo(() => 
+    haScheduled.filter(p => new Date(p.ha_scheduled_at!) >= now),
+    [haScheduled, now]
+  )
+  
+  const overdueHA = useMemo(() => 
+    haScheduled.filter(p => new Date(p.ha_scheduled_at!) < now),
+    [haScheduled, now]
+  )
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

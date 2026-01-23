@@ -206,11 +206,15 @@ export function useClients() {
     }))
   }, [user, supabase, page, PAGE_SIZE, applyDailyTouchpointView])
 
+  // Combined load function to prevent double fetches
+  const loadData = useCallback(async () => {
+    await Promise.all([loadClients(), loadStats()])
+  }, [loadClients, loadStats])
+
   // Initial load
   useEffect(() => {
-    loadClients()
-    loadStats()
-  }, [loadClients, loadStats])
+    loadData()
+  }, [loadData])
 
   // Add client
   const addClient = useCallback(async (newClient: NewClient): Promise<Client | null> => {

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from "react"
+import { createContext, useContext, ReactNode, useState, useEffect, useCallback, useMemo } from "react"
 import type { User } from "@supabase/supabase-js"
 import { useAuth } from "@/hooks/use-auth"
 import { useSupabaseData, UserProfile, NotificationSettings, AchievementBadge } from "@/hooks/use-supabase-data"
@@ -92,7 +92,8 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     loadContent()
   }, [loadContent])
 
-  const value: UserDataContextType = {
+  // Memoize context value to prevent unnecessary re-renders
+  const value: UserDataContextType = useMemo(() => ({
     // Auth
     user,
     authLoading,
@@ -120,7 +121,31 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     updateNotificationSettings,
     refreshData,
     refreshContent: loadContent,
-  }
+  }), [
+    user,
+    authLoading,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword,
+    profile,
+    completedResources,
+    bookmarks,
+    favoriteRecipes,
+    notificationSettings,
+    badges,
+    loading,
+    modules,
+    recipes,
+    contentLoading,
+    toggleCompletedResource,
+    toggleBookmark,
+    toggleFavoriteRecipe,
+    updateProfile,
+    updateNotificationSettings,
+    refreshData,
+    loadContent,
+  ])
 
   return (
     <UserDataContext.Provider value={value}>

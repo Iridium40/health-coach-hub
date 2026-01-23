@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import { useRouter, useParams } from "next/navigation"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ArrowLeft, Lock, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,13 +13,25 @@ import type { Module } from "@/lib/types"
 import { ACADEMY_QUIZZES } from "@/lib/academy-quiz-questions"
 import { ModuleQuiz } from "@/components/academy/ModuleQuiz"
 
-// Import module content components (will be created)
-import { Module1Content } from "@/components/academy/module-1-content"
-import { Module2Content } from "@/components/academy/module-2-content"
-import { Module3Content } from "@/components/academy/module-3-content"
-import { Module4Content } from "@/components/academy/module-4-content"
-import { Module5Content } from "@/components/academy/module-5-content"
-import { Module6Content } from "@/components/academy/module-6-content"
+// Dynamic imports for module content components - improves bundle size
+const Module1Content = dynamic(() => import("@/components/academy/module-1-content").then(mod => ({ default: mod.Module1Content })), {
+  loading: () => <div className="text-center py-8">Loading module content...</div>
+})
+const Module2Content = dynamic(() => import("@/components/academy/module-2-content").then(mod => ({ default: mod.Module2Content })), {
+  loading: () => <div className="text-center py-8">Loading module content...</div>
+})
+const Module3Content = dynamic(() => import("@/components/academy/module-3-content").then(mod => ({ default: mod.Module3Content })), {
+  loading: () => <div className="text-center py-8">Loading module content...</div>
+})
+const Module4Content = dynamic(() => import("@/components/academy/module-4-content").then(mod => ({ default: mod.Module4Content })), {
+  loading: () => <div className="text-center py-8">Loading module content...</div>
+})
+const Module5Content = dynamic(() => import("@/components/academy/module-5-content").then(mod => ({ default: mod.Module5Content })), {
+  loading: () => <div className="text-center py-8">Loading module content...</div>
+})
+const Module6Content = dynamic(() => import("@/components/academy/module-6-content").then(mod => ({ default: mod.Module6Content })), {
+  loading: () => <div className="text-center py-8">Loading module content...</div>
+})
 
 export default function AcademyModulePage() {
   const params = useParams()

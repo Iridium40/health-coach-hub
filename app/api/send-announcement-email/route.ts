@@ -1,10 +1,15 @@
 import { Resend } from "resend"
 import { NextRequest, NextResponse } from "next/server"
 import { getEmailWrapper, getEmailHeader, getEmailFooter, getButtonStyle } from "@/lib/email-templates"
+import { verifyAdmin } from "@/lib/api-auth"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {
+  // Verify admin authentication (announcements are admin-only)
+  const { user, response } = await verifyAdmin()
+  if (response) return response
+
   try {
     const { to, fullName, announcementTitle, announcementContent, priority } = await request.json()
 
