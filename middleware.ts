@@ -84,7 +84,8 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
     
-    if (profile?.user_role !== 'admin') {
+    // Case-insensitive check for admin role
+    if (profile?.user_role?.toLowerCase() !== 'admin') {
       const url = request.nextUrl.clone()
       url.pathname = "/dashboard"
       return NextResponse.redirect(url)
