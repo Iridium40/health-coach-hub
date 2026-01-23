@@ -152,23 +152,6 @@ async function handleBounceEvent(event: ResendWebhookEvent) {
   
   console.log(`Processing ${emailStatus} for ${recipientEmail}: ${bounceReason}`)
   
-  // Log event to email_events table
-  try {
-    await supabase.from("email_events").insert({
-      contact_email: recipientEmail,
-      event_type: event.type, // Use the full event type like "email.bounced"
-      event_timestamp: event.created_at,
-      resend_email_id: emailId,
-      resend_message_id: emailId,
-      bounce_reason: bounceReason,
-      bounce_type: event.data.bounce?.message ? "hard" : undefined,
-      event_data: event.data,
-    })
-  } catch (error) {
-    console.error("Failed to log email event:", error)
-    // Don't fail the webhook if logging fails
-  }
-  
   // Update invite by resend_message_id first (most accurate)
   let updated = false
   
@@ -211,22 +194,6 @@ async function handleBounceEvent(event: ResendWebhookEvent) {
     }
   }
   
-  // Also update contacts table if this email exists there
-  try {
-    await supabase
-      .from("contacts")
-      .update({
-        email_status: emailStatus === "complained" ? "complained" : "bounced",
-        bounce_count: supabase.rpc('increment', { x: 1 }),
-        last_bounce_at: emailStatus === "bounced" ? new Date().toISOString() : undefined,
-        last_complaint_at: emailStatus === "complained" ? new Date().toISOString() : undefined,
-      })
-      .eq("email", recipientEmail)
-  } catch (error) {
-    // Contacts table update is optional
-    console.warn("Could not update contacts table:", error)
-  }
-  
   if (!updated) {
     console.warn(`No invite found to update for bounce: ${recipientEmail}`)
   }
@@ -243,21 +210,6 @@ async function handleDeliveryEvent(event: ResendWebhookEvent) {
   if (!recipientEmail) return
   
   console.log(`Processing delivery confirmation for ${recipientEmail}`)
-  
-  // Log event to email_events table
-  try {
-    await supabase.from("email_events").insert({
-      contact_email: recipientEmail,
-      event_type: event.type, // "email.delivered"
-      event_timestamp: event.created_at,
-      resend_email_id: emailId,
-      resend_message_id: emailId,
-      event_data: event.data,
-    })
-  } catch (error) {
-    console.error("Failed to log email event:", error)
-    // Don't fail the webhook if logging fails
-  }
   
   // Update invite by resend_message_id first
   let updated = false
@@ -290,20 +242,6 @@ async function handleDeliveryEvent(event: ResendWebhookEvent) {
       .is("used_by", null)
       .order("created_at", { ascending: false })
       .limit(1)
-  }
-  
-  // Also update contacts table if this email exists there
-  try {
-    await supabase
-      .from("contacts")
-      .update({
-        last_email_sent: new Date().toISOString(),
-        total_emails_sent: supabase.rpc('increment', { x: 1 }),
-      })
-      .eq("email", recipientEmail)
-  } catch (error) {
-    // Contacts table update is optional
-    console.warn("Could not update contacts table:", error)
   }
 }
 
