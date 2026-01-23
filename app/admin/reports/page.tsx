@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useUserData } from "@/contexts/user-data-context"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { ArrowLeft, Users, BookOpen, Award, TrendingUp, UserCheck, Calendar } from "lucide-react"
 
@@ -27,22 +26,13 @@ interface ReportStats {
 
 export default function AdminReportsPage() {
   const router = useRouter()
-  const { authLoading, profile } = useUserData()
   const [stats, setStats] = useState<ReportStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
-
+  // Middleware now handles admin authentication - load stats on mount
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      router.replace("/training")
-      return
-    }
-
-    if (isAdmin) {
-      loadStats()
-    }
-  }, [authLoading, isAdmin, router])
+    loadStats()
+  }, [])
 
   const loadStats = async () => {
     const supabase = createClient()
@@ -134,28 +124,6 @@ export default function AdminReportsPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
-          <p className="text-optavia-gray">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
-          <p className="text-optavia-gray">Redirecting...</p>
-        </div>
-      </div>
-    )
   }
 
   return (
