@@ -321,13 +321,16 @@ export async function POST(request: NextRequest) {
           invitedByName
         )
         
-        // Send email
+        // Send email (disable click tracking so invite links go directly to our app)
         const { data: emailData, error: emailError } = await resend.emails.send({
           from: "Coaching Amplifier <onboarding@coachingamplifier.com>",
           to: [email],
           subject,
           html,
           text,
+          headers: {
+            "X-Entity-Ref-ID": inviteData?.id || inviteKey, // Prevents link rewriting
+          },
         })
         
         if (emailError) {

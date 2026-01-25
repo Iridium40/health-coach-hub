@@ -116,13 +116,16 @@ Best regards,
 The Coaching Amplifier Team
     `
 
-    // Send email using Resend
+    // Send email using Resend (disable click tracking so invite links go directly to our app)
     const { data, error } = await resend.emails.send({
-      from: "Coaching Amplifier <onboarding@coachingamplifier.com>", // Update this with your verified domain
+      from: "Coaching Amplifier <onboarding@coachingamplifier.com>",
       to: [to],
       subject: subject,
       html: htmlContent,
       text: textContent,
+      headers: {
+        "X-Entity-Ref-ID": inviteLink, // Prevents link rewriting
+      },
     })
 
     if (error) {

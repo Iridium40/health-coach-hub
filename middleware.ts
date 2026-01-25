@@ -42,6 +42,7 @@ export async function middleware(request: NextRequest) {
     "/login",
     "/signup",
     "/reset-password",
+    "/set-password",
     "/assessment",
     "/invite",
     "/health-assessment",
