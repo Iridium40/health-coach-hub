@@ -6,20 +6,19 @@ import { NextResponse } from "next/server"
  */
 export async function GET() {
   // Define the CSV template with headers and example row
-  const headers = ["full_name", "email"]
+  const headers = ["first_name", "last_name", "email"]
   
   // Create CSV content with header row and example
   const csvContent = [
     headers.join(","),
-    `"John Doe","john.doe@example.com"`,
-    `"Jane Smith","jane.smith@example.com"`,
+    `"John","Doe","john.doe@example.com"`,
+    `"Jane","Smith","jane.smith@example.com"`,
     "",
     "# Instructions:",
     "# 1. Delete these example rows and comment lines",
-    "# 2. Add one coach per row with their full name and email",
+    "# 2. Add one coach per row with their first name, last name, and email",
     "# 3. Save the file and upload it to the Bulk Invite page",
-    "# 4. Emails must be unique and valid",
-    "# 5. Names should be in format: First Last"
+    "# 4. Emails must be unique and valid"
   ].join("\n")
 
   // Return as downloadable CSV file

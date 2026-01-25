@@ -38,7 +38,8 @@ import {
 const DEFAULT_COACH_RANK = "IPD"
 
 interface ParsedEntry {
-  full_name: string
+  first_name: string
+  last_name: string
   email: string
   isValid: boolean
   errors: string[]
@@ -109,8 +110,12 @@ export function BulkInviteManager() {
   const validateEntry = (entry: Omit<ParsedEntry, "isValid" | "errors" | "rowNumber">): string[] => {
     const errors: string[] = []
     
-    if (!entry.full_name || entry.full_name.trim().length === 0) {
-      errors.push("Full name is required")
+    if (!entry.first_name || entry.first_name.trim().length === 0) {
+      errors.push("First name is required")
+    }
+    
+    if (!entry.last_name || entry.last_name.trim().length === 0) {
+      errors.push("Last name is required")
     }
     
     if (!entry.email || entry.email.trim().length === 0) {
@@ -143,13 +148,14 @@ export function BulkInviteManager() {
     const headerLine = lines[0]
     const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim())
     
-    const fullNameIndex = headers.findIndex(h => h === "full_name" || h === "fullname" || h === "name")
+    const firstNameIndex = headers.findIndex(h => h === "first_name" || h === "firstname" || h === "first")
+    const lastNameIndex = headers.findIndex(h => h === "last_name" || h === "lastname" || h === "last")
     const emailIndex = headers.findIndex(h => h === "email")
     
-    if (fullNameIndex === -1 || emailIndex === -1) {
+    if (firstNameIndex === -1 || lastNameIndex === -1 || emailIndex === -1) {
       toast({
         title: "Invalid CSV Format",
-        description: "CSV must have columns: full_name, email",
+        description: "CSV must have columns: first_name, last_name, email",
         variant: "destructive",
       })
       return []
@@ -161,10 +167,11 @@ export function BulkInviteManager() {
     for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i])
       
-      if (values.length < 2) continue
+      if (values.length < 3) continue
       
       const entry = {
-        full_name: values[fullNameIndex]?.trim() || "",
+        first_name: values[firstNameIndex]?.trim() || "",
+        last_name: values[lastNameIndex]?.trim() || "",
         email: values[emailIndex]?.trim().toLowerCase() || "",
       }
       
@@ -320,7 +327,7 @@ export function BulkInviteManager() {
         },
         body: JSON.stringify({
           entries: validEntries.map(e => ({
-            full_name: e.full_name,
+            full_name: `${e.first_name} ${e.last_name}`.trim(),
             email: e.email,
             coach_rank: DEFAULT_COACH_RANK,
           }))
@@ -382,7 +389,7 @@ export function BulkInviteManager() {
               Download CSV Template
             </Button>
             <div className="text-sm text-optavia-gray">
-              <p>Template includes columns: <code className="bg-gray-100 px-1 rounded">full_name</code>, <code className="bg-gray-100 px-1 rounded">email</code></p>
+              <p>Template includes columns: <code className="bg-gray-100 px-1 rounded">first_name</code>, <code className="bg-gray-100 px-1 rounded">last_name</code>, <code className="bg-gray-100 px-1 rounded">email</code></p>
             </div>
           </div>
         </CardContent>
@@ -495,7 +502,8 @@ export function BulkInviteManager() {
                     <TableRow>
                       <TableHead className="w-12">Row</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Full Name</TableHead>
+                      <TableHead>First Name</TableHead>
+                      <TableHead>Last Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Errors</TableHead>
                     </TableRow>
@@ -516,7 +524,8 @@ export function BulkInviteManager() {
                             <XCircle className="h-4 w-4 text-red-600" />
                           )}
                         </TableCell>
-                        <TableCell className="font-medium">{entry.full_name || "-"}</TableCell>
+                        <TableCell className="font-medium">{entry.first_name || "-"}</TableCell>
+                        <TableCell className="font-medium">{entry.last_name || "-"}</TableCell>
                         <TableCell className="text-sm">{entry.email || "-"}</TableCell>
                         <TableCell className="text-xs text-red-600">
                           {entry.errors.length > 0 ? entry.errors.join("; ") : "-"}
