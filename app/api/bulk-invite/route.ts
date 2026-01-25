@@ -26,7 +26,8 @@ interface InviteResult {
 }
 
 // Throttle delay between emails (ms) to respect Resend rate limits
-const EMAIL_THROTTLE_DELAY = 150
+// Resend allows 2 requests/second, so we need 500ms+ between emails
+const EMAIL_THROTTLE_DELAY = 550
 
 /**
  * Sleep helper for throttling
