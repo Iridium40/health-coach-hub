@@ -4,7 +4,15 @@ import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
 import {
   Dialog,
   DialogContent,
@@ -12,7 +20,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useUserData } from "@/contexts/user-data-context"
-import { useProspects } from "@/hooks/use-prospects"
 import { useClients } from "@/hooks/use-clients"
 import {
   useRankCalculator,
@@ -20,24 +27,25 @@ import {
   RANK_REQUIREMENTS,
   RANK_COLORS,
   type RankType,
-  type ProspectPipeline,
-  type ClientStats,
 } from "@/hooks/use-rank-calculator"
 import {
-  Target,
   Users,
-  Trophy,
+  Star,
+  TrendingUp,
+  Plus,
+  Minus,
+  RotateCcw,
   Sparkles,
   ExternalLink,
-  AlertCircle,
-  CheckCircle,
-  Star,
-  UserCheck,
 } from "lucide-react"
+
+interface SimulatedCoach {
+  id: string
+  rank: RankType
+}
 
 export function RankCalculator() {
   const { user } = useUserData()
-  const { prospects } = useProspects()
   const { stats: clientStats } = useClients()
   
   const {
@@ -46,48 +54,98 @@ export function RankCalculator() {
     qualifyingLegsCount,
     loading,
     updateRankData,
-    calculateProjections,
-    calculateGaps,
-    calculateProgress,
-    generateActionItems,
-    getNextRank,
   } = useRankCalculator(user)
 
   const [showRankSelector, setShowRankSelector] = useState(false)
-
-  // Build prospect pipeline from actual data
-  // New = new status prospects
-  // Interested = interested status prospects (without HA scheduled)
-  // HA Scheduled = prospects with ha_scheduled_at set (regardless of status, excluding converted)
-  const prospectPipeline: ProspectPipeline = useMemo(() => ({
-    new: prospects.filter(p => p.status === "new" && !p.ha_scheduled_at).length,
-    interested: prospects.filter(p => p.status === "interested" && !p.ha_scheduled_at).length,
-    ha_scheduled: prospects.filter(p => p.ha_scheduled_at && !["converted", "coach"].includes(p.status)).length,
-    ha_done: prospects.filter(p => p.status === "converted").length,
-  }), [prospects])
-
-  // Build client stats from actual data
-  const clientPipeline: ClientStats = useMemo(() => ({
-    active: clientStats.active,
-    paused: clientStats.paused,
-    completed: clientStats.completed,
-    coachProspects: clientStats.coachProspects,
-  }), [clientStats])
-
+  
   // Current data
   const currentRank = (rankData?.current_rank || "Coach") as RankType
-  const activeClients = clientPipeline.active
+  const activeClients = clientStats.active
   
-  const currentRankInfo = RANK_REQUIREMENTS[currentRank]
-  const currentRankColors = RANK_COLORS[currentRank]
-  const nextRank = getNextRank(currentRank)
+  // Simulation state
+  const [simClients, setSimClients] = useState(activeClients)
+  const [simCoaches, setSimCoaches] = useState<SimulatedCoach[]>(
+    frontlineCoaches.map(c => ({
+      id: c.id,
+      rank: c.coach_rank as RankType
+    }))
+  )
+
+  // Update simulation when actual data changes
+  useMemo(() => {
+    setSimClients(activeClients)
+    setSimCoaches(frontlineCoaches.map(c => ({
+      id: c.id,
+      rank: c.coach_rank as RankType
+    })))
+  }, [activeClients, frontlineCoaches])
+
+  // Calculate current stats - qualifying legs are coaches at Senior Coach or higher
+  const simQualifyingLegs = simCoaches.filter(c => 
+    RANK_ORDER.indexOf(c.rank) >= RANK_ORDER.indexOf('Senior Coach')
+  ).length
+
+  // Calculate qualifying points
+  const clientQP = Math.floor(simClients / 3.5) // ~3-4 clients per QP
+  const qualifyingLegQP = simQualifyingLegs
+  const totalQP = clientQP + qualifyingLegQP
+
+  // Determine rank based on simulated stats
+  const calculateRank = (): RankType => {
+    // Start from highest rank and work down
+    for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
+      const rank = RANK_ORDER[i]
+      const reqs = RANK_REQUIREMENTS[rank]
+      
+      if (
+        simClients >= reqs.minClients &&
+        simCoaches.length >= reqs.frontlineCoaches &&
+        simQualifyingLegs >= reqs.qualifyingLegs
+      ) {
+        return rank
+      }
+    }
+    return 'Coach'
+  }
+
+  const projectedRank = calculateRank()
+  const projectedRankIndex = RANK_ORDER.indexOf(projectedRank)
+  const projectedRankInfo = RANK_REQUIREMENTS[projectedRank]
+  const projectedRankColors = RANK_COLORS[projectedRank]
+
+  // Get next rank
+  const nextRank = projectedRankIndex < RANK_ORDER.length - 1
+    ? RANK_ORDER[projectedRankIndex + 1]
+    : null
   const nextRankReqs = nextRank ? RANK_REQUIREMENTS[nextRank] : null
 
-  // Calculations
-  const progress = calculateProgress(currentRank, activeClients)
-  const projections = calculateProjections(prospectPipeline, clientPipeline)
-  const gaps = calculateGaps(currentRank, activeClients)
-  const actionItems = generateActionItems(gaps, projections, prospectPipeline, clientPipeline, nextRank)
+  // Calculate gaps to next rank
+  const gaps = nextRankReqs ? {
+    clients: Math.max(0, nextRankReqs.minClients - simClients),
+    coaches: Math.max(0, nextRankReqs.frontlineCoaches - simCoaches.length),
+    qualifyingLegs: Math.max(0, nextRankReqs.qualifyingLegs - simQualifyingLegs),
+  } : null
+
+  // Add a coach
+  const addCoach = (rank: RankType) => {
+    setSimCoaches([...simCoaches, { id: Date.now().toString(), rank }])
+  }
+
+  // Remove last coach
+  const removeCoach = () => {
+    if (simCoaches.length > 0) {
+      setSimCoaches(simCoaches.slice(0, -1))
+    }
+  }
+
+  // Reset to current
+  const resetSimulation = () => {
+    setSimClients(activeClients)
+    setSimCoaches(frontlineCoaches.map(c => ({
+      id: c.id,
+      rank: c.coach_rank as RankType
+    })))
+  }
 
   const handleRankChange = async (newRank: RankType) => {
     await updateRankData({
@@ -109,225 +167,228 @@ export function RankCalculator() {
 
   return (
     <div className="space-y-4">
-      {/* Current Rank Card */}
-      <Card className={`${currentRankColors.bg} border-0 shadow-md`}>
-        <CardContent className="p-5">
-          <div className="flex items-center gap-3 mb-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Rank Calculator</h2>
+          <p className="text-sm text-gray-500">Simulate different scenarios</p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={resetSimulation}
+          className="flex items-center gap-1.5"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Reset
+        </Button>
+      </div>
+
+      {/* Current Rank Display */}
+      <Card className={`${projectedRankColors.bg} border-2 ${projectedRankColors.accent.replace('bg-', 'border-')}`}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setShowRankSelector(true)}
-              className={`w-12 h-12 ${currentRankColors.accent} rounded-full flex items-center justify-center hover:opacity-90 transition-opacity text-white`}
-              title="Change rank"
+              className={`w-12 h-12 ${projectedRankColors.accent} rounded-full flex items-center justify-center hover:opacity-90 transition-opacity text-white`}
+              title="Set your current rank"
             >
-              <span className="text-xl">{currentRankInfo.icon}</span>
+              <span className="text-2xl">{projectedRankInfo.icon}</span>
             </button>
             <div className="flex-1">
-              <p className="text-xs text-gray-500">Current Rank</p>
-              <h2 className={`text-lg font-bold ${currentRankColors.text}`}>{currentRank}</h2>
+              <p className="text-xs text-gray-500">
+                {projectedRank === currentRank ? 'Current Rank' : 'Projected Rank'}
+              </p>
+              <h3 className={`text-xl font-bold ${projectedRankColors.text}`}>
+                {projectedRank}
+              </h3>
+              <p className="text-xs text-gray-600 mt-0.5">
+                {totalQP} Qualifying Points ({clientQP} from clients + {qualifyingLegQP} from qualifying legs)
+              </p>
             </div>
+            {projectedRank !== currentRank && (
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                Simulated
+              </Badge>
+            )}
           </div>
-
-          {nextRank && (
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <span className="text-sm text-gray-600">
-                  Progress to <span className="font-semibold">{nextRank}</span>
-                </span>
-                <span className={`text-sm font-bold ${currentRankColors.text}`}>{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2.5" />
-            </div>
-          )}
-
-          {!nextRank && (
-            <div className="mt-2 p-2 bg-white bg-opacity-50 rounded-lg text-center">
-              <p className="text-sm font-semibold text-gray-700">🎉 Top rank achieved!</p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* Simulation Controls */}
+      <div className="grid grid-cols-1 gap-4">
+        {/* Active Clients Slider */}
         <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-xl font-bold text-green-600">{activeClients}</div>
-            <div className="text-[10px] text-gray-500">Active Clients</div>
-            {nextRank && gaps && gaps.clients > 0 && (
-              <Badge variant="outline" className="mt-1 text-[9px] text-orange-500 border-orange-300 px-1">
-                Need {gaps.clients}
-              </Badge>
-            )}
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-green-500" />
+                  Active Clients
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSimClients(Math.max(0, simClients - 1))}
+                    className="h-7 w-7 p-0"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="text-lg font-bold text-green-600 w-12 text-center">
+                    {simClients}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSimClients(simClients + 1)}
+                    className="h-7 w-7 p-0"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <Slider
+                value={[simClients]}
+                onValueChange={(value) => setSimClients(value[0])}
+                max={30}
+                step={1}
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500">
+                ~{clientQP} Qualifying Points from clients (~3-4 clients = 1 QP)
+              </p>
+            </div>
           </CardContent>
         </Card>
 
+        {/* Frontline Coaches */}
         <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-xl font-bold text-purple-600">{frontlineCoaches.length}</div>
-            <div className="text-[10px] text-gray-500">Frontline Coaches</div>
-            {nextRank && gaps && gaps.coaches > 0 && (
-              <Badge variant="outline" className="mt-1 text-[9px] text-orange-500 border-orange-300 px-1">
-                Need {gaps.coaches}
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-purple-500" />
+                  Frontline Coaches
+                </Label>
+                <Badge variant="secondary" className="text-sm">
+                  {simCoaches.length} total ({simQualifyingLegs} SC+)
+                </Badge>
+              </div>
 
-        <Card>
-          <CardContent className="p-3 text-center">
-            <div className="text-xl font-bold text-blue-600">{qualifyingLegsCount}</div>
-            <div className="text-[10px] text-gray-500">Qualifying Legs</div>
-            {nextRank && gaps && nextRankReqs && nextRankReqs.qualifyingLegs > 0 && gaps.qualifyingLegs > 0 && (
-              <Badge variant="outline" className="mt-1 text-[9px] text-orange-500 border-orange-300 px-1">
-                Need {gaps.qualifyingLegs}
-              </Badge>
-            )}
+              {/* Add Coach Controls */}
+              <div className="flex gap-2">
+                <Select onValueChange={(value) => addCoach(value as RankType)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Add a coach..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Coach">Coach</SelectItem>
+                    <SelectItem value="Senior Coach">Senior Coach</SelectItem>
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Associate Director">Associate Director</SelectItem>
+                    <SelectItem value="Director">Director</SelectItem>
+                    <SelectItem value="Executive Director">Executive Director</SelectItem>
+                    <SelectItem value="FIBC">FIBC</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={removeCoach}
+                  disabled={simCoaches.length === 0}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Coach List */}
+              {simCoaches.length > 0 && (
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {simCoaches.map((coach, idx) => {
+                    const isSC = RANK_ORDER.indexOf(coach.rank) >= RANK_ORDER.indexOf('Senior Coach')
+                    return (
+                      <div
+                        key={coach.id}
+                        className={`flex items-center justify-between p-2 rounded text-sm ${
+                          isSC ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                        }`}
+                      >
+                        <span className="text-gray-600">Coach {idx + 1}</span>
+                        <Badge variant={isSC ? "default" : "secondary"} className="text-xs">
+                          {coach.rank}
+                        </Badge>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500">
+                {qualifyingLegQP} Qualifying Points from qualifying legs (SC+)
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Frontline Coaches List */}
-      {frontlineCoaches.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Users className="h-4 w-4 text-purple-500" />
-              Your Frontline Coaches
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              {frontlineCoaches.map((coach) => {
-                const coachColors = RANK_COLORS[coach.coach_rank as RankType] || RANK_COLORS['Coach']
-                const coachInfo = RANK_REQUIREMENTS[coach.coach_rank as RankType] || RANK_REQUIREMENTS['Coach']
-                
-                return (
-                  <div
-                    key={coach.id}
-                    className={`flex items-center justify-between p-2 rounded-lg ${coach.is_qualifying ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 ${coachColors.accent} rounded-full flex items-center justify-center text-white text-sm`}>
-                        {coachInfo.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {coach.full_name || coach.email || "Coach"}
-                        </p>
-                        <p className="text-xs text-gray-500">{coach.coach_rank}</p>
-                      </div>
-                    </div>
-                    {coach.is_qualifying ? (
-                      <Badge className="bg-green-100 text-green-700 text-[10px]">
-                        <Star className="h-3 w-3 mr-0.5" />
-                        Qualifying
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] text-gray-500">
-                        Not yet qualifying
-                      </Badge>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-            <p className="text-[10px] text-gray-400 mt-2 text-center">
-              Qualifying leg = Senior Coach rank or higher
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* No Frontline Coaches */}
-      {frontlineCoaches.length === 0 && (
-        <Card className="bg-gray-50">
-          <CardContent className="p-4 text-center">
-            <UserCheck className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">No frontline coaches yet</p>
-            <p className="text-xs text-gray-400 mt-1">
-              Coaches you sponsor will appear here
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Next Rank Requirements */}
-      {nextRank && nextRankReqs && (
-        <Card className="bg-gradient-to-r from-gray-50 to-blue-50">
+      {nextRank && nextRankReqs && gaps && (
+        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
           <CardContent className="p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Target className="h-4 w-4 text-blue-500" />
-              {nextRank} Requirements
-            </h3>
-            <div className="grid grid-cols-3 gap-2 text-sm mb-3">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="h-4 w-4 text-blue-500" />
+              <h4 className="font-semibold text-gray-700">
+                To reach {nextRank}:
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 mb-3">
               <div className="text-center p-2 bg-white rounded">
-                <div className="font-bold text-gray-900">{nextRankReqs.minClients}+</div>
+                <div className={`text-lg font-bold ${gaps.clients > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {gaps.clients > 0 ? `+${gaps.clients}` : '✓'}
+                </div>
                 <div className="text-[10px] text-gray-500">Clients</div>
               </div>
               <div className="text-center p-2 bg-white rounded">
-                <div className="font-bold text-gray-900">{nextRankReqs.frontlineCoaches}</div>
+                <div className={`text-lg font-bold ${gaps.coaches > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {gaps.coaches > 0 ? `+${gaps.coaches}` : '✓'}
+                </div>
                 <div className="text-[10px] text-gray-500">Coaches</div>
               </div>
               <div className="text-center p-2 bg-white rounded">
-                <div className="font-bold text-gray-900">{nextRankReqs.qualifyingLegs}</div>
+                <div className={`text-lg font-bold ${gaps.qualifyingLegs > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {gaps.qualifyingLegs > 0 ? `+${gaps.qualifyingLegs}` : '✓'}
+                </div>
                 <div className="text-[10px] text-gray-500">Qual. Legs</div>
               </div>
             </div>
-            {nextRankReqs.note && (
-              <div className="flex items-start gap-2 p-2 bg-amber-50 rounded-lg border border-amber-200">
-                <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-700">{nextRankReqs.note}</p>
+
+            {gaps.clients === 0 && gaps.coaches === 0 && gaps.qualifyingLegs === 0 && (
+              <div className="flex items-center gap-2 p-2 bg-green-100 rounded-lg border border-green-300">
+                <Sparkles className="h-4 w-4 text-green-600" />
+                <p className="text-sm text-green-700 font-medium">
+                  You meet all requirements for {nextRank}!
+                </p>
               </div>
             )}
+
+            <p className="text-xs text-gray-600 mt-2">
+              {nextRankReqs.note}
+            </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Pipeline Summary */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-green-500" />
-            Pipeline Projections
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="grid grid-cols-3 gap-1.5 mb-3">
-            <PipelineCard count={prospectPipeline.new} label="New" color="blue" />
-            <PipelineCard count={prospectPipeline.interested} label="Interested" color="orange" />
-            <PipelineCard count={prospectPipeline.ha_scheduled} label="HA Sched" color="purple" />
-          </div>
-          
-          {/* Projections */}
-          <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
-            <span className="text-xs text-gray-600">Projected:</span>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px]">
-                +{projections.newClients} clients
-              </Badge>
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-[10px]">
-                +{projections.newCoaches} coaches
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Action Items */}
-      {actionItems.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold text-yellow-800 mb-2 flex items-center gap-2">
-              <Trophy className="h-4 w-4" />
-              To reach {nextRank}:
-            </h3>
-            <ul className="space-y-1.5">
-              {actionItems.map((item, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm text-yellow-700">
-                  <span className="text-yellow-500 mt-0.5">•</span>
-                  <span>{item.text}</span>
-                </li>
-              ))}
-            </ul>
+      {/* No Next Rank */}
+      {!nextRank && (
+        <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl mb-2">🎉</div>
+            <p className="font-semibold text-gray-700">Top Rank Achieved!</p>
+            <p className="text-sm text-gray-600 mt-1">
+              You've reached the highest rank in OPTAVIA
+            </p>
           </CardContent>
         </Card>
       )}
@@ -347,8 +408,8 @@ export function RankCalculator() {
       {/* Rank Journey */}
       <div className="flex items-center justify-between overflow-x-auto pb-2 gap-1 px-1">
         {RANK_ORDER.map((rank, idx) => {
-          const isCurrentOrPast = idx <= RANK_ORDER.indexOf(currentRank)
-          const isCurrent = rank === currentRank
+          const isCurrentOrPast = idx <= projectedRankIndex
+          const isCurrent = rank === projectedRank
           const colors = RANK_COLORS[rank]
 
           return (
@@ -365,7 +426,7 @@ export function RankCalculator() {
                 </span>
               </div>
               {idx < RANK_ORDER.length - 1 && (
-                <div className={`w-3 h-0.5 mx-0.5 ${idx < RANK_ORDER.indexOf(currentRank) ? "bg-green-400" : "bg-gray-200"}`} />
+                <div className={`w-3 h-0.5 mx-0.5 ${idx < projectedRankIndex ? "bg-green-400" : "bg-gray-200"}`} />
               )}
             </div>
           )
@@ -409,32 +470,6 @@ export function RankCalculator() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-// Sub-component
-function PipelineCard({ 
-  count, 
-  label, 
-  color 
-}: { 
-  count: number; 
-  label: string; 
-  color: "gray" | "orange" | "blue" | "purple" | "green" 
-}) {
-  const colorClasses = {
-    gray: "bg-gray-100 text-gray-600",
-    orange: "bg-orange-100 text-orange-600",
-    blue: "bg-blue-100 text-blue-600",
-    purple: "bg-purple-100 text-purple-600",
-    green: "bg-green-100 text-green-600",
-  }
-
-  return (
-    <div className={`rounded-lg p-2 text-center ${colorClasses[color]}`}>
-      <p className="text-lg font-bold">{count}</p>
-      <p className="text-[9px] truncate">{label}</p>
     </div>
   )
 }
