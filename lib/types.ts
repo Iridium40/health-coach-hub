@@ -71,6 +71,8 @@ export interface ZoomCall {
   // Event-specific fields
   event_type?: "meeting" | "event"
   end_date?: string | null
+  start_time?: string | null  // Optional time for events (e.g., "09:00")
+  end_time?: string | null    // Optional time for events (e.g., "17:00")
   location?: string | null
   is_virtual?: boolean
 }
