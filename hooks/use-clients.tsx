@@ -25,6 +25,7 @@ export interface Client {
   recurring_day: number | null  // 0-6 for day of week
   recurring_time: string | null  // HH:MM format
   notes: string | null
+  last_celebrated_day: number | null  // Track which milestone day was last celebrated
   created_at: string
   updated_at: string
 }
@@ -49,6 +50,7 @@ export interface UpdateClient {
   recurring_day?: number | null
   recurring_time?: string | null
   notes?: string | null
+  last_celebrated_day?: number | null
 }
 
 // Day phase configuration for UI

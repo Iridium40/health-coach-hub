@@ -209,22 +209,38 @@ export const ClientCard = memo(function ClientCard({
                   {client.am_done ? "Checked In" : "Check In"}
                 </span>
               </Button>
-              {/* Text Button - highlighted for milestones */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onOpenTextTemplates(client)}
-                className={`flex-1 ${
-                  isMilestoneDay(programDay)
-                    ? "bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200 animate-pulse"
-                    : "text-blue-600 border-blue-200 hover:bg-blue-50"
-                }`}
-              >
-                <MessageSquare className="h-4 w-4 mr-1" />
-                <span className="text-xs sm:text-sm">
-                  {isMilestoneDay(programDay) ? "Celebrate!" : "Text"}
-                </span>
-              </Button>
+              {/* Text Button - highlighted for milestones that haven't been celebrated */}
+              {(() => {
+                const isMilestone = isMilestoneDay(programDay)
+                const alreadyCelebrated = client.last_celebrated_day === programDay
+                const needsCelebration = isMilestone && !alreadyCelebrated
+                
+                return (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      // Mark as celebrated when clicking on a milestone day
+                      if (needsCelebration) {
+                        await onUpdateClient(client.id, { last_celebrated_day: programDay })
+                      }
+                      onOpenTextTemplates(client)
+                    }}
+                    className={`flex-1 ${
+                      needsCelebration
+                        ? "bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200 animate-pulse"
+                        : alreadyCelebrated
+                        ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
+                        : "text-blue-600 border-blue-200 hover:bg-blue-50"
+                    }`}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    <span className="text-xs sm:text-sm">
+                      {needsCelebration ? "Celebrate!" : alreadyCelebrated ? "Celebrated ✓" : "Text"}
+                    </span>
+                  </Button>
+                )
+              })()}
               <Button
                 variant="outline"
                 size="sm"
