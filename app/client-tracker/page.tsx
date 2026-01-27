@@ -51,9 +51,6 @@ import {
   Phone,
   Send,
   Repeat,
-  List,
-  CalendarDays,
-  ChevronLeft,
   CheckCircle,
   Circle,
   Search,
@@ -70,7 +67,7 @@ import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
 import { useUserData } from "@/contexts/user-data-context"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
-import { StatsCardsSkeleton, ClientListSkeleton, WeekViewSkeleton } from "@/components/ui/skeleton-loaders"
+import { StatsCardsSkeleton, ClientListSkeleton } from "@/components/ui/skeleton-loaders"
 import { ClientCard } from "@/components/client-tracker/client-card"
 import type { CalendarEvent } from "@/lib/calendar-utils"
 
