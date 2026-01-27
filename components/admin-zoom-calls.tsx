@@ -1297,14 +1297,48 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                           day: 'numeric',
                           year: 'numeric'
                         })}
+                        {call.end_date && call.end_date !== call.scheduled_at.split('T')[0] && (
+                          <> - {new Date(call.end_date + 'T00:00:00').toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric'
+                          })}</>
+                        )}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {new Date(call.scheduled_at).toLocaleTimeString(undefined, {
-                          hour: 'numeric',
-                          minute: '2-digit'
-                        })}
-                        {' '}({call.duration_minutes} min)
+                        {call.start_time ? (
+                          // Show start_time and end_time for events
+                          <>
+                            {(() => {
+                              const [h, m] = call.start_time.split(':')
+                              const hour24 = parseInt(h)
+                              const ampm = hour24 >= 12 ? 'PM' : 'AM'
+                              const hour12 = hour24 % 12 || 12
+                              return `${hour12}:${m} ${ampm}`
+                            })()}
+                            {call.end_time && (
+                              <>
+                                {' - '}
+                                {(() => {
+                                  const [h, m] = call.end_time.split(':')
+                                  const hour24 = parseInt(h)
+                                  const ampm = hour24 >= 12 ? 'PM' : 'AM'
+                                  const hour12 = hour24 % 12 || 12
+                                  return `${hour12}:${m} ${ampm}`
+                                })()}
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          // Show scheduled_at time and duration for meetings
+                          <>
+                            {new Date(call.scheduled_at).toLocaleTimeString(undefined, {
+                              hour: 'numeric',
+                              minute: '2-digit'
+                            })}
+                            {' '}({call.duration_minutes} min)
+                          </>
+                        )}
                       </span>
                     </CardDescription>
                   </div>
