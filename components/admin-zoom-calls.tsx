@@ -61,8 +61,39 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
   // Event-specific fields
   const [eventType, setEventType] = useState<"meeting" | "event">("meeting")
   const [endDate, setEndDate] = useState("")
-  const [startTime, setStartTime] = useState("") // Optional start time for events
-  const [endTime, setEndTime] = useState("") // Optional end time for events
+  // Time picker state (Safari-friendly approach using dropdowns)
+  const [startHour, setStartHour] = useState("")
+  const [startMinute, setStartMinute] = useState("00")
+  const [startAmPm, setStartAmPm] = useState<"AM" | "PM">("AM")
+  const [endHour, setEndHour] = useState("")
+  const [endMinute, setEndMinute] = useState("00")
+  const [endAmPm, setEndAmPm] = useState<"AM" | "PM">("PM")
+  
+  // Helper to convert 12h to 24h format for database storage
+  const to24Hour = (hour: string, ampm: "AM" | "PM"): string => {
+    if (!hour) return ""
+    const h = parseInt(hour)
+    if (ampm === "AM") {
+      return h === 12 ? "00" : h.toString().padStart(2, "0")
+    } else {
+      return h === 12 ? "12" : (h + 12).toString()
+    }
+  }
+  
+  // Helper to convert 24h to 12h format for display
+  const from24Hour = (time24: string): { hour: string; minute: string; ampm: "AM" | "PM" } => {
+    if (!time24) return { hour: "", minute: "00", ampm: "AM" }
+    const [h, m] = time24.split(":")
+    const hour24 = parseInt(h)
+    const ampm: "AM" | "PM" = hour24 >= 12 ? "PM" : "AM"
+    let hour12 = hour24 % 12
+    if (hour12 === 0) hour12 = 12
+    return { hour: hour12.toString(), minute: m || "00", ampm }
+  }
+  
+  // Computed values for database
+  const startTime = startHour ? `${to24Hour(startHour, startAmPm)}:${startMinute}` : ""
+  const endTime = endHour ? `${to24Hour(endHour, endAmPm)}:${endMinute}` : ""
   const [location, setLocation] = useState("")
   const [isVirtual, setIsVirtual] = useState(true)
   const [timezone, setTimezone] = useState("America/New_York") // Default to Eastern
@@ -152,8 +183,13 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setSendEmailNotification(true)
     setEventType("meeting")
     setEndDate("")
-    setStartTime("")
-    setEndTime("")
+    // Reset time picker state
+    setStartHour("")
+    setStartMinute("00")
+    setStartAmPm("AM")
+    setEndHour("")
+    setEndMinute("00")
+    setEndAmPm("PM")
     setLocation("")
     setIsVirtual(true)
     setTimezone("America/New_York")
@@ -243,8 +279,16 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setRecordingPlatform(call.recording_platform || "")
     setStatus(call.status)
     setEndDate(call.end_date || "")
-    setStartTime(call.start_time || "")
-    setEndTime(call.end_time || "")
+    // Parse start time
+    const startParsed = from24Hour(call.start_time || "")
+    setStartHour(startParsed.hour)
+    setStartMinute(startParsed.minute)
+    setStartAmPm(startParsed.ampm)
+    // Parse end time
+    const endParsed = from24Hour(call.end_time || "")
+    setEndHour(endParsed.hour)
+    setEndMinute(endParsed.minute)
+    setEndAmPm(endParsed.ampm)
     setLocation(call.location || "")
     setIsVirtual(call.is_virtual !== false)
     setTimezone(call.timezone || "America/New_York")
@@ -674,34 +718,112 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                         </div>
                       </div>
 
-                      {/* Optional Time Fields */}
+                      {/* Optional Time Fields - Safari-compatible dropdowns */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="startTime" className="text-optavia-dark flex items-center gap-2">
+                          <Label className="text-optavia-dark flex items-center gap-2">
                             <Clock className="h-4 w-4" />
                             Start Time <span className="text-gray-400 font-normal text-xs">(optional)</span>
                           </Label>
-                          <Input
-                            id="startTime"
-                            type="time"
-                            value={startTime}
-                            onChange={(e) => setStartTime(e.target.value)}
-                            className="border-gray-300"
-                          />
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={startHour}
+                              onChange={(e) => setStartHour(e.target.value)}
+                              className="w-20 h-10 text-center border rounded-md bg-white focus:ring-2 focus:ring-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
+                            >
+                              <option value="">--</option>
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h) => (
+                                <option key={h} value={h}>{h}</option>
+                              ))}
+                            </select>
+                            <span className="text-lg font-bold text-gray-400">:</span>
+                            <select
+                              value={startMinute}
+                              onChange={(e) => setStartMinute(e.target.value)}
+                              className="w-20 h-10 text-center border rounded-md bg-white focus:ring-2 focus:ring-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
+                            >
+                              {["00", "15", "30", "45"].map((m) => (
+                                <option key={m} value={m}>{m}</option>
+                              ))}
+                            </select>
+                            <div className="flex rounded-md border overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => setStartAmPm("AM")}
+                                className={`px-3 h-10 font-medium transition-colors ${
+                                  startAmPm === "AM"
+                                    ? "bg-[hsl(var(--optavia-green))] text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-100"
+                                }`}
+                              >
+                                AM
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setStartAmPm("PM")}
+                                className={`px-3 h-10 font-medium transition-colors ${
+                                  startAmPm === "PM"
+                                    ? "bg-[hsl(var(--optavia-green))] text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-100"
+                                }`}
+                              >
+                                PM
+                              </button>
+                            </div>
+                          </div>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="endTime" className="text-optavia-dark flex items-center gap-2">
+                          <Label className="text-optavia-dark flex items-center gap-2">
                             <Clock className="h-4 w-4" />
                             End Time <span className="text-gray-400 font-normal text-xs">(optional)</span>
                           </Label>
-                          <Input
-                            id="endTime"
-                            type="time"
-                            value={endTime}
-                            onChange={(e) => setEndTime(e.target.value)}
-                            className="border-gray-300"
-                          />
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={endHour}
+                              onChange={(e) => setEndHour(e.target.value)}
+                              className="w-20 h-10 text-center border rounded-md bg-white focus:ring-2 focus:ring-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
+                            >
+                              <option value="">--</option>
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h) => (
+                                <option key={h} value={h}>{h}</option>
+                              ))}
+                            </select>
+                            <span className="text-lg font-bold text-gray-400">:</span>
+                            <select
+                              value={endMinute}
+                              onChange={(e) => setEndMinute(e.target.value)}
+                              className="w-20 h-10 text-center border rounded-md bg-white focus:ring-2 focus:ring-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
+                            >
+                              {["00", "15", "30", "45"].map((m) => (
+                                <option key={m} value={m}>{m}</option>
+                              ))}
+                            </select>
+                            <div className="flex rounded-md border overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => setEndAmPm("AM")}
+                                className={`px-3 h-10 font-medium transition-colors ${
+                                  endAmPm === "AM"
+                                    ? "bg-[hsl(var(--optavia-green))] text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-100"
+                                }`}
+                              >
+                                AM
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEndAmPm("PM")}
+                                className={`px-3 h-10 font-medium transition-colors ${
+                                  endAmPm === "PM"
+                                    ? "bg-[hsl(var(--optavia-green))] text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-100"
+                                }`}
+                              >
+                                PM
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <p className="text-xs text-optavia-gray">
