@@ -258,7 +258,6 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
         const { success, error: emailError } = await sendWelcomeEmail({
           to: signUpData.user.email,
           fullName: inviteData.fullName,
-          coachRank: inviteData.coachRank,
         })
 
         if (emailError) {
