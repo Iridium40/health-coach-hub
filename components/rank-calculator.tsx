@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +17,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useUserData } from "@/contexts/user-data-context"
-import { useClients } from "@/hooks/use-clients"
 import {
   useRankCalculator,
   RANK_ORDER,
@@ -29,7 +28,7 @@ import {
   type RankType,
 } from "@/hooks/use-rank-calculator"
 import {
-  User,
+  Users,
   Star,
   TrendingUp,
   Plus,
@@ -67,11 +66,9 @@ const COACH_RANK_OPTIONS: { value: RankType; label: string; color: string }[] = 
 
 export function RankCalculator() {
   const { user } = useUserData()
-  const { stats: clientStats } = useClients()
   
   const {
     rankData,
-    frontlineCoaches,
     loading,
     updateRankData,
   } = useRankCalculator(user)
@@ -81,39 +78,38 @@ export function RankCalculator() {
   
   // Current data
   const currentRank = (rankData?.current_rank || "Coach") as RankType
-  const activeClients = clientStats.active
   
-  // Simulation state - Points from clients (5 clients = 1 point)
-  const [simPoints, setSimPoints] = useState(Math.floor(activeClients / 5))
-  const [simCoaches, setSimCoaches] = useState<SimulatedCoach[]>(
-    frontlineCoaches.map(c => ({
-      id: c.id,
-      rank: c.coach_rank as RankType
-    }))
-  )
-
-  // Update simulation when actual data changes
-  useEffect(() => {
-    setSimPoints(Math.floor(activeClients / 5))
-    setSimCoaches(frontlineCoaches.map(c => ({
-      id: c.id,
-      rank: c.coach_rank as RankType
-    })))
-  }, [activeClients, frontlineCoaches])
+  // Simulation state
+  const [simClients, setSimClients] = useState(0) // Number of clients
+  const [simCoaches, setSimCoaches] = useState<SimulatedCoach[]>([])
 
   // Calculate team counts from simulated coaches
   const simSCCount = simCoaches.filter(c => isQualifyingLeg(c.rank)).length
   const simEDCount = simCoaches.filter(c => isEDOrHigher(c.rank)).length
   const simFIBCCount = simCoaches.filter(c => isFIBCOrHigher(c.rank)).length
 
+  // Calculate points
+  // Points from clients: 5 clients = 1 point
+  const clientPoints = Math.floor(simClients / 5)
+  // Points from SC+ coaches: each SC+ coach = 1 point
+  const coachPoints = simSCCount
+  // Total qualifying points
+  const totalPoints = clientPoints + coachPoints
+  
+  // Minimum 5 clients required to qualify for any rank above Coach
+  const hasMinimumClients = simClients >= 5
+
   // Determine rank based on simulated stats
   const calculateRank = (): RankType => {
+    // Must have minimum 5 clients to qualify for anything above Coach
+    if (!hasMinimumClients) return 'Coach'
+    
     for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
       const rank = RANK_ORDER[i]
       const reqs = RANK_REQUIREMENTS[rank]
       
       if (
-        simPoints >= reqs.points &&
+        totalPoints >= reqs.points &&
         simSCCount >= reqs.scTeams &&
         simEDCount >= reqs.edTeams &&
         simFIBCCount >= reqs.fibcTeams
@@ -137,7 +133,7 @@ export function RankCalculator() {
 
   // Calculate gaps to next rank
   const gaps = nextRankReqs ? {
-    points: Math.max(0, nextRankReqs.points - simPoints),
+    points: Math.max(0, nextRankReqs.points - totalPoints),
     scTeams: Math.max(0, nextRankReqs.scTeams - simSCCount),
     edTeams: Math.max(0, nextRankReqs.edTeams - simEDCount),
     fibcTeams: Math.max(0, nextRankReqs.fibcTeams - simFIBCCount),
@@ -154,13 +150,10 @@ export function RankCalculator() {
     setSimCoaches(simCoaches.filter(c => c.id !== coachId))
   }
 
-  // Reset to current
+  // Reset to empty
   const resetSimulation = () => {
-    setSimPoints(Math.floor(activeClients / 5))
-    setSimCoaches(frontlineCoaches.map(c => ({
-      id: c.id,
-      rank: c.coach_rank as RankType
-    })))
+    setSimClients(0)
+    setSimCoaches([])
   }
 
   const handleRankChange = async (newRank: RankType) => {
@@ -171,15 +164,15 @@ export function RankCalculator() {
     setShowRankSelector(false)
   }
 
-  // Generate point icons for visual display
-  const pointIcons = useMemo(() => {
+  // Generate client icons for visual display
+  const clientIcons = useMemo(() => {
     const icons = []
-    const displayCount = Math.min(simPoints, 10)
+    const displayCount = Math.min(simClients, 25)
     for (let i = 0; i < displayCount; i++) {
       icons.push(i)
     }
     return icons
-  }, [simPoints])
+  }, [simClients])
 
   if (loading) {
     return (
@@ -247,7 +240,7 @@ export function RankCalculator() {
                 {projectedRank}
               </h3>
               <p className="text-xs text-gray-600 mt-0.5">
-                {simPoints} pts • {simSCCount} SC • {simEDCount} ED • {simFIBCCount} FIBC
+                {totalPoints} pts ({clientPoints} from clients + {coachPoints} from SC+) • {simEDCount} ED • {simFIBCCount} FIBC
               </p>
             </div>
             {projectedRank !== currentRank && (
@@ -259,33 +252,42 @@ export function RankCalculator() {
         </CardContent>
       </Card>
 
+      {/* Minimum Clients Warning */}
+      {!hasMinimumClients && simClients > 0 && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-sm text-amber-700">
+            <strong>Note:</strong> You need at least 5 clients to qualify for any rank above Coach.
+          </p>
+        </div>
+      )}
+
       {/* Simulation Controls */}
       <div className="grid grid-cols-1 gap-4">
-        {/* Points (from client volume) */}
+        {/* Clients Section */}
         <Card>
           <CardContent className="p-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-amber-500" />
-                  Qualifying Points
+                  <Users className="h-4 w-4 text-green-500" />
+                  Clients
                 </Label>
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setSimPoints(Math.max(0, simPoints - 1))}
+                    onClick={() => setSimClients(Math.max(0, simClients - 1))}
                     className="h-8 w-8 p-0"
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="text-xl font-bold text-amber-600 w-10 text-center">
-                    {simPoints}
+                  <span className="text-xl font-bold text-green-600 w-10 text-center">
+                    {simClients}
                   </span>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setSimPoints(simPoints + 1)}
+                    onClick={() => setSimClients(simClients + 1)}
                     className="h-8 w-8 p-0"
                   >
                     <Plus className="h-4 w-4" />
@@ -293,28 +295,41 @@ export function RankCalculator() {
                 </div>
               </div>
 
-              {/* Point Icons */}
-              <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-                {pointIcons.map((i) => (
+              {/* Client Icons */}
+              <div className="flex flex-wrap gap-1 min-h-[28px]">
+                {clientIcons.map((i) => (
                   <div
                     key={i}
-                    className="w-7 h-7 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center"
+                    className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                      i < 5 
+                        ? 'bg-green-100 border-2 border-green-400' 
+                        : 'bg-green-50 border border-green-300'
+                    }`}
                   >
-                    <Zap className="h-4 w-4 text-amber-600" />
+                    <Users className={`h-3 w-3 ${i < 5 ? 'text-green-600' : 'text-green-400'}`} />
                   </div>
                 ))}
-                {simPoints > 10 && (
-                  <div className="w-7 h-7 rounded-full bg-amber-200 border-2 border-amber-400 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-amber-700">+{simPoints - 10}</span>
+                {simClients > 25 && (
+                  <div className="w-6 h-6 rounded-full bg-green-200 border-2 border-green-400 flex items-center justify-center">
+                    <span className="text-[9px] font-bold text-green-700">+{simClients - 25}</span>
                   </div>
                 )}
-                {simPoints === 0 && (
-                  <p className="text-xs text-gray-400 italic">No points yet</p>
+                {simClients === 0 && (
+                  <p className="text-xs text-gray-400 italic">No clients yet</p>
                 )}
+              </div>
+
+              {/* Points from clients */}
+              <div className="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <span className="text-sm text-amber-700">Points from clients:</span>
+                </div>
+                <span className="text-lg font-bold text-amber-600">{clientPoints}</span>
               </div>
               
               <p className="text-xs text-gray-500">
-                ~5 clients = 1 point (from volume)
+                5 clients = 1 point • Need min 5 clients to qualify
               </p>
             </div>
           </CardContent>
@@ -414,11 +429,23 @@ export function RankCalculator() {
                 <p className="text-xs text-gray-400 italic text-center py-2">No coaches added yet</p>
               )}
 
+              {/* Points from SC+ coaches */}
+              {simSCCount > 0 && (
+                <div className="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm text-amber-700">Points from SC+ coaches:</span>
+                  </div>
+                  <span className="text-lg font-bold text-amber-600">{coachPoints}</span>
+                </div>
+              )}
+
               {/* Team Summary */}
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="p-2 bg-blue-50 rounded text-center border border-blue-200">
                   <span className="font-bold text-blue-600">{simSCCount}</span>
                   <span className="text-blue-500 block text-[10px]">SC+ teams</span>
+                  <span className="text-amber-500 text-[9px]">= {simSCCount} pts</span>
                 </div>
                 <div className="p-2 bg-purple-50 rounded text-center border border-purple-200">
                   <span className="font-bold text-purple-600">{simEDCount}</span>
@@ -429,10 +456,32 @@ export function RankCalculator() {
                   <span className="text-fuchsia-500 block text-[10px]">FIBC+ teams</span>
                 </div>
               </div>
+              
+              <p className="text-xs text-gray-500">
+                Each SC+ frontline coach = 1 point
+              </p>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Total Points Summary */}
+      <Card className="bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-amber-500" />
+              <span className="font-semibold text-amber-800">Total Qualifying Points</span>
+            </div>
+            <div className="text-right">
+              <span className="text-2xl font-bold text-amber-600">{totalPoints}</span>
+              <p className="text-xs text-amber-600">
+                {clientPoints} (clients) + {coachPoints} (SC+)
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Next Rank Requirements */}
       {nextRank && nextRankReqs && gaps && (
@@ -504,6 +553,12 @@ export function RankCalculator() {
       {/* Rank Progression Info */}
       <Card className="bg-gray-50">
         <CardContent className="p-4">
+          <p className="text-xs font-semibold text-gray-600 mb-2">How Points Work:</p>
+          <div className="space-y-2 text-xs text-gray-600 mb-3">
+            <p>• <strong>5 clients = 1 point</strong> (from volume)</p>
+            <p>• <strong>1 SC+ frontline coach = 1 point</strong></p>
+            <p>• <strong>Minimum 5 clients</strong> required to qualify for any rank</p>
+          </div>
           <p className="text-xs font-semibold text-gray-600 mb-2">Rank Requirements:</p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-gray-500">
             <div className="space-y-0.5">
@@ -511,8 +566,9 @@ export function RankCalculator() {
               <p>SC: 1 pt • Mgr: 2 pts • AD: 3 pts</p>
               <p>Dir: 4 pts • ED: 5 pts</p>
               <p className="font-semibold text-gray-400 uppercase mt-1">ED Teams Track</p>
-              <p>RD: 1 ED • ND: 3 EDs • GD: 5 EDs</p>
-              <p>PD: 10 EDs</p>
+              <p>RD: 5 pts + 1 ED</p>
+              <p>ND: 5 pts + 3 EDs • GD: 5 pts + 5 EDs</p>
+              <p>PD: 5 pts + 10 EDs</p>
             </div>
             <div className="space-y-0.5">
               <p className="font-semibold text-gray-400 uppercase">Integrated Track</p>

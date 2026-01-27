@@ -244,7 +244,6 @@ export interface Gaps {
 
 export function useRankCalculator(user: User | null) {
   const [rankData, setRankData] = useState<RankData | null>(null)
-  const [frontlineCoaches, setFrontlineCoaches] = useState<FrontlineCoach[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -292,41 +291,9 @@ export function useRankCalculator(user: User | null) {
             total_team_size: 0
           }])
       }
-
-      const { data: coachesResult, error: coachesError } = await supabase
-        .from("sponsor_team")
-        .select("coach_id, coach_name, coach_email, coach_rank")
-        .eq("sponsor_id", user.id)
-        .neq("coach_id", user.id)
-
-      if (coachesError) {
-        console.error("Error loading frontline coaches:", coachesError)
-        const { data: profilesResult } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, coach_rank")
-          .eq("sponsor_id", user.id)
-          .neq("id", user.id)
-        
-        if (profilesResult) {
-          const coaches: FrontlineCoach[] = profilesResult.map(c => ({
-            id: c.id,
-            full_name: c.full_name,
-            email: c.email,
-            coach_rank: c.coach_rank || "Coach",
-            is_qualifying: isQualifyingLeg(c.coach_rank || "Coach")
-          }))
-          setFrontlineCoaches(coaches)
-        }
-      } else if (coachesResult) {
-        const coaches: FrontlineCoach[] = coachesResult.map(c => ({
-          id: c.coach_id,
-          full_name: c.coach_name,
-          email: c.coach_email,
-          coach_rank: c.coach_rank || "Coach",
-          is_qualifying: isQualifyingLeg(c.coach_rank || "Coach")
-        }))
-        setFrontlineCoaches(coaches)
-      }
+      
+      // NOTE: Frontline coaches are now manually entered in the calculator
+      // No automatic fetching from sponsor_team or profiles
     } catch (err: any) {
       console.error("Error loading data:", err)
       setError(err.message)
@@ -359,8 +326,8 @@ export function useRankCalculator(user: User | null) {
           current_fqv: 0,
           current_pqv: 0,
           qualifying_points: 0,
-          frontline_coaches: frontlineCoaches.length,
-          total_team_size: frontlineCoaches.length
+          frontline_coaches: 0,
+          total_team_size: 0
         })
 
       if (error) throw error
@@ -368,7 +335,7 @@ export function useRankCalculator(user: User | null) {
       console.error("Error updating rank data:", err)
       loadData()
     }
-  }, [user, rankData, frontlineCoaches.length, loadData])
+  }, [user, rankData, loadData])
 
   // Calculate gaps to next rank
   const calculateGaps = useCallback((
@@ -402,19 +369,8 @@ export function useRankCalculator(user: User | null) {
       : null
   }, [])
 
-  // Computed values from actual frontline coaches
-  const qualifyingLegsCount = frontlineCoaches.filter(c => c.is_qualifying).length
-  const edTeamsCount = frontlineCoaches.filter(c => isEDOrHigher(c.coach_rank)).length
-  const fibcTeamsCount = frontlineCoaches.filter(c => isFIBCOrHigher(c.coach_rank)).length
-  const gdTeamsCount = frontlineCoaches.filter(c => isGDOrHigher(c.coach_rank)).length
-
   return {
     rankData,
-    frontlineCoaches,
-    qualifyingLegsCount,  // SC+ teams
-    edTeamsCount,         // ED+ teams
-    fibcTeamsCount,       // FIBC+ teams
-    gdTeamsCount,         // GD+ teams (legacy)
     loading,
     error,
     updateRankData,

@@ -115,9 +115,10 @@ export function DashboardOverview() {
   const { getBookmarkedIds } = useBookmarks(user)
 
   // Rank calculator
-  const { rankData, frontlineCoaches, qualifyingLegsCount, edTeamsCount, fibcTeamsCount, calculateGaps, getNextRank } = useRankCalculator(user)
+  const { rankData, calculateGaps, getNextRank } = useRankCalculator(user)
   
-  // Estimate points from clients (~5 clients = 1 point)
+  // Estimate points from clients only (~5 clients = 1 point)
+  // Note: SC+ frontline coaches also contribute points - use Rank Calculator for full simulation
   const estimatedPoints = Math.floor(clientStats.active / 5)
 
   const [upcomingMeetings, setUpcomingMeetings] = useState<ExpandedZoomCall[]>([])
@@ -308,8 +309,9 @@ export function DashboardOverview() {
   const firstName = profile?.full_name?.split(" ")[0] || "Coach"
 
   // Calculate rank gaps for RankProgressCard
+  // Note: Frontline coaches are now manually entered in the Rank Calculator
   const nextRank = rankData ? getNextRank(rankData.current_rank as RankType) : null
-  const gaps = rankData ? calculateGaps(rankData.current_rank as RankType, estimatedPoints, qualifyingLegsCount, edTeamsCount, fibcTeamsCount) : null
+  const gaps = rankData ? calculateGaps(rankData.current_rank as RankType, estimatedPoints, 0, 0, 0) : null
 
   // Check if ready for promotion and show celebration
   useEffect(() => {
@@ -578,9 +580,9 @@ export function DashboardOverview() {
             currentRank={rankData.current_rank}
             nextRank={nextRank}
             points={estimatedPoints}
-            scTeams={qualifyingLegsCount}
-            edTeams={edTeamsCount}
-            fibcTeams={fibcTeamsCount}
+            scTeams={0}
+            edTeams={0}
+            fibcTeams={0}
             gaps={gaps}
           />
         </div>
