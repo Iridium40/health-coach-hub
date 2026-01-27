@@ -401,6 +401,7 @@ export function RankCalculator() {
                 <div className="flex-1 p-2 bg-yellow-50 rounded text-center">
                   <span className="font-bold text-yellow-600">{simGDCount}</span>
                   <span className="text-yellow-600 ml-1">GD+ teams</span>
+                  <span className="text-[9px] text-yellow-500 block">(GD or higher)</span>
                 </div>
               </div>
             </div>
@@ -442,7 +443,7 @@ export function RankCalculator() {
                 <div className={`text-lg font-bold ${gaps.gdTeams > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                   {gaps.gdTeams > 0 ? `+${gaps.gdTeams}` : '✓'}
                 </div>
-                <div className="text-[10px] text-gray-500">GD Teams</div>
+                <div className="text-[10px] text-gray-500">GD+ Teams</div>
               </div>
             </div>
 
@@ -482,7 +483,7 @@ export function RankCalculator() {
           <div className="space-y-1 text-xs text-gray-500">
             <p>• <strong>5 EDs</strong> → Global Director (GD)</p>
             <p>• <strong>10 EDs</strong> → Presidential Director (PD)</p>
-            <p>• <strong>10 EDs + 5 GDs</strong> → IPD</p>
+            <p>• <strong>10 EDs + 5 GD+</strong> → IPD <span className="text-gray-400">(GD or higher)</span></p>
           </div>
         </CardContent>
       </Card>

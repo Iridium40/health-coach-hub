@@ -100,9 +100,9 @@ export const RANK_REQUIREMENTS: Record<RankType, {
     frontlineCoaches: 15,
     edTeams: 10,
     gdTeams: 5,
-    description: '10 ED teams + 5 GD teams',
+    description: '10 ED teams + 5 GD+ teams',
     icon: '💎',
-    note: '10 EDs + 5 of those must be Global Director or higher'
+    note: '10 EDs + 5 at GD rank or higher (GD, PD, or IPD)'
   }
 }
 

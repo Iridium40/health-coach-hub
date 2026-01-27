@@ -121,7 +121,7 @@ export function RankProgressCard({
                   <div className="flex items-center gap-2 text-sm">
                     <Crown className="h-4 w-4 text-yellow-500" />
                     <span className="text-gray-700">
-                      Need <strong className="text-amber-700">{gaps.gdTeams}</strong> GD team{gaps.gdTeams > 1 ? 's' : ''}
+                      Need <strong className="text-amber-700">{gaps.gdTeams}</strong> GD+ team{gaps.gdTeams > 1 ? 's' : ''}
                     </span>
                     <span className="text-xs text-gray-400">({gdTeams}/{nextReqs.gdTeams})</span>
                   </div>
