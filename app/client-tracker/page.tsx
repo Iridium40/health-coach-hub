@@ -119,8 +119,6 @@ export default function ClientTrackerPage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [filterStatus, setFilterStatus] = useState<ClientStatus | "all">("active")
   const [searchTerm, setSearchTerm] = useState("")
-  const [viewMode, setViewMode] = useState<"list" | "week">("list")
-  const [weekOffset, setWeekOffset] = useState(0) // 0 = current week, 1 = next week, etc.
   
   // Schedule state
   const [scheduleDay, setScheduleDay] = useState<number>(new Date().getDay())
@@ -648,218 +646,21 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               ))}
             </div>
 
-            {/* View Toggle & Export */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportToCSV}
-                className="text-gray-600"
-                title="Export to CSV"
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1">Export</span>
-              </Button>
-              <div className="flex rounded-lg border overflow-hidden">
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors ${
-                    viewMode === "list"
-                      ? "bg-[hsl(var(--optavia-green))] text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <List className="h-4 w-4" />
-                  <span className="hidden sm:inline">List</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("week")}
-                  className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors ${
-                    viewMode === "week"
-                      ? "bg-[hsl(var(--optavia-green))] text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <CalendarDays className="h-4 w-4" />
-                  <span className="hidden sm:inline">Week</span>
-                </button>
-              </div>
-            </div>
+            {/* Export */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToCSV}
+              className="text-gray-600"
+              title="Export to CSV"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Export</span>
+            </Button>
           </div>
         </div>
 
-        {/* Week Calendar View */}
-        {viewMode === "week" && (
-          <div className="mb-6">
-            {/* Week Navigation */}
-            <div className="flex items-center justify-between mb-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setWeekOffset(weekOffset - 1)}
-                disabled={weekOffset <= 0}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-              <div className="text-center">
-                <span className="font-semibold text-gray-900">
-                  {(() => {
-                    const now = new Date()
-                    const startOfWeek = new Date(now)
-                    startOfWeek.setDate(now.getDate() - now.getDay() + weekOffset * 7)
-                    const endOfWeek = new Date(startOfWeek)
-                    endOfWeek.setDate(startOfWeek.getDate() + 6)
-                    return `${startOfWeek.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${endOfWeek.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
-                  })()}
-                </span>
-                {weekOffset === 0 && (
-                  <Badge className="ml-2 bg-green-100 text-green-700">This Week</Badge>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setWeekOffset(weekOffset + 1)}
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-
-            {/* Week Grid */}
-            <div className="grid grid-cols-7 gap-2">
-              {DAYS_OF_WEEK.map((day) => {
-                const now = new Date()
-                const startOfWeek = new Date(now)
-                startOfWeek.setDate(now.getDate() - now.getDay() + weekOffset * 7)
-                const dayDate = new Date(startOfWeek)
-                dayDate.setDate(startOfWeek.getDate() + day.value)
-                const isToday = dayDate.toDateString() === now.toDateString()
-                const isPast = dayDate < new Date(now.toDateString())
-
-                // Get clients scheduled for this day
-                const dayClients = filteredClients.filter((client) => {
-                  if (!client.next_scheduled_at) return false
-                  const scheduledDate = new Date(client.next_scheduled_at)
-                  return scheduledDate.toDateString() === dayDate.toDateString()
-                }).sort((a, b) => {
-                  const aTime = new Date(a.next_scheduled_at!).getTime()
-                  const bTime = new Date(b.next_scheduled_at!).getTime()
-                  return aTime - bTime
-                })
-
-                return (
-                  <div
-                    key={day.value}
-                    className={`min-h-[200px] rounded-lg border ${
-                      isToday
-                        ? "border-[hsl(var(--optavia-green))] bg-green-50"
-                        : isPast
-                        ? "bg-gray-50 border-gray-200"
-                        : "bg-white border-gray-200"
-                    }`}
-                  >
-                    {/* Day Header */}
-                    <div
-                      className={`px-2 py-2 border-b text-center ${
-                        isToday ? "bg-[hsl(var(--optavia-green))] text-white" : "bg-gray-100"
-                      }`}
-                    >
-                      <div className="text-xs font-medium">{day.short}</div>
-                      <div className={`text-lg font-bold ${isToday ? "" : "text-gray-700"}`}>
-                        {dayDate.getDate()}
-                      </div>
-                    </div>
-
-                    {/* Day Content */}
-                    <div className="p-2 space-y-2">
-                      {dayClients.length === 0 ? (
-                        <div className="text-xs text-gray-400 text-center py-4">
-                          No check-ins
-                        </div>
-                      ) : (
-                        dayClients.map((client) => {
-                          const programDay = getProgramDay(client.start_date)
-                          const phase = getDayPhase(programDay)
-                          const scheduledTime = new Date(client.next_scheduled_at!).toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })
-                          return (
-                            <div
-                              key={client.id}
-                              onClick={() => openScheduleModal(client)}
-                              className="p-2 rounded-lg border border-gray-200 bg-white hover:shadow-sm cursor-pointer transition-shadow"
-                              style={{ borderLeftColor: phase.color, borderLeftWidth: "3px" }}
-                            >
-                              <div className="text-xs font-medium text-gray-900 truncate">
-                                {client.label}
-                              </div>
-                              <div className="flex items-center justify-between mt-1">
-                                <span className="text-xs text-gray-500">{scheduledTime}</span>
-                                <Badge
-                                  className="text-[10px] px-1.5 py-0"
-                                  style={{ backgroundColor: phase.bg, color: phase.color }}
-                                >
-                                  D{programDay}
-                                </Badge>
-                              </div>
-                              {client.recurring_frequency && client.recurring_frequency !== "none" && (
-                                <Repeat className="h-3 w-3 text-purple-400 mt-1" />
-                              )}
-                            </div>
-                          )
-                        })
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Unscheduled Clients */}
-            {(() => {
-              const unscheduledClients = filteredClients.filter(c => !c.next_scheduled_at)
-              if (unscheduledClients.length === 0) return null
-              return (
-                <div className="mt-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AlertCircle className="h-4 w-4 text-orange-500" />
-                    <span className="font-medium text-gray-700">Unscheduled ({unscheduledClients.length})</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {unscheduledClients.map((client) => {
-                      const programDay = getProgramDay(client.start_date)
-                      const phase = getDayPhase(programDay)
-                      return (
-                        <Button
-                          key={client.id}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openScheduleModal(client)}
-                          className="border-orange-200 text-orange-700 hover:bg-orange-50"
-                        >
-                          <div
-                            className="w-5 h-5 rounded mr-2 flex items-center justify-center text-[10px] font-bold"
-                            style={{ backgroundColor: phase.bg, color: phase.color }}
-                          >
-                            {programDay}
-                          </div>
-                          {client.label}
-                          <CalendarPlus className="h-3 w-3 ml-2" />
-                        </Button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
-        )}
-
         {/* Client List */}
-        {viewMode === "list" && (
         <div className="space-y-3">
           {filteredClients.map((client) => {
             const programDay = getProgramDay(client.start_date)
@@ -1122,7 +923,6 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
             </Card>
           )}
         </div>
-        )}
         </ErrorBoundary>
       </div>
 

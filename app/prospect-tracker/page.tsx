@@ -132,8 +132,6 @@ export default function ProspectTrackerPage() {
   
   // Debounce search term for better performance
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
-  const [viewMode, setViewMode] = useState<"list" | "week">("list")
-  const [weekOffset, setWeekOffset] = useState(0) // 0 = current week, 1 = next week, etc.
   const [clientStartDate, setClientStartDate] = useState("")
 
   // HA Scheduling state
@@ -714,43 +712,17 @@ Talking Points:
               </TooltipProvider>
             </div>
 
-            {/* View Toggle & Export */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportToCSV}
-                className="text-gray-600"
-                title="Export to CSV"
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1">Export</span>
-              </Button>
-              <div className="flex rounded-lg border overflow-hidden">
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors ${
-                    viewMode === "list"
-                      ? "bg-[hsl(var(--optavia-green))] text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <List className="h-4 w-4" />
-                  <span className="hidden sm:inline">List</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("week")}
-                  className={`px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-sm font-medium transition-colors ${
-                    viewMode === "week"
-                      ? "bg-[hsl(var(--optavia-green))] text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <CalendarDays className="h-4 w-4" />
-                  <span className="hidden sm:inline">Week</span>
-                </button>
-              </div>
-            </div>
+            {/* Export */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToCSV}
+              className="text-gray-600 flex-shrink-0"
+              title="Export to CSV"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Export</span>
+            </Button>
           </div>
         </div>
 
