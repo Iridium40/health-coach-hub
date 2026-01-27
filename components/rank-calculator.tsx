@@ -136,6 +136,7 @@ export function RankCalculator() {
   // Calculate gaps to next rank
   const gaps = nextRankReqs ? {
     points: Math.max(0, nextRankReqs.points - totalPoints),
+    minClients: Math.max(0, nextRankReqs.minClients - simClients),
     scTeams: Math.max(0, nextRankReqs.scTeams - simSCCount),
     edTeams: Math.max(0, nextRankReqs.edTeams - simEDCount),
     fibcTeams: Math.max(0, nextRankReqs.fibcTeams - simFIBCCount),
