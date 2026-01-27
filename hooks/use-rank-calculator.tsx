@@ -4,12 +4,11 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 
-// Rank order
+// Rank order (simplified for the calculator)
 export const RANK_ORDER = [
   'Coach',
   'Senior Coach',
   'Executive Director',
-  'FIBC',
   'Global Director',
   'Presidential Director',
   'IPD'
@@ -28,11 +27,25 @@ export function isQualifyingLeg(rank: string): boolean {
   return getRankIndex(rank) >= 1 // Senior Coach or higher
 }
 
-// Simplified requirements - clients, frontline coaches, and qualifying legs
+// Check if coach is ED or higher
+export function isEDOrHigher(rank: string): boolean {
+  return getRankIndex(rank) >= 2 // Executive Director or higher
+}
+
+// Check if coach is GD or higher
+export function isGDOrHigher(rank: string): boolean {
+  return getRankIndex(rank) >= 3 // Global Director or higher
+}
+
+// Simplified requirements based on:
+// - 5 EDs = Global Director (GD)
+// - 10 EDs = Presidential Director (PD)
+// - 10 EDs + 5 GDs = IPD
 export const RANK_REQUIREMENTS: Record<RankType, {
   minClients: number
   frontlineCoaches: number
-  qualifyingLegs: number  // Coaches at Senior Coach rank or higher
+  edTeams: number      // Number of ED+ frontline coaches needed
+  gdTeams: number      // Number of GD+ frontline coaches needed
   description: string
   icon: string
   note: string
@@ -40,7 +53,8 @@ export const RANK_REQUIREMENTS: Record<RankType, {
   'Coach': {
     minClients: 0,
     frontlineCoaches: 0,
-    qualifyingLegs: 0,
+    edTeams: 0,
+    gdTeams: 0,
     description: 'Starting rank - welcome to the team!',
     icon: '🌱',
     note: ''
@@ -48,7 +62,8 @@ export const RANK_REQUIREMENTS: Record<RankType, {
   'Senior Coach': {
     minClients: 3,
     frontlineCoaches: 0,
-    qualifyingLegs: 0,
+    edTeams: 0,
+    gdTeams: 0,
     description: '3+ active clients with qualifying orders',
     icon: '⭐',
     note: 'Verify FQV requirements in OPTAVIA Connect'
@@ -56,42 +71,38 @@ export const RANK_REQUIREMENTS: Record<RankType, {
   'Executive Director': {
     minClients: 5,
     frontlineCoaches: 3,
-    qualifyingLegs: 0,
-    description: '5+ clients and 3 frontline coaches',
+    edTeams: 0,
+    gdTeams: 0,
+    description: '5+ clients and 3+ frontline coaches',
     icon: '💫',
     note: 'Verify FQV requirements in OPTAVIA Connect'
   },
-  'FIBC': {
+  'Global Director': {
     minClients: 8,
     frontlineCoaches: 5,
-    qualifyingLegs: 2,
-    description: '8+ clients, 5 coaches, 2 qualifying legs',
-    icon: '🏆',
-    note: 'Qualifying leg = Senior Coach or higher'
-  },
-  'Global Director': {
-    minClients: 10,
-    frontlineCoaches: 6,
-    qualifyingLegs: 3,
-    description: '10+ clients, 6 coaches, 3 qualifying legs',
+    edTeams: 5,
+    gdTeams: 0,
+    description: '5 ED teams (frontline coaches at ED rank)',
     icon: '🌍',
-    note: 'Qualifying leg = Senior Coach or higher'
+    note: '5 frontline coaches must be Executive Director or higher'
   },
   'Presidential Director': {
-    minClients: 15,
-    frontlineCoaches: 8,
-    qualifyingLegs: 4,
-    description: '15+ clients, 8 coaches, 4 qualifying legs',
+    minClients: 12,
+    frontlineCoaches: 10,
+    edTeams: 10,
+    gdTeams: 0,
+    description: '10 ED teams (frontline coaches at ED rank)',
     icon: '👑',
-    note: 'Qualifying leg = Senior Coach or higher'
+    note: '10 frontline coaches must be Executive Director or higher'
   },
   'IPD': {
-    minClients: 20,
-    frontlineCoaches: 10,
-    qualifyingLegs: 5,
-    description: '20+ clients, 10 coaches, 5 qualifying legs',
+    minClients: 15,
+    frontlineCoaches: 15,
+    edTeams: 10,
+    gdTeams: 5,
+    description: '10 ED teams + 5 GD teams',
     icon: '💎',
-    note: 'Verify all requirements in OPTAVIA Connect'
+    note: '10 EDs + 5 of those must be Global Director or higher'
   }
 }
 
@@ -99,7 +110,6 @@ export const RANK_COLORS: Record<RankType, { bg: string; text: string; accent: s
   'Coach': { bg: 'bg-gray-100', text: 'text-gray-600', accent: 'bg-gray-500' },
   'Senior Coach': { bg: 'bg-blue-50', text: 'text-blue-600', accent: 'bg-blue-500' },
   'Executive Director': { bg: 'bg-purple-50', text: 'text-purple-600', accent: 'bg-purple-500' },
-  'FIBC': { bg: 'bg-green-50', text: 'text-green-600', accent: 'bg-green-600' },
   'Global Director': { bg: 'bg-yellow-50', text: 'text-yellow-700', accent: 'bg-yellow-500' },
   'Presidential Director': { bg: 'bg-orange-50', text: 'text-orange-600', accent: 'bg-orange-500' },
   'IPD': { bg: 'bg-red-50', text: 'text-red-600', accent: 'bg-red-600' }
@@ -154,7 +164,8 @@ export interface Projections {
 export interface Gaps {
   coaches: number
   clients: number
-  qualifyingLegs: number
+  edTeams: number
+  gdTeams: number
 }
 
 export function useRankCalculator(user: User | null) {
@@ -322,7 +333,9 @@ export function useRankCalculator(user: User | null) {
   // Calculate gaps to next rank
   const calculateGaps = useCallback((
     currentRank: RankType,
-    activeClients: number
+    activeClients: number,
+    edCount: number,
+    gdCount: number
   ): Gaps | null => {
     const currentRankIndex = RANK_ORDER.indexOf(currentRank)
     const nextRank = currentRankIndex < RANK_ORDER.length - 1
@@ -332,19 +345,21 @@ export function useRankCalculator(user: User | null) {
     if (!nextRank) return null
 
     const nextRankReqs = RANK_REQUIREMENTS[nextRank]
-    const qualifyingCount = frontlineCoaches.filter(c => c.is_qualifying).length
 
     return {
       coaches: Math.max(0, nextRankReqs.frontlineCoaches - frontlineCoaches.length),
       clients: Math.max(0, nextRankReqs.minClients - activeClients),
-      qualifyingLegs: Math.max(0, nextRankReqs.qualifyingLegs - qualifyingCount)
+      edTeams: Math.max(0, nextRankReqs.edTeams - edCount),
+      gdTeams: Math.max(0, nextRankReqs.gdTeams - gdCount)
     }
   }, [frontlineCoaches])
 
   // Calculate progress to next rank
   const calculateProgress = useCallback((
     currentRank: RankType,
-    activeClients: number
+    activeClients: number,
+    edCount: number,
+    gdCount: number
   ): number => {
     const currentRankIndex = RANK_ORDER.indexOf(currentRank)
     const nextRank = currentRankIndex < RANK_ORDER.length - 1
@@ -354,86 +369,28 @@ export function useRankCalculator(user: User | null) {
     if (!nextRank) return 100
 
     const nextRankReqs = RANK_REQUIREMENTS[nextRank]
-    const qualifyingCount = frontlineCoaches.filter(c => c.is_qualifying).length
     
-    // Calculate client progress (40% weight)
+    // Calculate client progress (30% weight)
     const clientProgress = nextRankReqs.minClients > 0
       ? Math.min((activeClients / nextRankReqs.minClients) * 100, 100)
       : 100
 
-    // Calculate coach progress (30% weight)
+    // Calculate coach progress (20% weight)
     const coachProgress = nextRankReqs.frontlineCoaches > 0
       ? Math.min((frontlineCoaches.length / nextRankReqs.frontlineCoaches) * 100, 100)
       : 100
 
-    // Calculate qualifying legs progress (30% weight)
-    const legsProgress = nextRankReqs.qualifyingLegs > 0
-      ? Math.min((qualifyingCount / nextRankReqs.qualifyingLegs) * 100, 100)
+    // Calculate ED teams progress (30% weight)
+    const edProgress = nextRankReqs.edTeams > 0
+      ? Math.min((edCount / nextRankReqs.edTeams) * 100, 100)
       : 100
 
-    return Math.round((clientProgress * 0.4) + (coachProgress * 0.3) + (legsProgress * 0.3))
-  }, [frontlineCoaches])
+    // Calculate GD teams progress (20% weight)
+    const gdProgress = nextRankReqs.gdTeams > 0
+      ? Math.min((gdCount / nextRankReqs.gdTeams) * 100, 100)
+      : 100
 
-  // Generate action items
-  const generateActionItems = useCallback((
-    gaps: Gaps | null,
-    projections: Projections,
-    prospects: ProspectPipeline,
-    clients: ClientStats,
-    nextRank: RankType | null
-  ): { priority: "high" | "medium" | "low"; text: string }[] => {
-    if (!gaps || !nextRank) return []
-
-    const items: { priority: "high" | "medium" | "low"; text: string }[] = []
-
-    // Client gaps
-    if (gaps.clients > 0) {
-      items.push({
-        priority: "high",
-        text: `Need ${gaps.clients} more active clients`
-      })
-    }
-
-    // Coach gaps
-    if (gaps.coaches > 0) {
-      if (clients.coachProspects > 0) {
-        items.push({
-          priority: "high",
-          text: `Recruit ${gaps.coaches} more coaches (${clients.coachProspects} flagged as prospects)`
-        })
-      } else {
-        items.push({
-          priority: "medium",
-          text: `Need ${gaps.coaches} more frontline coaches`
-        })
-      }
-    }
-
-    // Qualifying legs gaps
-    if (gaps.qualifyingLegs > 0) {
-      const nonQualifying = frontlineCoaches.filter(c => !c.is_qualifying)
-      if (nonQualifying.length > 0) {
-        items.push({
-          priority: "high",
-          text: `Help ${gaps.qualifyingLegs} coaches reach Senior Coach rank`
-        })
-      } else {
-        items.push({
-          priority: "medium",
-          text: `Need ${gaps.qualifyingLegs} qualifying legs (Senior Coach+)`
-        })
-      }
-    }
-
-    // Pipeline actions
-    if (prospects.ha_done > 0) {
-      items.push({
-        priority: "medium",
-        text: `Follow up with ${prospects.ha_done} prospects who completed HA`
-      })
-    }
-
-    return items.slice(0, 4)
+    return Math.round((clientProgress * 0.3) + (coachProgress * 0.2) + (edProgress * 0.3) + (gdProgress * 0.2))
   }, [frontlineCoaches])
 
   // Get next rank
@@ -446,18 +403,21 @@ export function useRankCalculator(user: User | null) {
 
   // Computed values
   const qualifyingLegsCount = frontlineCoaches.filter(c => c.is_qualifying).length
+  const edTeamsCount = frontlineCoaches.filter(c => isEDOrHigher(c.coach_rank)).length
+  const gdTeamsCount = frontlineCoaches.filter(c => isGDOrHigher(c.coach_rank)).length
 
   return {
     rankData,
     frontlineCoaches,
     qualifyingLegsCount,
+    edTeamsCount,
+    gdTeamsCount,
     loading,
     error,
     updateRankData,
     calculateProjections,
     calculateGaps,
     calculateProgress,
-    generateActionItems,
     getNextRank,
     reload: loadData,
     RANK_ORDER,

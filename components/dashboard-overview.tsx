@@ -115,7 +115,7 @@ export function DashboardOverview() {
   const { getBookmarkedIds } = useBookmarks(user)
 
   // Rank calculator
-  const { rankData, frontlineCoaches, qualifyingLegsCount, calculateGaps, getNextRank } = useRankCalculator(user)
+  const { rankData, frontlineCoaches, edTeamsCount, gdTeamsCount, calculateGaps, getNextRank } = useRankCalculator(user)
 
   const [upcomingMeetings, setUpcomingMeetings] = useState<ExpandedZoomCall[]>([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
@@ -306,14 +306,14 @@ export function DashboardOverview() {
 
   // Calculate rank gaps for RankProgressCard
   const nextRank = rankData ? getNextRank(rankData.current_rank as RankType) : null
-  const gaps = rankData ? calculateGaps(rankData.current_rank as RankType, clientStats.active) : null
+  const gaps = rankData ? calculateGaps(rankData.current_rank as RankType, clientStats.active, edTeamsCount, gdTeamsCount) : null
 
   // Check if ready for promotion and show celebration
   useEffect(() => {
     if (!rankData || !nextRank || !gaps) return
     
     // Check if all gaps are 0 (ready for promotion)
-    const isReadyForPromotion = gaps.clients === 0 && gaps.coaches === 0 && gaps.qualifyingLegs === 0
+    const isReadyForPromotion = gaps.clients === 0 && gaps.coaches === 0 && gaps.edTeams === 0 && gaps.gdTeams === 0
     
     if (isReadyForPromotion) {
       // Check if we've already shown this celebration (using localStorage)
@@ -576,7 +576,8 @@ export function DashboardOverview() {
             nextRank={nextRank}
             activeClients={clientStats.active}
             frontlineCoaches={frontlineCoaches.length}
-            qualifyingLegs={qualifyingLegsCount}
+            edTeams={edTeamsCount}
+            gdTeams={gdTeamsCount}
             gaps={gaps}
           />
         </div>
