@@ -240,6 +240,7 @@ export interface Gaps {
   scTeams: number     // Gap in SC+ teams
   edTeams: number     // Gap in ED+ teams
   fibcTeams: number   // Gap in FIBC+ teams
+  minClients: number  // Gap in minimum clients (need 5 to qualify)
 }
 
 export function useRankCalculator(user: User | null) {
@@ -343,7 +344,8 @@ export function useRankCalculator(user: User | null) {
     currentPoints: number,
     scCount: number,
     edCount: number,
-    fibcCount: number
+    fibcCount: number,
+    clientCount: number = 0  // Number of clients (need 5 minimum to qualify)
   ): Gaps | null => {
     const currentRankIndex = RANK_ORDER.indexOf(currentRank)
     const nextRank = currentRankIndex < RANK_ORDER.length - 1
@@ -356,6 +358,7 @@ export function useRankCalculator(user: User | null) {
 
     return {
       points: Math.max(0, nextRankReqs.points - currentPoints),
+      minClients: Math.max(0, 5 - clientCount),  // Need at least 5 clients
       scTeams: Math.max(0, nextRankReqs.scTeams - scCount),
       edTeams: Math.max(0, nextRankReqs.edTeams - edCount),
       fibcTeams: Math.max(0, nextRankReqs.fibcTeams - fibcCount)

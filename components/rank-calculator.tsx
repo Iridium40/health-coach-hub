@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -164,15 +164,6 @@ export function RankCalculator() {
     setShowRankSelector(false)
   }
 
-  // Generate client icons for visual display
-  const clientIcons = useMemo(() => {
-    const icons = []
-    const displayCount = Math.min(simClients, 25)
-    for (let i = 0; i < displayCount; i++) {
-      icons.push(i)
-    }
-    return icons
-  }, [simClients])
 
   if (loading) {
     return (
@@ -263,74 +254,114 @@ export function RankCalculator() {
 
       {/* Simulation Controls */}
       <div className="grid grid-cols-1 gap-4">
-        {/* Clients Section */}
+        {/* Active Clients Section */}
         <Card>
           <CardContent className="p-4">
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* Header with +/- controls */}
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-green-500" />
-                  Clients
+                <Label className="flex items-center gap-2 text-base font-semibold text-green-700">
+                  <Users className="h-5 w-5 text-green-500" />
+                  Active Clients
                 </Label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => setSimClients(Math.max(0, simClients - 1))}
-                    className="h-8 w-8 p-0"
+                    className="h-10 w-10 rounded-r-none border-r-0"
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="text-xl font-bold text-green-600 w-10 text-center">
-                    {simClients}
-                  </span>
+                  <div className="h-10 px-4 flex items-center justify-center border-2 border-green-500 bg-white min-w-[60px]">
+                    <span className="text-xl font-bold text-green-600">
+                      {simClients}
+                    </span>
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => setSimClients(simClients + 1)}
-                    className="h-8 w-8 p-0"
+                    className="h-10 w-10 rounded-l-none border-l-0"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
-              {/* Client Icons */}
-              <div className="flex flex-wrap gap-1 min-h-[28px]">
-                {clientIcons.map((i) => (
-                  <div
-                    key={i}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                      i < 5 
-                        ? 'bg-green-100 border-2 border-green-400' 
-                        : 'bg-green-50 border border-green-300'
-                    }`}
-                  >
-                    <Users className={`h-3 w-3 ${i < 5 ? 'text-green-600' : 'text-green-400'}`} />
-                  </div>
-                ))}
-                {simClients > 25 && (
-                  <div className="w-6 h-6 rounded-full bg-green-200 border-2 border-green-400 flex items-center justify-center">
-                    <span className="text-[9px] font-bold text-green-700">+{simClients - 25}</span>
+              {/* Points explanation */}
+              <div className="p-3 border border-green-200 rounded-lg bg-white">
+                <p className="text-sm text-gray-600 mb-3">
+                  5 clients = 1 point  |  <span className="text-amber-600 font-semibold">{clientPoints} point{clientPoints !== 1 ? 's' : ''} from {simClients} clients</span> {hasMinimumClients && <span className="text-green-500">✓</span>}
+                </p>
+                
+                {/* Visual rows of 5 clients = 1 PT */}
+                {clientPoints > 0 && (
+                  <div className="space-y-2">
+                    {Array.from({ length: Math.min(clientPoints, 5) }).map((_, rowIdx) => (
+                      <div key={rowIdx} className="flex items-center gap-2">
+                        {/* 5 client icons per row */}
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-7 h-7 rounded-full bg-green-100 border-2 border-green-400 flex items-center justify-center"
+                          >
+                            <Users className="h-4 w-4 text-green-600" />
+                          </div>
+                        ))}
+                        {/* = 1 PT badge */}
+                        <Badge className="bg-amber-500 text-white text-xs px-2 py-1">
+                          = 1 PT ★
+                        </Badge>
+                      </div>
+                    ))}
+                    {clientPoints > 5 && (
+                      <p className="text-xs text-gray-500 pl-1">+ {clientPoints - 5} more point{clientPoints - 5 > 1 ? 's' : ''}</p>
+                    )}
                   </div>
                 )}
+                
+                {/* Remaining clients (not yet a full point) */}
+                {simClients % 5 > 0 && (
+                  <div className="flex items-center gap-2 mt-2 opacity-60">
+                    {Array.from({ length: simClients % 5 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-7 h-7 rounded-full bg-green-50 border border-green-300 flex items-center justify-center"
+                      >
+                        <Users className="h-4 w-4 text-green-400" />
+                      </div>
+                    ))}
+                    <span className="text-xs text-gray-400">({5 - (simClients % 5)} more for next point)</span>
+                  </div>
+                )}
+                
                 {simClients === 0 && (
-                  <p className="text-xs text-gray-400 italic">No clients yet</p>
+                  <p className="text-sm text-gray-400 italic">Add clients to see points</p>
                 )}
               </div>
 
-              {/* Points from clients */}
-              <div className="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-200">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm text-amber-700">Points from clients:</span>
-                </div>
-                <span className="text-lg font-bold text-amber-600">{clientPoints}</span>
+              {/* Quick add buttons */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-500">Quick add:</span>
+                {[
+                  { clients: 5, pts: 1 },
+                  { clients: 10, pts: 2 },
+                  { clients: 15, pts: 3 },
+                  { clients: 20, pts: 4 },
+                  { clients: 25, pts: 5 },
+                ].map(({ clients, pts }) => (
+                  <Button
+                    key={clients}
+                    size="sm"
+                    variant={simClients === clients ? "default" : "outline"}
+                    onClick={() => setSimClients(clients)}
+                    className={`text-xs h-7 px-2 ${simClients === clients ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                  >
+                    {clients} ({pts} pt{pts > 1 ? 's' : ''})
+                  </Button>
+                ))}
               </div>
-              
-              <p className="text-xs text-gray-500">
-                5 clients = 1 point • Need min 5 clients to qualify
-              </p>
             </div>
           </CardContent>
         </Card>
@@ -494,6 +525,16 @@ export function RankCalculator() {
               </h4>
             </div>
 
+            {/* Minimum Clients Requirement */}
+            {!hasMinimumClients && (
+              <div className="flex items-center gap-2 p-2 mb-3 bg-orange-100 rounded-lg border border-orange-300">
+                <Users className="h-4 w-4 text-orange-600" />
+                <p className="text-sm text-orange-700">
+                  Need <strong>{5 - simClients}</strong> more client{5 - simClients > 1 ? 's' : ''} (min 5 required)
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
               <div className="text-center p-2 bg-white rounded">
                 <div className={`text-lg font-bold ${gaps.points > 0 ? 'text-orange-600' : 'text-green-600'}`}>
@@ -521,7 +562,7 @@ export function RankCalculator() {
               </div>
             </div>
 
-            {gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0 && (
+            {hasMinimumClients && gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0 && (
               <div className="flex items-center gap-2 p-2 bg-green-100 rounded-lg border border-green-300">
                 <Sparkles className="h-4 w-4 text-green-600" />
                 <p className="text-sm text-green-700 font-medium">
@@ -558,6 +599,11 @@ export function RankCalculator() {
             <p>• <strong>5 clients = 1 point</strong> (from volume)</p>
             <p>• <strong>1 SC+ frontline coach = 1 point</strong></p>
             <p>• <strong>Minimum 5 clients</strong> required to qualify for any rank</p>
+          </div>
+          <div className="p-2 bg-green-50 border border-green-200 rounded-lg mb-3">
+            <p className="text-xs text-green-700">
+              <strong>Example:</strong> 5 clients (1 pt) + 4 SC coaches (4 pts) = 5 pts = ED rank ✓
+            </p>
           </div>
           <p className="text-xs font-semibold text-gray-600 mb-2">Rank Requirements:</p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-gray-500">

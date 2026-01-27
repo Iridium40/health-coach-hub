@@ -311,14 +311,14 @@ export function DashboardOverview() {
   // Calculate rank gaps for RankProgressCard
   // Note: Frontline coaches are now manually entered in the Rank Calculator
   const nextRank = rankData ? getNextRank(rankData.current_rank as RankType) : null
-  const gaps = rankData ? calculateGaps(rankData.current_rank as RankType, estimatedPoints, 0, 0, 0) : null
+  const gaps = rankData ? calculateGaps(rankData.current_rank as RankType, estimatedPoints, 0, 0, 0, clientStats.active) : null
 
   // Check if ready for promotion and show celebration
   useEffect(() => {
     if (!rankData || !nextRank || !gaps) return
     
-    // Check if all gaps are 0 (ready for promotion)
-    const isReadyForPromotion = gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0
+    // Check if all gaps are 0 (ready for promotion) and has minimum clients
+    const isReadyForPromotion = gaps.minClients === 0 && gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0
     
     if (isReadyForPromotion) {
       // Check if we've already shown this celebration (using localStorage)

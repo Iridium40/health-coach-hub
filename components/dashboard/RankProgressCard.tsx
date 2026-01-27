@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { TrendingUp, ChevronRight, Trophy, Zap, Star, Crown } from "lucide-react"
+import { TrendingUp, ChevronRight, Trophy, Zap, Star, Crown, Users } from "lucide-react"
 import { RANK_REQUIREMENTS, type RankType } from "@/hooks/use-rank-calculator"
 
 interface RankProgressCardProps {
@@ -20,6 +20,7 @@ interface RankProgressCardProps {
     scTeams: number
     edTeams: number
     fibcTeams: number
+    minClients: number
   } | null
 }
 
@@ -89,6 +90,14 @@ export function RankProgressCard({
 
               {/* Requirements */}
               <div className="space-y-1">
+                {gaps && gaps.minClients > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-4 w-4 text-green-500" />
+                    <span className="text-gray-700">
+                      Need <strong className="text-amber-700">{gaps.minClients}</strong> more client{gaps.minClients > 1 ? 's' : ''} <span className="text-xs text-gray-400">(min 5 required)</span>
+                    </span>
+                  </div>
+                )}
                 {gaps && gaps.points > 0 && (
                   <div className="flex items-center gap-2 text-sm">
                     <Zap className="h-4 w-4 text-amber-500" />
@@ -125,7 +134,7 @@ export function RankProgressCard({
                     <span className="text-xs text-gray-400">({fibcTeams}/{nextReqs.fibcTeams})</span>
                   </div>
                 )}
-                {gaps && gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0 && (
+                {gaps && gaps.minClients === 0 && gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0 && (
                   <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
                     <Trophy className="h-4 w-4" />
                     Ready for promotion!
