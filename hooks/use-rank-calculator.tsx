@@ -53,15 +53,17 @@ export function isGDOrHigher(rank: string): boolean {
 }
 
 // Rank requirements based on simplified OPTAVIA Career Path
-// Points = Qualifying Points (simplified: we'll use client count where ~5 clients = 1 point)
+// Points = Qualifying Points (from clients: 5 clients = 1 pt, AND from SC+ coaches: 1 coach = 1 pt)
 // SC Teams = number of SC+ frontline coaches
 // ED Teams = number of ED+ frontline coaches  
 // FIBC Teams = number of FIBC+ frontline coaches (integrated track)
+// minClients = minimum number of clients required (5 for basic ranks, 25 for FIBC and integrated)
 export const RANK_REQUIREMENTS: Record<RankType, {
   points: number      // Qualifying Points needed
   scTeams: number     // SC+ frontline coaches needed
   edTeams: number     // ED+ frontline coaches needed
   fibcTeams: number   // FIBC+ frontline coaches needed
+  minClients: number  // Minimum clients required
   description: string
   icon: string
   note: string
@@ -71,6 +73,7 @@ export const RANK_REQUIREMENTS: Record<RankType, {
     scTeams: 0,
     edTeams: 0,
     fibcTeams: 0,
+    minClients: 0,
     description: 'Starting rank',
     icon: '🌱',
     note: 'Welcome to the team!'
@@ -80,60 +83,67 @@ export const RANK_REQUIREMENTS: Record<RankType, {
     scTeams: 0,
     edTeams: 0,
     fibcTeams: 0,
+    minClients: 5,
     description: '1 Point',
     icon: '⭐',
-    note: '~5 clients with qualifying orders'
+    note: 'Min 5 clients to qualify'
   },
   'Manager': {
     points: 2,
     scTeams: 0,
     edTeams: 0,
     fibcTeams: 0,
+    minClients: 5,
     description: '2 Points',
     icon: '📈',
-    note: '~10 clients with qualifying orders'
+    note: 'Min 5 clients to qualify'
   },
   'Associate Director': {
     points: 3,
     scTeams: 0,
     edTeams: 0,
     fibcTeams: 0,
+    minClients: 5,
     description: '3 Points',
     icon: '🎯',
-    note: '~15 clients with qualifying orders'
+    note: 'Min 5 clients to qualify'
   },
   'Director': {
     points: 4,
     scTeams: 0,
     edTeams: 0,
     fibcTeams: 0,
+    minClients: 5,
     description: '4 Points',
     icon: '🏅',
-    note: '~20 clients with qualifying orders'
+    note: 'Min 5 clients to qualify'
   },
   'Executive Director': {
     points: 5,
     scTeams: 0,
     edTeams: 0,
     fibcTeams: 0,
+    minClients: 5,
     description: '5 Points',
     icon: '💫',
-    note: '~25 clients with qualifying orders'
+    note: 'Min 5 clients to qualify'
   },
   'FIBC': {
     points: 5,
     scTeams: 5,
     edTeams: 0,
     fibcTeams: 0,
-    description: '5 Points + 5 SC Teams',
+    minClients: 25,
+    description: '5 Points + 5 SC + 25 Clients',
     icon: '🏆',
-    note: 'Fully Integrated Business Coach'
+    note: 'Fully Integrated Business Coach - requires 25 clients'
   },
   'Regional Director': {
     points: 5,
     scTeams: 0,
     edTeams: 1,
     fibcTeams: 0,
+    minClients: 5,
     description: '5 Points + 1 ED Team',
     icon: '🗺️',
     note: '1 frontline ED+ coach'
@@ -143,15 +153,17 @@ export const RANK_REQUIREMENTS: Record<RankType, {
     scTeams: 5,
     edTeams: 1,
     fibcTeams: 0,
-    description: '5 Points + 5 SC + 1 ED',
+    minClients: 25,
+    description: '5 Points + 5 SC + 1 ED + 25 Clients',
     icon: '🌐',
-    note: 'Integrated Regional Director'
+    note: 'Integrated Regional Director - requires 25 clients'
   },
   'National Director': {
     points: 5,
     scTeams: 0,
     edTeams: 3,
     fibcTeams: 0,
+    minClients: 5,
     description: '5 Points + 3 ED Teams',
     icon: '🏛️',
     note: '3 frontline ED+ coaches'
@@ -161,15 +173,17 @@ export const RANK_REQUIREMENTS: Record<RankType, {
     scTeams: 5,
     edTeams: 3,
     fibcTeams: 0,
-    description: '5 Points + 5 SC + 3 ED',
+    minClients: 25,
+    description: '5 Points + 5 SC + 3 ED + 25 Clients',
     icon: '🌟',
-    note: 'Integrated National Director'
+    note: 'Integrated National Director - requires 25 clients'
   },
   'Global Director': {
     points: 5,
     scTeams: 0,
     edTeams: 5,
     fibcTeams: 0,
+    minClients: 5,
     description: '5 Points + 5 ED Teams',
     icon: '🌍',
     note: '5 frontline ED+ coaches'
@@ -179,15 +193,17 @@ export const RANK_REQUIREMENTS: Record<RankType, {
     scTeams: 5,
     edTeams: 0,
     fibcTeams: 5,
-    description: '5 Points + 5 SC + 5 FIBC',
+    minClients: 25,
+    description: '5 Points + 5 SC + 5 FIBC + 25 Clients',
     icon: '💎',
-    note: 'Fully Integrated Business Leader'
+    note: 'Fully Integrated Business Leader - requires 25 clients'
   },
   'Presidential Director': {
     points: 5,
     scTeams: 0,
     edTeams: 10,
     fibcTeams: 0,
+    minClients: 5,
     description: '5 Points + 10 ED Teams',
     icon: '👑',
     note: '10 frontline ED+ coaches'
@@ -197,9 +213,10 @@ export const RANK_REQUIREMENTS: Record<RankType, {
     scTeams: 5,
     edTeams: 10,
     fibcTeams: 5,
-    description: '5 Points + 5 SC + 10 ED + 5 FIBC',
+    minClients: 25,
+    description: '5 Points + 5 SC + 10 ED + 5 FIBC + 25 Clients',
     icon: '🎖️',
-    note: 'Integrated Presidential Director'
+    note: 'Integrated Presidential Director - requires 25 clients'
   }
 }
 
@@ -345,7 +362,7 @@ export function useRankCalculator(user: User | null) {
     scCount: number,
     edCount: number,
     fibcCount: number,
-    clientCount: number = 0  // Number of clients (need 5 minimum to qualify)
+    clientCount: number = 0  // Number of clients
   ): Gaps | null => {
     const currentRankIndex = RANK_ORDER.indexOf(currentRank)
     const nextRank = currentRankIndex < RANK_ORDER.length - 1
@@ -358,7 +375,7 @@ export function useRankCalculator(user: User | null) {
 
     return {
       points: Math.max(0, nextRankReqs.points - currentPoints),
-      minClients: Math.max(0, 5 - clientCount),  // Need at least 5 clients
+      minClients: Math.max(0, nextRankReqs.minClients - clientCount),  // Use rank's minClients requirement
       scTeams: Math.max(0, nextRankReqs.scTeams - scCount),
       edTeams: Math.max(0, nextRankReqs.edTeams - edCount),
       fibcTeams: Math.max(0, nextRankReqs.fibcTeams - fibcCount)

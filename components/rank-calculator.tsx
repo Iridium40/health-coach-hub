@@ -108,7 +108,9 @@ export function RankCalculator() {
       const rank = RANK_ORDER[i]
       const reqs = RANK_REQUIREMENTS[rank]
       
+      // Check all requirements including minClients for this specific rank
       if (
+        simClients >= reqs.minClients &&
         totalPoints >= reqs.points &&
         simSCCount >= reqs.scTeams &&
         simEDCount >= reqs.edTeams &&
@@ -526,16 +528,23 @@ export function RankCalculator() {
             </div>
 
             {/* Minimum Clients Requirement */}
-            {!hasMinimumClients && (
+            {gaps.minClients > 0 && (
               <div className="flex items-center gap-2 p-2 mb-3 bg-orange-100 rounded-lg border border-orange-300">
                 <Users className="h-4 w-4 text-orange-600" />
                 <p className="text-sm text-orange-700">
-                  Need <strong>{5 - simClients}</strong> more client{5 - simClients > 1 ? 's' : ''} (min 5 required)
+                  Need <strong>{gaps.minClients}</strong> more client{gaps.minClients > 1 ? 's' : ''} ({nextRankReqs.minClients} required for {nextRank})
                 </p>
               </div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+              {/* Clients */}
+              <div className="text-center p-2 bg-white rounded">
+                <div className={`text-lg font-bold ${gaps.minClients > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {gaps.minClients > 0 ? `+${gaps.minClients}` : '✓'}
+                </div>
+                <div className="text-[10px] text-gray-500">Clients</div>
+              </div>
               <div className="text-center p-2 bg-white rounded">
                 <div className={`text-lg font-bold ${gaps.points > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                   {gaps.points > 0 ? `+${gaps.points}` : '✓'}
@@ -562,7 +571,7 @@ export function RankCalculator() {
               </div>
             </div>
 
-            {hasMinimumClients && gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0 && (
+            {gaps.minClients === 0 && gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0 && (
               <div className="flex items-center gap-2 p-2 bg-green-100 rounded-lg border border-green-300">
                 <Sparkles className="h-4 w-4 text-green-600" />
                 <p className="text-sm text-green-700 font-medium">
@@ -598,7 +607,8 @@ export function RankCalculator() {
           <div className="space-y-2 text-xs text-gray-600 mb-3">
             <p>• <strong>5 clients = 1 point</strong> (from volume)</p>
             <p>• <strong>1 SC+ frontline coach = 1 point</strong></p>
-            <p>• <strong>Minimum 5 clients</strong> required to qualify for any rank</p>
+            <p>• <strong>Minimum 5 clients</strong> required to qualify for basic ranks</p>
+            <p>• <strong>Minimum 25 clients</strong> required for FIBC & Integrated ranks</p>
           </div>
           <div className="p-2 bg-green-50 border border-green-200 rounded-lg mb-3">
             <p className="text-xs text-green-700">
@@ -608,21 +618,21 @@ export function RankCalculator() {
           <p className="text-xs font-semibold text-gray-600 mb-2">Rank Requirements:</p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-gray-500">
             <div className="space-y-0.5">
-              <p className="font-semibold text-gray-400 uppercase">Points Track</p>
+              <p className="font-semibold text-gray-400 uppercase">Points Track (5+ clients)</p>
               <p>SC: 1 pt • Mgr: 2 pts • AD: 3 pts</p>
               <p>Dir: 4 pts • ED: 5 pts</p>
-              <p className="font-semibold text-gray-400 uppercase mt-1">ED Teams Track</p>
+              <p className="font-semibold text-gray-400 uppercase mt-1">ED Teams Track (5+ clients)</p>
               <p>RD: 5 pts + 1 ED</p>
               <p>ND: 5 pts + 3 EDs • GD: 5 pts + 5 EDs</p>
               <p>PD: 5 pts + 10 EDs</p>
             </div>
             <div className="space-y-0.5">
-              <p className="font-semibold text-gray-400 uppercase">Integrated Track</p>
-              <p>FIBC: 5 pts + 5 SC teams</p>
-              <p>IRD: 5 pts + 5 SC + 1 ED</p>
-              <p>IND: 5 pts + 5 SC + 3 EDs</p>
-              <p>FIBL: 5 pts + 5 SC + 5 FIBC</p>
-              <p>IPD: 5 pts + 5 SC + 10 ED + 5 FIBC</p>
+              <p className="font-semibold text-gray-400 uppercase">Integrated Track (25 clients)</p>
+              <p>FIBC: 5 pts + 5 SC + 25 clients</p>
+              <p>IRD: 5 pts + 5 SC + 1 ED + 25 clients</p>
+              <p>IND: 5 pts + 5 SC + 3 EDs + 25 clients</p>
+              <p>FIBL: 5 pts + 5 SC + 5 FIBC + 25 clients</p>
+              <p>IPD: 5 pts + 5 SC + 10 ED + 5 FIBC + 25 clients</p>
             </div>
           </div>
         </CardContent>
