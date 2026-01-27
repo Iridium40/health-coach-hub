@@ -66,7 +66,7 @@ export function CalendarView() {
 
     const { data, error } = await supabase
       .from("zoom_calls")
-      .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,recurrence_end_date,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_by,created_at,updated_at")
+      .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,recurrence_end_date,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_by,created_at,updated_at,event_type,start_time,end_time,end_date")
       .in("status", ["upcoming", "live", "completed"])
       // Include recurring templates regardless of scheduled_at, and non-recurring calls inside the window.
       .or(`is_recurring.eq.true,and(scheduled_at.gte.${startIso},scheduled_at.lte.${endIso})`)
@@ -270,8 +270,31 @@ export function CalendarView() {
     })
   }
 
+  // Format HH:MM time string to readable format
+  const formatTimeString = (timeStr: string): string => {
+    if (!timeStr) return ""
+    const [hours, minutes] = timeStr.split(':').map(Number)
+    const date = new Date()
+    date.setHours(hours, minutes, 0, 0)
+    return date.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit'
+    })
+  }
+
   // Simple time format for compact displays
-  const formatTime = (dateString: string, eventTimezone?: string) => {
+  const formatTime = (dateString: string, eventTimezone?: string, startTime?: string | null, endTime?: string | null) => {
+    // If event has specific start/end times, use those
+    if (startTime) {
+      const start = formatTimeString(startTime)
+      if (endTime) {
+        const end = formatTimeString(endTime)
+        return `${start} - ${end}`
+      }
+      return start
+    }
+    
+    // Otherwise use the scheduled_at time
     const date = new Date(dateString)
     const localTime = date.toLocaleTimeString(undefined, {
       hour: 'numeric',
@@ -293,6 +316,11 @@ export function CalendarView() {
     }
     
     return localTime
+  }
+  
+  // Check if event is all-day (no specific times)
+  const isAllDayEvent = (event: ExpandedZoomCall): boolean => {
+    return event.event_type === 'event' && !event.start_time
   }
 
   const isToday = (date: Date) => {
@@ -449,7 +477,7 @@ export function CalendarView() {
                         className={`w-full text-left text-[10px] sm:text-xs text-white rounded px-0.5 sm:px-1 py-0 sm:py-0.5 truncate relative ${getCallTypeColor(event.call_type)}`}
                       >
                         {getStatusIndicator(event.status)}
-                        <span className="hidden sm:inline">{formatTime(event.occurrence_date, event.timezone)} </span>
+                        <span className="hidden sm:inline">{isAllDayEvent(event) ? "All day" : formatTime(event.occurrence_date, event.timezone, event.start_time, event.end_time)} </span>
                         <span className="hidden sm:inline">{event.title}</span>
                         <span className="sm:hidden">{event.title.substring(0, 8)}{event.title.length > 8 ? "…" : ""}</span>
                       </button>
@@ -531,7 +559,7 @@ export function CalendarView() {
                           {/* Time */}
                           <div className="flex items-center gap-1 text-xs font-medium text-gray-600 mb-1">
                             <Clock className="h-3 w-3" />
-                            {formatTime(event.occurrence_date, event.timezone)}
+                            {isAllDayEvent(event) ? "All day" : formatTime(event.occurrence_date, event.timezone, event.start_time, event.end_time)}
                           </div>
                           
                           {/* Title */}
@@ -633,7 +661,13 @@ export function CalendarView() {
                 <div className="flex items-center gap-2 sm:gap-3 text-optavia-gray text-sm sm:text-base">
                   <Clock className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                   <span>
-                    {formatTime(selectedEvent.occurrence_date, selectedEvent.timezone)} {selectedEvent.duration_minutes && `(${selectedEvent.duration_minutes} min)`}
+                    {isAllDayEvent(selectedEvent) 
+                      ? "All day event" 
+                      : <>
+                          {formatTime(selectedEvent.occurrence_date, selectedEvent.timezone, selectedEvent.start_time, selectedEvent.end_time)}
+                          {selectedEvent.duration_minutes && !selectedEvent.start_time && ` (${selectedEvent.duration_minutes} min)`}
+                        </>
+                    }
                   </span>
                 </div>
 
