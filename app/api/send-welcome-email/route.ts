@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   if (response) return response
 
   try {
-    const { to, fullName, coachRank } = await request.json()
+    const { to, fullName } = await request.json()
 
     if (!to || !fullName) {
       return NextResponse.json(
@@ -34,22 +34,15 @@ export async function POST(request: NextRequest) {
           Welcome to <strong>Coaching Amplifier</strong>! We're excited to have you join our community of coaches dedicated to amplifying their business and supporting their clients.
         </p>
         
-        ${coachRank ? `
-          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2d5016;">
-            <p style="margin: 0; font-size: 15px; color: #333;">
-              <strong style="color: #2d5016;">Your Coach Rank:</strong> ${coachRank}
-            </p>
-          </div>
-        ` : ""}
-        
         <div style="background-color: #e7f5e7; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #2d5016;">
-          <h2 style="color: #2d5016; margin-top: 0; font-size: 20px; font-weight: bold;">What's Next?</h2>
+          <h2 style="color: #2d5016; margin-top: 0; font-size: 20px; font-weight: bold;">What's Inside?</h2>
           <ul style="margin: 10px 0; padding-left: 20px; color: #333; font-size: 15px; line-height: 1.8;">
-            <li>Explore our comprehensive resource library</li>
-            <li>Access training modules to enhance your coaching skills</li>
-            <li>Discover Lean & Green recipes for your clients</li>
-            <li>Track your progress and earn achievement badges</li>
-            <li>Connect with OPTAVIA resources and tools</li>
+            <li>Step-by-step training modules for every stage of your coaching journey</li>
+            <li>Client Tracker to manage touchpoints and celebrate milestones</li>
+            <li>100's List and Prospect Pipeline to grow your business</li>
+            <li>Calendar with team calls and events</li>
+            <li>Lean & Green recipes to share with your clients</li>
+            <li>Rank Calculator to track your path to the next level</li>
           </ul>
         </div>
         
@@ -65,16 +58,19 @@ export async function POST(request: NextRequest) {
           <h3 style="color: #2d5016; margin-top: 0; font-size: 18px; font-weight: bold;">Quick Tips to Get Started</h3>
           <div style="margin-top: 15px;">
             <p style="margin: 10px 0; font-size: 15px; color: #333;">
-              <strong style="color: #2d5016;">📚 Training Tab:</strong> Browse modules organized by category - Getting Started, Business Building, Client Support, and Training.
+              <strong style="color: #2d5016;">📊 Dashboard:</strong> Your home base with quick stats, upcoming events, and personalized recommendations.
             </p>
             <p style="margin: 10px 0; font-size: 15px; color: #333;">
-              <strong style="color: #2d5016;">🍽️ Recipes Tab:</strong> Access a collection of Lean & Green recipes to share with your clients.
+              <strong style="color: #2d5016;">📚 Training:</strong> Follow the guided curriculum from orientation through leadership development.
             </p>
             <p style="margin: 10px 0; font-size: 15px; color: #333;">
-              <strong style="color: #2d5016;">🏆 Achievements:</strong> Complete resources in each category to earn achievement badges and track your progress.
+              <strong style="color: #2d5016;">👥 My Business:</strong> Access your Client Tracker, 100's List, Prospect Pipeline, and Rank Calculator.
             </p>
             <p style="margin: 10px 0; font-size: 15px; color: #333;">
-              <strong style="color: #2d5016;">⚙️ Settings:</strong> Customize your profile, upload an avatar, and manage your notification preferences.
+              <strong style="color: #2d5016;">📅 Calendar:</strong> Never miss a team call or event - join directly from the app.
+            </p>
+            <p style="margin: 10px 0; font-size: 15px; color: #333;">
+              <strong style="color: #2d5016;">🍽️ Recipes:</strong> Browse Lean & Green recipes you can share with your clients.
             </p>
           </div>
         </div>
@@ -101,26 +97,28 @@ Hi ${fullName},
 
 Welcome to Coaching Amplifier! We're excited to have you join our community of coaches dedicated to amplifying their business and supporting their clients.
 
-${coachRank ? `Your Coach Rank: ${coachRank}\n\n` : ""}
-What's Next?
+What's Inside?
 
-• Explore our comprehensive resource library
-• Access training modules to enhance your coaching skills
-• Discover Lean & Green recipes for your clients
-• Track your progress and earn achievement badges
-• Connect with OPTAVIA resources and tools
+• Step-by-step training modules for every stage of your coaching journey
+• Client Tracker to manage touchpoints and celebrate milestones
+• 100's List and Prospect Pipeline to grow your business
+• Calendar with team calls and events
+• Lean & Green recipes to share with your clients
+• Rank Calculator to track your path to the next level
 
 Ready to get started? Visit your dashboard: ${appUrl}
 
 Quick Tips to Get Started:
 
-📚 Training Tab: Browse modules organized by category - Getting Started, Business Building, Client Support, and Training.
+📊 Dashboard: Your home base with quick stats, upcoming events, and personalized recommendations.
 
-🍽️ Recipes Tab: Access a collection of Lean & Green recipes to share with your clients.
+📚 Training: Follow the guided curriculum from orientation through leadership development.
 
-🏆 Achievements: Complete resources in each category to earn achievement badges and track your progress.
+👥 My Business: Access your Client Tracker, 100's List, Prospect Pipeline, and Rank Calculator.
 
-⚙️ Settings: Customize your profile, upload an avatar, and manage your notification preferences.
+📅 Calendar: Never miss a team call or event - join directly from the app.
+
+🍽️ Recipes: Browse Lean & Green recipes you can share with your clients.
 
 If you have any questions or need assistance, don't hesitate to reach out. We're here to support your success!
 

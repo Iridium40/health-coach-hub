@@ -21,7 +21,6 @@ export interface BadgeEmailData {
 export interface WelcomeEmailData {
   to: string
   fullName: string
-  coachRank?: string
 }
 
 export interface AnnouncementEmailData {
