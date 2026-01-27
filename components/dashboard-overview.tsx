@@ -115,7 +115,10 @@ export function DashboardOverview() {
   const { getBookmarkedIds } = useBookmarks(user)
 
   // Rank calculator
-  const { rankData, frontlineCoaches, edTeamsCount, gdTeamsCount, calculateGaps, getNextRank } = useRankCalculator(user)
+  const { rankData, frontlineCoaches, qualifyingLegsCount, edTeamsCount, fibcTeamsCount, calculateGaps, getNextRank } = useRankCalculator(user)
+  
+  // Estimate points from clients (~5 clients = 1 point)
+  const estimatedPoints = Math.floor(clientStats.active / 5)
 
   const [upcomingMeetings, setUpcomingMeetings] = useState<ExpandedZoomCall[]>([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
@@ -306,14 +309,14 @@ export function DashboardOverview() {
 
   // Calculate rank gaps for RankProgressCard
   const nextRank = rankData ? getNextRank(rankData.current_rank as RankType) : null
-  const gaps = rankData ? calculateGaps(rankData.current_rank as RankType, clientStats.active, edTeamsCount, gdTeamsCount) : null
+  const gaps = rankData ? calculateGaps(rankData.current_rank as RankType, estimatedPoints, qualifyingLegsCount, edTeamsCount, fibcTeamsCount) : null
 
   // Check if ready for promotion and show celebration
   useEffect(() => {
     if (!rankData || !nextRank || !gaps) return
     
     // Check if all gaps are 0 (ready for promotion)
-    const isReadyForPromotion = gaps.clients === 0 && gaps.coaches === 0 && gaps.edTeams === 0 && gaps.gdTeams === 0
+    const isReadyForPromotion = gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0
     
     if (isReadyForPromotion) {
       // Check if we've already shown this celebration (using localStorage)
@@ -574,10 +577,10 @@ export function DashboardOverview() {
           <RankProgressCard
             currentRank={rankData.current_rank}
             nextRank={nextRank}
-            activeClients={clientStats.active}
-            frontlineCoaches={frontlineCoaches.length}
+            points={estimatedPoints}
+            scTeams={qualifyingLegsCount}
             edTeams={edTeamsCount}
-            gdTeams={gdTeamsCount}
+            fibcTeams={fibcTeamsCount}
             gaps={gaps}
           />
         </div>

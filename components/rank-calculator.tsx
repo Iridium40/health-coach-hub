@@ -6,13 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -31,7 +24,8 @@ import {
   RANK_REQUIREMENTS,
   RANK_COLORS,
   isEDOrHigher,
-  isGDOrHigher,
+  isFIBCOrHigher,
+  isQualifyingLeg,
   type RankType,
 } from "@/hooks/use-rank-calculator"
 import {
@@ -44,6 +38,7 @@ import {
   RotateCcw,
   Sparkles,
   ExternalLink,
+  Zap,
 } from "lucide-react"
 
 interface SimulatedCoach {
@@ -54,9 +49,18 @@ interface SimulatedCoach {
 // Coach rank options for the dropdown
 const COACH_RANK_OPTIONS: { value: RankType; label: string; color: string }[] = [
   { value: "Coach", label: "Coach", color: "bg-gray-500" },
-  { value: "Senior Coach", label: "Senior Coach", color: "bg-blue-500" },
+  { value: "Senior Coach", label: "Senior Coach (SC)", color: "bg-blue-500" },
+  { value: "Manager", label: "Manager", color: "bg-teal-500" },
+  { value: "Associate Director", label: "Associate Director (AD)", color: "bg-indigo-500" },
+  { value: "Director", label: "Director", color: "bg-violet-500" },
   { value: "Executive Director", label: "Executive Director (ED)", color: "bg-purple-500" },
+  { value: "FIBC", label: "FIBC", color: "bg-fuchsia-500" },
+  { value: "Regional Director", label: "Regional Director (RD)", color: "bg-cyan-500" },
+  { value: "Integrated RD", label: "Integrated RD (IRD)", color: "bg-sky-500" },
+  { value: "National Director", label: "National Director (ND)", color: "bg-emerald-500" },
+  { value: "Integrated ND", label: "Integrated ND (IND)", color: "bg-green-500" },
   { value: "Global Director", label: "Global Director (GD)", color: "bg-yellow-500" },
+  { value: "FIBL", label: "FIBL", color: "bg-amber-500" },
   { value: "Presidential Director", label: "Presidential Director (PD)", color: "bg-orange-500" },
   { value: "IPD", label: "IPD", color: "bg-red-500" },
 ]
@@ -79,8 +83,8 @@ export function RankCalculator() {
   const currentRank = (rankData?.current_rank || "Coach") as RankType
   const activeClients = clientStats.active
   
-  // Simulation state
-  const [simClients, setSimClients] = useState(activeClients)
+  // Simulation state - Points from clients (5 clients = 1 point)
+  const [simPoints, setSimPoints] = useState(Math.floor(activeClients / 5))
   const [simCoaches, setSimCoaches] = useState<SimulatedCoach[]>(
     frontlineCoaches.map(c => ({
       id: c.id,
@@ -90,29 +94,29 @@ export function RankCalculator() {
 
   // Update simulation when actual data changes
   useEffect(() => {
-    setSimClients(activeClients)
+    setSimPoints(Math.floor(activeClients / 5))
     setSimCoaches(frontlineCoaches.map(c => ({
       id: c.id,
       rank: c.coach_rank as RankType
     })))
   }, [activeClients, frontlineCoaches])
 
-  // Calculate ED and GD counts from simulated coaches
+  // Calculate team counts from simulated coaches
+  const simSCCount = simCoaches.filter(c => isQualifyingLeg(c.rank)).length
   const simEDCount = simCoaches.filter(c => isEDOrHigher(c.rank)).length
-  const simGDCount = simCoaches.filter(c => isGDOrHigher(c.rank)).length
+  const simFIBCCount = simCoaches.filter(c => isFIBCOrHigher(c.rank)).length
 
   // Determine rank based on simulated stats
   const calculateRank = (): RankType => {
-    // Start from highest rank and work down
     for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
       const rank = RANK_ORDER[i]
       const reqs = RANK_REQUIREMENTS[rank]
       
       if (
-        simClients >= reqs.minClients &&
-        simCoaches.length >= reqs.frontlineCoaches &&
+        simPoints >= reqs.points &&
+        simSCCount >= reqs.scTeams &&
         simEDCount >= reqs.edTeams &&
-        simGDCount >= reqs.gdTeams
+        simFIBCCount >= reqs.fibcTeams
       ) {
         return rank
       }
@@ -133,10 +137,10 @@ export function RankCalculator() {
 
   // Calculate gaps to next rank
   const gaps = nextRankReqs ? {
-    clients: Math.max(0, nextRankReqs.minClients - simClients),
-    coaches: Math.max(0, nextRankReqs.frontlineCoaches - simCoaches.length),
+    points: Math.max(0, nextRankReqs.points - simPoints),
+    scTeams: Math.max(0, nextRankReqs.scTeams - simSCCount),
     edTeams: Math.max(0, nextRankReqs.edTeams - simEDCount),
-    gdTeams: Math.max(0, nextRankReqs.gdTeams - simGDCount),
+    fibcTeams: Math.max(0, nextRankReqs.fibcTeams - simFIBCCount),
   } : null
 
   // Add a coach
@@ -152,7 +156,7 @@ export function RankCalculator() {
 
   // Reset to current
   const resetSimulation = () => {
-    setSimClients(activeClients)
+    setSimPoints(Math.floor(activeClients / 5))
     setSimCoaches(frontlineCoaches.map(c => ({
       id: c.id,
       rank: c.coach_rank as RankType
@@ -167,15 +171,15 @@ export function RankCalculator() {
     setShowRankSelector(false)
   }
 
-  // Generate client icons array for visual display
-  const clientIcons = useMemo(() => {
+  // Generate point icons for visual display
+  const pointIcons = useMemo(() => {
     const icons = []
-    const displayCount = Math.min(simClients, 20) // Cap visual display at 20
+    const displayCount = Math.min(simPoints, 10)
     for (let i = 0; i < displayCount; i++) {
       icons.push(i)
     }
     return icons
-  }, [simClients])
+  }, [simPoints])
 
   if (loading) {
     return (
@@ -185,6 +189,24 @@ export function RankCalculator() {
         </CardContent>
       </Card>
     )
+  }
+
+  // Get abbreviated rank name for display
+  const getShortRank = (rank: string) => {
+    const map: Record<string, string> = {
+      'Senior Coach': 'SC',
+      'Manager': 'Mgr',
+      'Associate Director': 'AD',
+      'Director': 'Dir',
+      'Executive Director': 'ED',
+      'Regional Director': 'RD',
+      'Integrated RD': 'IRD',
+      'National Director': 'ND',
+      'Integrated ND': 'IND',
+      'Global Director': 'GD',
+      'Presidential Director': 'PD',
+    }
+    return map[rank] || rank
   }
 
   return (
@@ -225,7 +247,7 @@ export function RankCalculator() {
                 {projectedRank}
               </h3>
               <p className="text-xs text-gray-600 mt-0.5">
-                {simEDCount} ED teams • {simGDCount} GD teams
+                {simPoints} pts • {simSCCount} SC • {simEDCount} ED • {simFIBCCount} FIBC
               </p>
             </div>
             {projectedRank !== currentRank && (
@@ -239,31 +261,31 @@ export function RankCalculator() {
 
       {/* Simulation Controls */}
       <div className="grid grid-cols-1 gap-4">
-        {/* Active Clients with People Icons */}
+        {/* Points (from client volume) */}
         <Card>
           <CardContent className="p-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-green-500" />
-                  Active Clients
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  Qualifying Points
                 </Label>
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setSimClients(Math.max(0, simClients - 1))}
+                    onClick={() => setSimPoints(Math.max(0, simPoints - 1))}
                     className="h-8 w-8 p-0"
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="text-xl font-bold text-green-600 w-10 text-center">
-                    {simClients}
+                  <span className="text-xl font-bold text-amber-600 w-10 text-center">
+                    {simPoints}
                   </span>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setSimClients(simClients + 1)}
+                    onClick={() => setSimPoints(simPoints + 1)}
                     className="h-8 w-8 p-0"
                   >
                     <Plus className="h-4 w-4" />
@@ -271,25 +293,29 @@ export function RankCalculator() {
                 </div>
               </div>
 
-              {/* People Icons Grid */}
+              {/* Point Icons */}
               <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-                {clientIcons.map((i) => (
+                {pointIcons.map((i) => (
                   <div
                     key={i}
-                    className="w-7 h-7 rounded-full bg-green-100 border-2 border-green-400 flex items-center justify-center"
+                    className="w-7 h-7 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center"
                   >
-                    <User className="h-4 w-4 text-green-600" />
+                    <Zap className="h-4 w-4 text-amber-600" />
                   </div>
                 ))}
-                {simClients > 20 && (
-                  <div className="w-7 h-7 rounded-full bg-green-200 border-2 border-green-400 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-green-700">+{simClients - 20}</span>
+                {simPoints > 10 && (
+                  <div className="w-7 h-7 rounded-full bg-amber-200 border-2 border-amber-400 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-amber-700">+{simPoints - 10}</span>
                   </div>
                 )}
-                {simClients === 0 && (
-                  <p className="text-xs text-gray-400 italic">No clients added</p>
+                {simPoints === 0 && (
+                  <p className="text-xs text-gray-400 italic">No points yet</p>
                 )}
               </div>
+              
+              <p className="text-xs text-gray-500">
+                ~5 clients = 1 point (from volume)
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -304,80 +330,76 @@ export function RankCalculator() {
                   Frontline Coaches
                 </Label>
                 <Badge variant="secondary" className="text-sm bg-purple-100 text-purple-700">
-                  {simCoaches.length} total ({simEDCount} ED+)
+                  {simCoaches.length} total
                 </Badge>
               </div>
 
-              {/* Add Coach Button with Popover */}
-              <div className="flex gap-2">
-                <Popover open={addCoachOpen} onOpenChange={setAddCoachOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="flex-1 justify-start gap-2 border-dashed"
-                    >
-                      <Plus className="h-4 w-4 text-green-500" />
-                      <span className="text-gray-600">Add a coach...</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64 p-2" align="start">
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-gray-500 px-2 pb-1">Select coach rank:</p>
-                      {COACH_RANK_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => addCoach(option.value)}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-left"
-                        >
-                          <div className={`w-3 h-3 rounded-full ${option.color}`} />
-                          <span className="text-sm">{option.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
+              {/* Add Coach Button */}
+              <Popover open={addCoachOpen} onOpenChange={setAddCoachOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 border-dashed"
+                  >
+                    <Plus className="h-4 w-4 text-green-500" />
+                    <span className="text-gray-600">Add a coach...</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-2" align="start">
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    <p className="text-xs font-medium text-gray-500 px-2 pb-1">Select coach rank:</p>
+                    {COACH_RANK_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => addCoach(option.value)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-left"
+                      >
+                        <div className={`w-3 h-3 rounded-full ${option.color}`} />
+                        <span className="text-sm">{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
 
-              {/* Coach List with Individual Remove Buttons */}
+              {/* Coach List */}
               {simCoaches.length > 0 && (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
                   {simCoaches.map((coach, idx) => {
+                    const isSC = isQualifyingLeg(coach.rank)
                     const isED = isEDOrHigher(coach.rank)
-                    const isGD = isGDOrHigher(coach.rank)
+                    const isFIBC = isFIBCOrHigher(coach.rank)
                     const rankOption = COACH_RANK_OPTIONS.find(o => o.value === coach.rank)
                     
                     return (
                       <div
                         key={coach.id}
                         className={`flex items-center justify-between p-2 rounded-lg text-sm ${
-                          isGD 
-                            ? 'bg-yellow-50 border border-yellow-300' 
+                          isFIBC 
+                            ? 'bg-fuchsia-50 border border-fuchsia-300' 
                             : isED 
                               ? 'bg-purple-50 border border-purple-200' 
-                              : 'bg-gray-50 border border-gray-200'
+                              : isSC
+                                ? 'bg-blue-50 border border-blue-200'
+                                : 'bg-gray-50 border border-gray-200'
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <div className={`w-3 h-3 rounded-full ${rankOption?.color || 'bg-gray-400'}`} />
                           <span className="text-gray-700">Coach {idx + 1}</span>
+                          <div className="flex gap-1">
+                            {isSC && <span className="text-[9px] text-blue-500 bg-blue-100 px-1 rounded">SC</span>}
+                            {isED && <span className="text-[9px] text-purple-500 bg-purple-100 px-1 rounded">ED</span>}
+                            {isFIBC && <span className="text-[9px] text-fuchsia-500 bg-fuchsia-100 px-1 rounded">FIBC</span>}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={isGD ? "default" : isED ? "default" : "secondary"} 
-                            className={`text-xs ${
-                              isGD 
-                                ? 'bg-yellow-500' 
-                                : isED 
-                                  ? 'bg-purple-500' 
-                                  : ''
-                            }`}
-                          >
-                            {coach.rank}
+                          <Badge variant="secondary" className="text-xs">
+                            {getShortRank(coach.rank)}
                           </Badge>
                           <button
                             onClick={() => removeCoach(coach.id)}
                             className="p-1 rounded-full hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
-                            title="Remove coach"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
@@ -392,16 +414,19 @@ export function RankCalculator() {
                 <p className="text-xs text-gray-400 italic text-center py-2">No coaches added yet</p>
               )}
 
-              {/* ED/GD Summary */}
-              <div className="flex gap-2 text-xs">
-                <div className="flex-1 p-2 bg-purple-50 rounded text-center">
-                  <span className="font-bold text-purple-600">{simEDCount}</span>
-                  <span className="text-purple-500 ml-1">ED+ teams</span>
+              {/* Team Summary */}
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="p-2 bg-blue-50 rounded text-center border border-blue-200">
+                  <span className="font-bold text-blue-600">{simSCCount}</span>
+                  <span className="text-blue-500 block text-[10px]">SC+ teams</span>
                 </div>
-                <div className="flex-1 p-2 bg-yellow-50 rounded text-center">
-                  <span className="font-bold text-yellow-600">{simGDCount}</span>
-                  <span className="text-yellow-600 ml-1">GD+ teams</span>
-                  <span className="text-[9px] text-yellow-500 block">(GD or higher)</span>
+                <div className="p-2 bg-purple-50 rounded text-center border border-purple-200">
+                  <span className="font-bold text-purple-600">{simEDCount}</span>
+                  <span className="text-purple-500 block text-[10px]">ED+ teams</span>
+                </div>
+                <div className="p-2 bg-fuchsia-50 rounded text-center border border-fuchsia-200">
+                  <span className="font-bold text-fuchsia-600">{simFIBCCount}</span>
+                  <span className="text-fuchsia-500 block text-[10px]">FIBC+ teams</span>
                 </div>
               </div>
             </div>
@@ -422,32 +447,32 @@ export function RankCalculator() {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
               <div className="text-center p-2 bg-white rounded">
-                <div className={`text-lg font-bold ${gaps.clients > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                  {gaps.clients > 0 ? `+${gaps.clients}` : '✓'}
+                <div className={`text-lg font-bold ${gaps.points > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {gaps.points > 0 ? `+${gaps.points}` : '✓'}
                 </div>
-                <div className="text-[10px] text-gray-500">Clients</div>
+                <div className="text-[10px] text-gray-500">Points</div>
               </div>
               <div className="text-center p-2 bg-white rounded">
-                <div className={`text-lg font-bold ${gaps.coaches > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                  {gaps.coaches > 0 ? `+${gaps.coaches}` : '✓'}
+                <div className={`text-lg font-bold ${gaps.scTeams > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {gaps.scTeams > 0 ? `+${gaps.scTeams}` : '✓'}
                 </div>
-                <div className="text-[10px] text-gray-500">Coaches</div>
+                <div className="text-[10px] text-gray-500">SC teams</div>
               </div>
               <div className="text-center p-2 bg-white rounded">
                 <div className={`text-lg font-bold ${gaps.edTeams > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                   {gaps.edTeams > 0 ? `+${gaps.edTeams}` : '✓'}
                 </div>
-                <div className="text-[10px] text-gray-500">ED Teams</div>
+                <div className="text-[10px] text-gray-500">ED teams</div>
               </div>
               <div className="text-center p-2 bg-white rounded">
-                <div className={`text-lg font-bold ${gaps.gdTeams > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                  {gaps.gdTeams > 0 ? `+${gaps.gdTeams}` : '✓'}
+                <div className={`text-lg font-bold ${gaps.fibcTeams > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {gaps.fibcTeams > 0 ? `+${gaps.fibcTeams}` : '✓'}
                 </div>
-                <div className="text-[10px] text-gray-500">GD+ Teams</div>
+                <div className="text-[10px] text-gray-500">FIBC teams</div>
               </div>
             </div>
 
-            {gaps.clients === 0 && gaps.coaches === 0 && gaps.edTeams === 0 && gaps.gdTeams === 0 && (
+            {gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0 && (
               <div className="flex items-center gap-2 p-2 bg-green-100 rounded-lg border border-green-300">
                 <Sparkles className="h-4 w-4 text-green-600" />
                 <p className="text-sm text-green-700 font-medium">
@@ -479,11 +504,24 @@ export function RankCalculator() {
       {/* Rank Progression Info */}
       <Card className="bg-gray-50">
         <CardContent className="p-4">
-          <p className="text-xs font-semibold text-gray-600 mb-2">Rank Progression (ED-based):</p>
-          <div className="space-y-1 text-xs text-gray-500">
-            <p>• <strong>5 EDs</strong> → Global Director (GD)</p>
-            <p>• <strong>10 EDs</strong> → Presidential Director (PD)</p>
-            <p>• <strong>10 EDs + 5 GD+</strong> → IPD <span className="text-gray-400">(GD or higher)</span></p>
+          <p className="text-xs font-semibold text-gray-600 mb-2">Rank Requirements:</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-gray-500">
+            <div className="space-y-0.5">
+              <p className="font-semibold text-gray-400 uppercase">Points Track</p>
+              <p>SC: 1 pt • Mgr: 2 pts • AD: 3 pts</p>
+              <p>Dir: 4 pts • ED: 5 pts</p>
+              <p className="font-semibold text-gray-400 uppercase mt-1">ED Teams Track</p>
+              <p>RD: 1 ED • ND: 3 EDs • GD: 5 EDs</p>
+              <p>PD: 10 EDs</p>
+            </div>
+            <div className="space-y-0.5">
+              <p className="font-semibold text-gray-400 uppercase">Integrated Track</p>
+              <p>FIBC: 5 pts + 5 SC teams</p>
+              <p>IRD: 5 pts + 5 SC + 1 ED</p>
+              <p>IND: 5 pts + 5 SC + 3 EDs</p>
+              <p>FIBL: 5 pts + 5 SC + 5 FIBC</p>
+              <p>IPD: 5 pts + 5 SC + 10 ED + 5 FIBC</p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -496,41 +534,9 @@ export function RankCalculator() {
         className="flex items-center justify-center gap-2 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-gray-700 text-sm"
       >
         <img src="/media/optavia_logo.svg" alt="" className="h-4 w-4" />
-        Verify volume in OPTAVIA Connect
+        Verify in OPTAVIA Connect
         <ExternalLink className="h-3 w-3" />
       </a>
-
-      {/* Rank Journey */}
-      <div className="flex items-center justify-between overflow-x-auto pb-2 gap-1 px-1">
-        {RANK_ORDER.map((rank, idx) => {
-          const isCurrentOrPast = idx <= projectedRankIndex
-          const isCurrent = rank === projectedRank
-          const colors = RANK_COLORS[rank]
-
-          return (
-            <div key={rank} className="flex items-center">
-              <div className={`flex flex-col items-center ${isCurrent ? "scale-110" : ""}`}>
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm
-                    ${isCurrentOrPast ? colors.accent + " text-white" : "bg-gray-200 text-gray-400"}`}
-                >
-                  {RANK_REQUIREMENTS[rank].icon}
-                </div>
-                <span className={`text-[9px] mt-0.5 text-center ${isCurrent ? "font-bold" : "text-gray-400"}`}>
-                  {rank === "Executive Director" ? "ED" : 
-                   rank === "Senior Coach" ? "SC" :
-                   rank === "Global Director" ? "GD" :
-                   rank === "Presidential Director" ? "PD" :
-                   rank}
-                </span>
-              </div>
-              {idx < RANK_ORDER.length - 1 && (
-                <div className={`w-4 h-0.5 mx-0.5 ${idx < projectedRankIndex ? "bg-green-400" : "bg-gray-200"}`} />
-              )}
-            </div>
-          )
-        })}
-      </div>
 
       {/* Rank Selector Modal */}
       <Dialog open={showRankSelector} onOpenChange={setShowRankSelector}>

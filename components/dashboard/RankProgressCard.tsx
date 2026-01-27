@@ -5,31 +5,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { TrendingUp, ChevronRight, Trophy, Users, Star, Crown } from "lucide-react"
+import { TrendingUp, ChevronRight, Trophy, Zap, Star, Crown } from "lucide-react"
 import { RANK_REQUIREMENTS, type RankType } from "@/hooks/use-rank-calculator"
 
 interface RankProgressCardProps {
   currentRank: string
   nextRank: string | null
-  activeClients: number
-  frontlineCoaches: number
+  points: number
+  scTeams: number
   edTeams: number
-  gdTeams: number
+  fibcTeams: number
   gaps: {
-    clients: number
-    coaches: number
+    points: number
+    scTeams: number
     edTeams: number
-    gdTeams: number
+    fibcTeams: number
   } | null
 }
 
 export function RankProgressCard({
   currentRank,
   nextRank,
-  activeClients,
-  frontlineCoaches,
+  points,
+  scTeams,
   edTeams,
-  gdTeams,
+  fibcTeams,
   gaps,
 }: RankProgressCardProps) {
   const currentReqs = RANK_REQUIREMENTS[currentRank as RankType]
@@ -38,9 +38,8 @@ export function RankProgressCard({
   // Calculate progress percentage toward next rank
   let progressPercent = 100
   if (nextReqs && gaps) {
-    const totalNeeded = (nextReqs.minClients || 0) + (nextReqs.frontlineCoaches || 0) + (nextReqs.edTeams || 0) + (nextReqs.gdTeams || 0)
-    const totalHave = activeClients + frontlineCoaches + edTeams + gdTeams
-    const totalGaps = gaps.clients + gaps.coaches + gaps.edTeams + gaps.gdTeams
+    const totalNeeded = (nextReqs.points || 0) + (nextReqs.scTeams || 0) + (nextReqs.edTeams || 0) + (nextReqs.fibcTeams || 0)
+    const totalGaps = gaps.points + gaps.scTeams + gaps.edTeams + gaps.fibcTeams
     if (totalNeeded > 0) {
       progressPercent = Math.round(((totalNeeded - totalGaps) / totalNeeded) * 100)
     }
@@ -90,43 +89,43 @@ export function RankProgressCard({
 
               {/* Requirements */}
               <div className="space-y-1">
-                {gaps && gaps.clients > 0 && (
+                {gaps && gaps.points > 0 && (
                   <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-green-500" />
+                    <Zap className="h-4 w-4 text-amber-500" />
                     <span className="text-gray-700">
-                      Need <strong className="text-amber-700">{gaps.clients}</strong> more client{gaps.clients > 1 ? 's' : ''}
+                      Need <strong className="text-amber-700">{gaps.points}</strong> more point{gaps.points > 1 ? 's' : ''}
                     </span>
-                    <span className="text-xs text-gray-400">({activeClients}/{nextReqs.minClients})</span>
+                    <span className="text-xs text-gray-400">({points}/{nextReqs.points})</span>
                   </div>
                 )}
-                {gaps && gaps.coaches > 0 && (
+                {gaps && gaps.scTeams > 0 && (
                   <div className="flex items-center gap-2 text-sm">
-                    <Star className="h-4 w-4 text-purple-500" />
+                    <Star className="h-4 w-4 text-blue-500" />
                     <span className="text-gray-700">
-                      Need <strong className="text-amber-700">{gaps.coaches}</strong> more coach{gaps.coaches > 1 ? 'es' : ''}
+                      Need <strong className="text-amber-700">{gaps.scTeams}</strong> SC team{gaps.scTeams > 1 ? 's' : ''}
                     </span>
-                    <span className="text-xs text-gray-400">({frontlineCoaches}/{nextReqs.frontlineCoaches})</span>
+                    <span className="text-xs text-gray-400">({scTeams}/{nextReqs.scTeams})</span>
                   </div>
                 )}
                 {gaps && gaps.edTeams > 0 && (
                   <div className="flex items-center gap-2 text-sm">
-                    <Trophy className="h-4 w-4 text-purple-500" />
+                    <Crown className="h-4 w-4 text-purple-500" />
                     <span className="text-gray-700">
                       Need <strong className="text-amber-700">{gaps.edTeams}</strong> ED team{gaps.edTeams > 1 ? 's' : ''}
                     </span>
                     <span className="text-xs text-gray-400">({edTeams}/{nextReqs.edTeams})</span>
                   </div>
                 )}
-                {gaps && gaps.gdTeams > 0 && (
+                {gaps && gaps.fibcTeams > 0 && (
                   <div className="flex items-center gap-2 text-sm">
-                    <Crown className="h-4 w-4 text-yellow-500" />
+                    <Trophy className="h-4 w-4 text-fuchsia-500" />
                     <span className="text-gray-700">
-                      Need <strong className="text-amber-700">{gaps.gdTeams}</strong> GD+ team{gaps.gdTeams > 1 ? 's' : ''}
+                      Need <strong className="text-amber-700">{gaps.fibcTeams}</strong> FIBC team{gaps.fibcTeams > 1 ? 's' : ''}
                     </span>
-                    <span className="text-xs text-gray-400">({gdTeams}/{nextReqs.gdTeams})</span>
+                    <span className="text-xs text-gray-400">({fibcTeams}/{nextReqs.fibcTeams})</span>
                   </div>
                 )}
-                {gaps && gaps.clients === 0 && gaps.coaches === 0 && gaps.edTeams === 0 && gaps.gdTeams === 0 && (
+                {gaps && gaps.points === 0 && gaps.scTeams === 0 && gaps.edTeams === 0 && gaps.fibcTeams === 0 && (
                   <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
                     <Trophy className="h-4 w-4" />
                     Ready for promotion!

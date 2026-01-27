@@ -4,12 +4,21 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 
-// Rank order (simplified for the calculator)
+// Full OPTAVIA Rank order including integrated track
 export const RANK_ORDER = [
   'Coach',
   'Senior Coach',
+  'Manager',
+  'Associate Director',
+  'Director',
   'Executive Director',
+  'FIBC',
+  'Regional Director',
+  'Integrated RD',
+  'National Director',
+  'Integrated ND',
   'Global Director',
+  'FIBL',
   'Presidential Director',
   'IPD'
 ] as const
@@ -22,106 +31,194 @@ export function getRankIndex(rank: string): number {
   return index >= 0 ? index : 0
 }
 
-// Check if a coach qualifies as a "qualifying leg" (Senior Coach or higher)
+// Check if a coach qualifies as SC+ (Senior Coach or higher) - counts as 1 QP
 export function isQualifyingLeg(rank: string): boolean {
   return getRankIndex(rank) >= 1 // Senior Coach or higher
 }
 
 // Check if coach is ED or higher
 export function isEDOrHigher(rank: string): boolean {
-  return getRankIndex(rank) >= 2 // Executive Director or higher
+  return getRankIndex(rank) >= 5 // Executive Director or higher
 }
 
-// Check if coach is GD or higher
+// Check if coach is FIBC or higher (integrated track)
+export function isFIBCOrHigher(rank: string): boolean {
+  const r = rank as RankType
+  return ['FIBC', 'Integrated RD', 'Integrated ND', 'FIBL', 'IPD'].includes(r)
+}
+
+// Check if coach is GD or higher (for legacy compatibility)
 export function isGDOrHigher(rank: string): boolean {
-  return getRankIndex(rank) >= 3 // Global Director or higher
+  return getRankIndex(rank) >= 11 // Global Director or higher
 }
 
-// Simplified requirements based on:
-// - 5 EDs = Global Director (GD)
-// - 10 EDs = Presidential Director (PD)
-// - 10 EDs + 5 GDs = IPD
+// Rank requirements based on simplified OPTAVIA Career Path
+// Points = Qualifying Points (simplified: we'll use client count where ~5 clients = 1 point)
+// SC Teams = number of SC+ frontline coaches
+// ED Teams = number of ED+ frontline coaches  
+// FIBC Teams = number of FIBC+ frontline coaches (integrated track)
 export const RANK_REQUIREMENTS: Record<RankType, {
-  minClients: number
-  frontlineCoaches: number
-  edTeams: number      // Number of ED+ frontline coaches needed
-  gdTeams: number      // Number of GD+ frontline coaches needed
+  points: number      // Qualifying Points needed
+  scTeams: number     // SC+ frontline coaches needed
+  edTeams: number     // ED+ frontline coaches needed
+  fibcTeams: number   // FIBC+ frontline coaches needed
   description: string
   icon: string
   note: string
 }> = {
   'Coach': {
-    minClients: 0,
-    frontlineCoaches: 0,
+    points: 0,
+    scTeams: 0,
     edTeams: 0,
-    gdTeams: 0,
-    description: 'Starting rank - welcome to the team!',
+    fibcTeams: 0,
+    description: 'Starting rank',
     icon: '🌱',
-    note: ''
+    note: 'Welcome to the team!'
   },
   'Senior Coach': {
-    minClients: 3,
-    frontlineCoaches: 0,
+    points: 1,
+    scTeams: 0,
     edTeams: 0,
-    gdTeams: 0,
-    description: '3+ active clients with qualifying orders',
+    fibcTeams: 0,
+    description: '1 Point',
     icon: '⭐',
-    note: 'Verify FQV requirements in OPTAVIA Connect'
+    note: '~5 clients with qualifying orders'
+  },
+  'Manager': {
+    points: 2,
+    scTeams: 0,
+    edTeams: 0,
+    fibcTeams: 0,
+    description: '2 Points',
+    icon: '📈',
+    note: '~10 clients with qualifying orders'
+  },
+  'Associate Director': {
+    points: 3,
+    scTeams: 0,
+    edTeams: 0,
+    fibcTeams: 0,
+    description: '3 Points',
+    icon: '🎯',
+    note: '~15 clients with qualifying orders'
+  },
+  'Director': {
+    points: 4,
+    scTeams: 0,
+    edTeams: 0,
+    fibcTeams: 0,
+    description: '4 Points',
+    icon: '🏅',
+    note: '~20 clients with qualifying orders'
   },
   'Executive Director': {
-    minClients: 5,
-    frontlineCoaches: 3,
+    points: 5,
+    scTeams: 0,
     edTeams: 0,
-    gdTeams: 0,
-    description: '5+ clients and 3+ frontline coaches',
+    fibcTeams: 0,
+    description: '5 Points',
     icon: '💫',
-    note: 'Verify FQV requirements in OPTAVIA Connect'
+    note: '~25 clients with qualifying orders'
+  },
+  'FIBC': {
+    points: 5,
+    scTeams: 5,
+    edTeams: 0,
+    fibcTeams: 0,
+    description: '5 Points + 5 SC Teams',
+    icon: '🏆',
+    note: 'Fully Integrated Business Coach'
+  },
+  'Regional Director': {
+    points: 5,
+    scTeams: 0,
+    edTeams: 1,
+    fibcTeams: 0,
+    description: '5 Points + 1 ED Team',
+    icon: '🗺️',
+    note: '1 frontline ED+ coach'
+  },
+  'Integrated RD': {
+    points: 5,
+    scTeams: 5,
+    edTeams: 1,
+    fibcTeams: 0,
+    description: '5 Points + 5 SC + 1 ED',
+    icon: '🌐',
+    note: 'Integrated Regional Director'
+  },
+  'National Director': {
+    points: 5,
+    scTeams: 0,
+    edTeams: 3,
+    fibcTeams: 0,
+    description: '5 Points + 3 ED Teams',
+    icon: '🏛️',
+    note: '3 frontline ED+ coaches'
+  },
+  'Integrated ND': {
+    points: 5,
+    scTeams: 5,
+    edTeams: 3,
+    fibcTeams: 0,
+    description: '5 Points + 5 SC + 3 ED',
+    icon: '🌟',
+    note: 'Integrated National Director'
   },
   'Global Director': {
-    minClients: 8,
-    frontlineCoaches: 5,
+    points: 5,
+    scTeams: 0,
     edTeams: 5,
-    gdTeams: 0,
-    description: '5 ED teams (frontline coaches at ED rank)',
+    fibcTeams: 0,
+    description: '5 Points + 5 ED Teams',
     icon: '🌍',
-    note: '5 frontline coaches must be Executive Director or higher'
+    note: '5 frontline ED+ coaches'
+  },
+  'FIBL': {
+    points: 5,
+    scTeams: 5,
+    edTeams: 0,
+    fibcTeams: 5,
+    description: '5 Points + 5 SC + 5 FIBC',
+    icon: '💎',
+    note: 'Fully Integrated Business Leader'
   },
   'Presidential Director': {
-    minClients: 12,
-    frontlineCoaches: 10,
+    points: 5,
+    scTeams: 0,
     edTeams: 10,
-    gdTeams: 0,
-    description: '10 ED teams (frontline coaches at ED rank)',
+    fibcTeams: 0,
+    description: '5 Points + 10 ED Teams',
     icon: '👑',
-    note: '10 frontline coaches must be Executive Director or higher'
+    note: '10 frontline ED+ coaches'
   },
   'IPD': {
-    minClients: 15,
-    frontlineCoaches: 15,
+    points: 5,
+    scTeams: 5,
     edTeams: 10,
-    gdTeams: 5,
-    description: '10 ED teams + 5 GD+ teams',
-    icon: '💎',
-    note: '10 EDs + 5 at GD rank or higher (GD, PD, or IPD)'
+    fibcTeams: 5,
+    description: '5 Points + 5 SC + 10 ED + 5 FIBC',
+    icon: '🎖️',
+    note: 'Integrated Presidential Director'
   }
 }
 
 export const RANK_COLORS: Record<RankType, { bg: string; text: string; accent: string }> = {
   'Coach': { bg: 'bg-gray-100', text: 'text-gray-600', accent: 'bg-gray-500' },
   'Senior Coach': { bg: 'bg-blue-50', text: 'text-blue-600', accent: 'bg-blue-500' },
+  'Manager': { bg: 'bg-teal-50', text: 'text-teal-600', accent: 'bg-teal-500' },
+  'Associate Director': { bg: 'bg-indigo-50', text: 'text-indigo-600', accent: 'bg-indigo-500' },
+  'Director': { bg: 'bg-violet-50', text: 'text-violet-600', accent: 'bg-violet-500' },
   'Executive Director': { bg: 'bg-purple-50', text: 'text-purple-600', accent: 'bg-purple-500' },
+  'FIBC': { bg: 'bg-fuchsia-50', text: 'text-fuchsia-600', accent: 'bg-fuchsia-500' },
+  'Regional Director': { bg: 'bg-cyan-50', text: 'text-cyan-600', accent: 'bg-cyan-500' },
+  'Integrated RD': { bg: 'bg-sky-50', text: 'text-sky-600', accent: 'bg-sky-500' },
+  'National Director': { bg: 'bg-emerald-50', text: 'text-emerald-600', accent: 'bg-emerald-500' },
+  'Integrated ND': { bg: 'bg-green-50', text: 'text-green-600', accent: 'bg-green-500' },
   'Global Director': { bg: 'bg-yellow-50', text: 'text-yellow-700', accent: 'bg-yellow-500' },
+  'FIBL': { bg: 'bg-amber-50', text: 'text-amber-600', accent: 'bg-amber-500' },
   'Presidential Director': { bg: 'bg-orange-50', text: 'text-orange-600', accent: 'bg-orange-500' },
   'IPD': { bg: 'bg-red-50', text: 'text-red-600', accent: 'bg-red-600' }
-}
-
-// Conversion rate assumptions for projections
-export const CONVERSION_RATES = {
-  cold_to_ha: 0.15,
-  warm_to_ha: 0.40,
-  scheduled_to_ha: 0.80,
-  ha_to_client: 0.50,
-  client_to_coach: 0.30,
 }
 
 export interface FrontlineCoach {
@@ -138,34 +235,11 @@ export interface RankData {
   rank_achieved_date: string | null
 }
 
-export interface ProspectPipeline {
-  new: number
-  interested: number
-  ha_scheduled: number
-  ha_done: number
-}
-
-export interface ClientStats {
-  active: number
-  paused: number
-  completed: number
-  coachProspects: number
-}
-
-export interface Projections {
-  totalProspects: number
-  projectedHAs: number
-  newClients: number
-  newCoaches: number
-  totalCoaches: number
-  totalClients: number
-}
-
 export interface Gaps {
-  coaches: number
-  clients: number
-  edTeams: number
-  gdTeams: number
+  points: number      // Gap in qualifying points
+  scTeams: number     // Gap in SC+ teams
+  edTeams: number     // Gap in ED+ teams
+  fibcTeams: number   // Gap in FIBC+ teams
 }
 
 export function useRankCalculator(user: User | null) {
@@ -174,10 +248,8 @@ export function useRankCalculator(user: User | null) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Memoize Supabase client to prevent re-creation on every render
   const supabase = useMemo(() => createClient(), [])
 
-  // Load rank data and frontline coaches
   const loadData = useCallback(async () => {
     if (!user) {
       setLoading(false)
@@ -188,7 +260,6 @@ export function useRankCalculator(user: User | null) {
     setError(null)
 
     try {
-      // Load rank data
       const { data: rankDataResult, error: rankError } = await supabase
         .from("coach_rank_data")
         .select("coach_id, current_rank, rank_achieved_date")
@@ -202,7 +273,6 @@ export function useRankCalculator(user: User | null) {
       if (rankDataResult) {
         setRankData(rankDataResult as RankData)
       } else {
-        // Create default rank data
         const defaultData: RankData = {
           coach_id: user.id,
           current_rank: "Coach",
@@ -210,7 +280,6 @@ export function useRankCalculator(user: User | null) {
         }
         setRankData(defaultData)
 
-        // Try to insert default record
         await supabase
           .from("coach_rank_data")
           .insert([{ 
@@ -224,21 +293,19 @@ export function useRankCalculator(user: User | null) {
           }])
       }
 
-      // Load frontline coaches from sponsor_team view (exclude self)
       const { data: coachesResult, error: coachesError } = await supabase
         .from("sponsor_team")
         .select("coach_id, coach_name, coach_email, coach_rank")
         .eq("sponsor_id", user.id)
-        .neq("coach_id", user.id) // Don't include yourself as your own frontline coach
+        .neq("coach_id", user.id)
 
       if (coachesError) {
         console.error("Error loading frontline coaches:", coachesError)
-        // Fallback: try querying profiles directly
         const { data: profilesResult } = await supabase
           .from("profiles")
           .select("id, full_name, email, coach_rank")
           .eq("sponsor_id", user.id)
-          .neq("id", user.id) // Don't include yourself
+          .neq("id", user.id)
         
         if (profilesResult) {
           const coaches: FrontlineCoach[] = profilesResult.map(c => ({
@@ -277,7 +344,6 @@ export function useRankCalculator(user: User | null) {
     loadData()
   }, [loadData])
 
-  // Update rank data
   const updateRankData = useCallback(async (updates: Partial<RankData>) => {
     if (!user || !rankData) return
 
@@ -304,38 +370,13 @@ export function useRankCalculator(user: User | null) {
     }
   }, [user, rankData, frontlineCoaches.length, loadData])
 
-  // Calculate projections from pipeline
-  const calculateProjections = useCallback((
-    prospects: ProspectPipeline,
-    clients: ClientStats
-  ): Projections => {
-    const totalProspects = prospects.new + prospects.interested + prospects.ha_scheduled
-
-    const projectedHAs =
-      (prospects.new * CONVERSION_RATES.cold_to_ha) +
-      (prospects.interested * CONVERSION_RATES.warm_to_ha) +
-      (prospects.ha_scheduled * CONVERSION_RATES.scheduled_to_ha)
-
-    const projectedNewClients = projectedHAs * CONVERSION_RATES.ha_to_client
-
-    const projectedNewCoaches = clients.coachProspects * CONVERSION_RATES.client_to_coach
-
-    return {
-      totalProspects,
-      projectedHAs: Math.round(projectedHAs),
-      newClients: Math.round(projectedNewClients),
-      newCoaches: Math.round(projectedNewCoaches),
-      totalCoaches: frontlineCoaches.length + Math.round(projectedNewCoaches),
-      totalClients: clients.active + Math.round(projectedNewClients)
-    }
-  }, [frontlineCoaches.length])
-
   // Calculate gaps to next rank
   const calculateGaps = useCallback((
     currentRank: RankType,
-    activeClients: number,
+    currentPoints: number,
+    scCount: number,
     edCount: number,
-    gdCount: number
+    fibcCount: number
   ): Gaps | null => {
     const currentRankIndex = RANK_ORDER.indexOf(currentRank)
     const nextRank = currentRankIndex < RANK_ORDER.length - 1
@@ -347,53 +388,13 @@ export function useRankCalculator(user: User | null) {
     const nextRankReqs = RANK_REQUIREMENTS[nextRank]
 
     return {
-      coaches: Math.max(0, nextRankReqs.frontlineCoaches - frontlineCoaches.length),
-      clients: Math.max(0, nextRankReqs.minClients - activeClients),
+      points: Math.max(0, nextRankReqs.points - currentPoints),
+      scTeams: Math.max(0, nextRankReqs.scTeams - scCount),
       edTeams: Math.max(0, nextRankReqs.edTeams - edCount),
-      gdTeams: Math.max(0, nextRankReqs.gdTeams - gdCount)
+      fibcTeams: Math.max(0, nextRankReqs.fibcTeams - fibcCount)
     }
-  }, [frontlineCoaches])
+  }, [])
 
-  // Calculate progress to next rank
-  const calculateProgress = useCallback((
-    currentRank: RankType,
-    activeClients: number,
-    edCount: number,
-    gdCount: number
-  ): number => {
-    const currentRankIndex = RANK_ORDER.indexOf(currentRank)
-    const nextRank = currentRankIndex < RANK_ORDER.length - 1
-      ? RANK_ORDER[currentRankIndex + 1]
-      : null
-
-    if (!nextRank) return 100
-
-    const nextRankReqs = RANK_REQUIREMENTS[nextRank]
-    
-    // Calculate client progress (30% weight)
-    const clientProgress = nextRankReqs.minClients > 0
-      ? Math.min((activeClients / nextRankReqs.minClients) * 100, 100)
-      : 100
-
-    // Calculate coach progress (20% weight)
-    const coachProgress = nextRankReqs.frontlineCoaches > 0
-      ? Math.min((frontlineCoaches.length / nextRankReqs.frontlineCoaches) * 100, 100)
-      : 100
-
-    // Calculate ED teams progress (30% weight)
-    const edProgress = nextRankReqs.edTeams > 0
-      ? Math.min((edCount / nextRankReqs.edTeams) * 100, 100)
-      : 100
-
-    // Calculate GD teams progress (20% weight)
-    const gdProgress = nextRankReqs.gdTeams > 0
-      ? Math.min((gdCount / nextRankReqs.gdTeams) * 100, 100)
-      : 100
-
-    return Math.round((clientProgress * 0.3) + (coachProgress * 0.2) + (edProgress * 0.3) + (gdProgress * 0.2))
-  }, [frontlineCoaches])
-
-  // Get next rank
   const getNextRank = useCallback((currentRank: RankType): RankType | null => {
     const currentRankIndex = RANK_ORDER.indexOf(currentRank)
     return currentRankIndex < RANK_ORDER.length - 1
@@ -401,23 +402,23 @@ export function useRankCalculator(user: User | null) {
       : null
   }, [])
 
-  // Computed values
+  // Computed values from actual frontline coaches
   const qualifyingLegsCount = frontlineCoaches.filter(c => c.is_qualifying).length
   const edTeamsCount = frontlineCoaches.filter(c => isEDOrHigher(c.coach_rank)).length
+  const fibcTeamsCount = frontlineCoaches.filter(c => isFIBCOrHigher(c.coach_rank)).length
   const gdTeamsCount = frontlineCoaches.filter(c => isGDOrHigher(c.coach_rank)).length
 
   return {
     rankData,
     frontlineCoaches,
-    qualifyingLegsCount,
-    edTeamsCount,
-    gdTeamsCount,
+    qualifyingLegsCount,  // SC+ teams
+    edTeamsCount,         // ED+ teams
+    fibcTeamsCount,       // FIBC+ teams
+    gdTeamsCount,         // GD+ teams (legacy)
     loading,
     error,
     updateRankData,
-    calculateProjections,
     calculateGaps,
-    calculateProgress,
     getNextRank,
     reload: loadData,
     RANK_ORDER,
