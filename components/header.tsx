@@ -146,10 +146,10 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                 variant="outline"
                 size="sm"
                 onClick={handleInviteClick}
-                className="group hidden sm:flex items-center gap-2 border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))] hover:border-[hsl(var(--optavia-green))] transition-colors [&:hover]:text-white"
+                className="hidden sm:flex items-center gap-2 border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))] hover:border-[hsl(var(--optavia-green))] hover:text-white transition-colors"
               >
-                <UserPlus className="h-4 w-4 group-hover:text-white" />
-                <span className="hidden md:inline group-hover:text-white">Invite Coach</span>
+                <UserPlus className="h-4 w-4" />
+                <span className="hidden md:inline">Invite Coach</span>
               </Button>
             )}
             {/* Mobile Invite Button (Admin Only) */}
