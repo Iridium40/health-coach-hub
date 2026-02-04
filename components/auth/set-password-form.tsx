@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { sendWelcomeEmail } from "@/lib/email"
+import { Eye, EyeOff, CheckCircle2 } from "lucide-react"
 
 interface SetPasswordFormProps {
   onSuccess?: () => void
@@ -18,6 +19,8 @@ interface SetPasswordFormProps {
 export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [validatingInvite, setValidatingInvite] = useState(true)
   const [inviteData, setInviteData] = useState<{
@@ -330,33 +333,68 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
 
           <div className="space-y-2">
             <Label htmlFor="password" className="text-optavia-dark">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              disabled={loading}
-              className="bg-white border-gray-300 text-optavia-dark"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                disabled={loading}
+                autoComplete="new-password"
+                className="bg-white border-gray-300 text-optavia-dark pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             <p className="text-xs text-optavia-gray">Must be at least 6 characters</p>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="confirmPassword" className="text-optavia-dark">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={6}
-              disabled={loading}
-              className="bg-white border-gray-300 text-optavia-dark"
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+                disabled={loading}
+                autoComplete="new-password"
+                className="bg-white border-gray-300 text-optavia-dark pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {/* Password match indicator */}
+            {confirmPassword && (
+              <div className={`flex items-center gap-1 text-xs ${password === confirmPassword ? "text-green-600" : "text-red-500"}`}>
+                {password === confirmPassword ? (
+                  <>
+                    <CheckCircle2 className="h-3 w-3" />
+                    <span>Passwords match</span>
+                  </>
+                ) : (
+                  <span>Passwords do not match</span>
+                )}
+              </div>
+            )}
           </div>
 
           <Button
