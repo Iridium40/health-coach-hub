@@ -339,7 +339,8 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
               Create New Invite
             </CardTitle>
             <CardDescription className="text-optavia-gray">
-              Generate an invite link for a new coach with their information
+              Generate an invite link for a new coach with their information.
+              <span className="block mt-1 text-amber-600 font-medium">Note: Invites expire in 14 days.</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
