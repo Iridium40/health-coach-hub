@@ -146,7 +146,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                 variant="outline"
                 size="sm"
                 onClick={handleInviteClick}
-                className="hidden sm:flex items-center gap-2 border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))] hover:border-[hsl(var(--optavia-green))] hover:text-white transition-colors"
+                className="hidden sm:flex items-center gap-2 border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))] hover:border-[hsl(var(--optavia-green))] hover:text-[hsl(var(--optavia-green))] transition-colors"
               >
                 <UserPlus className="h-4 w-4" />
                 <span className="hidden md:inline">Invite Coach</span>
