@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         
         <div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
           <p style="margin: 0; font-size: 14px; color: #856404;">
-            <strong>Note:</strong> This invitation link will expire in 30 days. After setting your password, you can sign in to access Coaching Amplifier.
+            <strong>Note:</strong> This invitation link will expire in 14 days. After setting your password, you can sign in to access Coaching Amplifier.
           </p>
         </div>
         
@@ -110,7 +110,7 @@ Click the link below to set your password and create your account:
 
 ${inviteLink}
 
-This invitation link will expire in 30 days. After setting your password, you can sign in to access Coaching Amplifier.
+This invitation link will expire in 14 days. After setting your password, you can sign in to access Coaching Amplifier.
 
 Best regards,
 The Coaching Amplifier Team

@@ -25,16 +25,11 @@ interface InviteResult {
   error?: string
 }
 
-// Throttle delay between emails (ms) to respect Resend rate limits
-// Resend allows 2 requests/second, so we need 500ms+ between emails
-const EMAIL_THROTTLE_DELAY = 550
+// Maximum emails per Resend batch request (Resend limit is 100)
+const RESEND_BATCH_SIZE = 100
 
-/**
- * Sleep helper for throttling
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
+// Maximum total invites per request (can be higher since we split into batches)
+const MAX_TOTAL_INVITES = 1000
 
 /**
  * Add contact to Resend segment for marketing purposes
@@ -137,7 +132,7 @@ function generateInviteEmailContent(
       
       <div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
         <p style="margin: 0; font-size: 14px; color: #856404;">
-          <strong>Note:</strong> This invitation link will expire in 30 days. After setting your password, you can sign in to access Coaching Amplifier.
+          <strong>Note:</strong> This invitation link will expire in 14 days. After setting your password, you can sign in to access Coaching Amplifier.
         </p>
       </div>
       
@@ -163,7 +158,7 @@ Click the link below to set your password and create your account:
 
 ${inviteLink}
 
-This invitation link will expire in 30 days. After setting your password, you can sign in to access Coaching Amplifier.
+This invitation link will expire in 14 days. After setting your password, you can sign in to access Coaching Amplifier.
 
 Best regards,
 The Coaching Amplifier Team
@@ -217,17 +212,27 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Limit batch size to prevent timeout
-    if (entries.length > 100) {
+    // Limit total invites per request
+    if (entries.length > MAX_TOTAL_INVITES) {
       return NextResponse.json(
-        { error: "Maximum 100 invites per batch. Please split your CSV into smaller files." },
+        { error: `Maximum ${MAX_TOTAL_INVITES} invites per batch. Please split your CSV into smaller files.` },
         { status: 400 }
       )
     }
     
     const results: InviteResult[] = []
     
-    // Process each entry sequentially with throttling
+    // Phase 1: Validate all entries and create invite records
+    interface PreparedInvite {
+      email: string
+      fullName: string
+      coachRank: string
+      inviteKey: string
+      inviteId: string
+      inviteLink: string
+    }
+    const preparedInvites: PreparedInvite[] = []
+    
     for (const entry of entries) {
       const fullName = entry.full_name?.trim() || ""
       const email = entry.email?.trim().toLowerCase() || ""
@@ -284,7 +289,7 @@ export async function POST(request: NextRequest) {
         // Generate invite
         const inviteKey = generateInviteKey()
         const expiresAt = new Date()
-        expiresAt.setDate(expiresAt.getDate() + 30) // 30 days expiration
+        expiresAt.setDate(expiresAt.getDate() + 14) // 14 days expiration
         
         // Create invite record (is_bulk_invite = true means no sponsor_id will be set)
         const { data: inviteData, error: insertError } = await supabase
@@ -297,7 +302,7 @@ export async function POST(request: NextRequest) {
             coach_rank: coachRank,
             expires_at: expiresAt.toISOString(),
             is_active: true,
-            email_status: "sent",
+            email_status: "pending",
             is_bulk_invite: true,
           })
           .select("id")
@@ -313,55 +318,18 @@ export async function POST(request: NextRequest) {
           continue
         }
         
-        // Generate invite link and email content
+        // Generate invite link
         const inviteLink = createInviteLink(inviteKey, process.env.NEXT_PUBLIC_APP_URL)
-        const { subject, html, text } = generateInviteEmailContent(
+        
+        // Add to prepared invites for batch sending
+        preparedInvites.push({
+          email,
           fullName,
           coachRank,
-          inviteLink,
-          invitedByName
-        )
-        
-        // Send email (disable click tracking so invite links go directly to our app)
-        const { data: emailData, error: emailError } = await resend.emails.send({
-          from: "Coaching Amplifier <onboarding@coachingamplifier.com>",
-          to: [email],
-          subject,
-          html,
-          text,
-          headers: {
-            "X-Entity-Ref-ID": inviteData?.id || inviteKey, // Prevents link rewriting
-          },
+          inviteKey,
+          inviteId: inviteData.id,
+          inviteLink
         })
-        
-        if (emailError) {
-          results.push({
-            email,
-            full_name: fullName,
-            success: false,
-            error: `Email failed: ${emailError.message}`
-          })
-        } else {
-          // Store Resend message ID for webhook correlation
-          if (emailData?.id && inviteData?.id) {
-            await supabase
-              .from("invites")
-              .update({ resend_message_id: emailData.id })
-              .eq("id", inviteData.id)
-          }
-          
-          // Add contact to Resend segment for marketing/audience tracking
-          await addContactToResendSegment(email)
-          
-          results.push({
-            email,
-            full_name: fullName,
-            success: true
-          })
-        }
-        
-        // Throttle to respect rate limits
-        await sleep(EMAIL_THROTTLE_DELAY)
         
       } catch (error: any) {
         results.push({
@@ -370,6 +338,127 @@ export async function POST(request: NextRequest) {
           success: false,
           error: error.message || "Unknown error occurred"
         })
+      }
+    }
+    
+    // Phase 2: Send all emails using Resend batch API (in chunks of 100)
+    if (preparedInvites.length > 0) {
+      // Split prepared invites into chunks of RESEND_BATCH_SIZE (100)
+      const chunks: PreparedInvite[][] = []
+      for (let i = 0; i < preparedInvites.length; i += RESEND_BATCH_SIZE) {
+        chunks.push(preparedInvites.slice(i, i + RESEND_BATCH_SIZE))
+      }
+      
+      console.log(`Sending ${preparedInvites.length} emails in ${chunks.length} batch(es)`)
+      
+      // Process each chunk
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex]
+        
+        // Prepare batch email payload for this chunk
+        const batchEmails = chunk.map(invite => {
+          const { subject, html, text } = generateInviteEmailContent(
+            invite.fullName,
+            invite.coachRank,
+            invite.inviteLink,
+            invitedByName
+          )
+          
+          return {
+            from: "Coaching Amplifier <onboarding@coachingamplifier.com>",
+            to: [invite.email],
+            subject,
+            html,
+            text,
+            headers: {
+              "X-Entity-Ref-ID": invite.inviteId, // Prevents link rewriting
+            },
+          }
+        })
+        
+        try {
+          // Send this batch (up to 100 emails)
+          console.log(`Sending batch ${chunkIndex + 1}/${chunks.length} (${chunk.length} emails)`)
+          const { data: batchData, error: batchError } = await resend.batch.send(batchEmails)
+          
+          if (batchError) {
+            // Batch failed entirely - mark all in this chunk as failed
+            console.error(`Batch ${chunkIndex + 1} email error:`, batchError)
+            for (const invite of chunk) {
+              results.push({
+                email: invite.email,
+                full_name: invite.fullName,
+                success: false,
+                error: `Batch email failed: ${batchError.message}`
+              })
+              // Update invite status to failed
+              await supabase
+                .from("invites")
+                .update({ email_status: "failed" })
+                .eq("id", invite.inviteId)
+            }
+          } else if (batchData?.data) {
+            // Process batch results - each item corresponds to an email in this chunk
+            for (let i = 0; i < chunk.length; i++) {
+              const invite = chunk[i]
+              const emailResult = batchData.data[i]
+              
+              if (emailResult?.id) {
+                // Email sent successfully
+                await supabase
+                  .from("invites")
+                  .update({ 
+                    email_status: "sent",
+                    resend_message_id: emailResult.id 
+                  })
+                  .eq("id", invite.inviteId)
+                
+                // Add contact to Resend segment for marketing/audience tracking
+                await addContactToResendSegment(invite.email)
+                
+                results.push({
+                  email: invite.email,
+                  full_name: invite.fullName,
+                  success: true
+                })
+              } else {
+                // Individual email failed
+                await supabase
+                  .from("invites")
+                  .update({ email_status: "failed" })
+                  .eq("id", invite.inviteId)
+                
+                results.push({
+                  email: invite.email,
+                  full_name: invite.fullName,
+                  success: false,
+                  error: "Email delivery failed"
+                })
+              }
+            }
+          }
+          
+          // Small delay between batches to be respectful to Resend API
+          if (chunkIndex < chunks.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
+          
+        } catch (error: any) {
+          console.error(`Batch ${chunkIndex + 1} send exception:`, error)
+          // Mark all in this chunk as failed
+          for (const invite of chunk) {
+            results.push({
+              email: invite.email,
+              full_name: invite.fullName,
+              success: false,
+              error: error.message || "Batch email failed"
+            })
+            await supabase
+              .from("invites")
+              .update({ email_status: "failed" })
+              .eq("id", invite.inviteId)
+          }
+        }
       }
     }
     

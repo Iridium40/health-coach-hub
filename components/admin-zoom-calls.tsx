@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useAdminChanges } from "@/hooks/use-admin-changes"
 import { AdminSaveButton } from "@/components/admin-save-button"
-import { sendMeetingEmail } from "@/lib/email"
+import { sendBatchMeetingEmail } from "@/lib/email"
 import { 
   X, Plus, Edit, Trash2, Search, Video, Calendar, Clock, Users, 
   Link as LinkIcon, PlayCircle, Copy, Check, ExternalLink, Mail, Loader2,
@@ -159,7 +159,40 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
         variant: "destructive",
       })
     } else {
-      setZoomCalls(data || [])
+      const calls = data || []
+      
+      // Auto-update status for past events that are still marked as "upcoming"
+      const now = new Date()
+      const pastUpcoming = calls.filter(call => {
+        if (call.status !== "upcoming") return false
+        // For events with end_date, use that; otherwise use scheduled_at
+        const eventEndDate = call.end_date 
+          ? new Date(call.end_date + "T23:59:59") 
+          : new Date(call.scheduled_at)
+        // Add duration for meetings without end_date
+        if (!call.end_date && call.duration_minutes) {
+          eventEndDate.setMinutes(eventEndDate.getMinutes() + call.duration_minutes)
+        }
+        return eventEndDate < now
+      })
+      
+      // Update past events to "completed" status
+      if (pastUpcoming.length > 0) {
+        const ids = pastUpcoming.map(c => c.id)
+        await supabase
+          .from("zoom_calls")
+          .update({ status: "completed" })
+          .in("id", ids)
+        
+        // Update local state with the corrected status
+        calls.forEach(call => {
+          if (ids.includes(call.id)) {
+            call.status = "completed"
+          }
+        })
+      }
+      
+      setZoomCalls(calls)
     }
     setLoading(false)
   }
@@ -472,39 +505,36 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
             minute: '2-digit'
           })
 
-          // Send emails with throttling
-          const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-          let emailsSent = 0
-          
-          for (const u of usersToEmail) {
-            try {
-              await sendMeetingEmail({
-                to: u.email!,
-                fullName: u.full_name || "Coach",
-                meetingTitle: title,
-                meetingDescription: description || undefined,
-                meetingDate,
-                meetingTime,
-                durationMinutes,
-                callType,
-                zoomLink: zoomLink || undefined,
-                zoomMeetingId: zoomMeetingId || undefined,
-                zoomPasscode: zoomPasscode || undefined,
-                isRecurring,
-                recurrencePattern: isRecurring ? recurrencePattern : undefined,
-              })
-              emailsSent++
-              await delay(600) // Throttle to stay under rate limit
-            } catch (emailErr) {
-              console.error(`Failed to send email to ${u.email}:`, emailErr)
-            }
-          }
+          // Send batch emails using Resend batch API (up to 100 at once)
+          if (usersToEmail.length > 0) {
+            const recipients = usersToEmail.map(u => ({
+              to: u.email!,
+              fullName: u.full_name || "Coach"
+            }))
 
-          if (emailsSent > 0) {
-            toast({
-              title: "Emails Sent",
-              description: `Sent ${emailsSent} email notification(s)`,
+            const { success, sent, error } = await sendBatchMeetingEmail({
+              recipients,
+              meetingTitle: title,
+              meetingDescription: description || undefined,
+              meetingDate,
+              meetingTime,
+              durationMinutes,
+              callType,
+              zoomLink: zoomLink || undefined,
+              zoomMeetingId: zoomMeetingId || undefined,
+              zoomPasscode: zoomPasscode || undefined,
+              isRecurring,
+              recurrencePattern: isRecurring ? recurrencePattern : undefined,
             })
+
+            if (success && sent && sent > 0) {
+              toast({
+                title: "Emails Sent",
+                description: `Sent ${sent} email notification(s)`,
+              })
+            } else if (error) {
+              console.error("Batch email error:", error)
+            }
           }
         }
       } catch (emailError) {

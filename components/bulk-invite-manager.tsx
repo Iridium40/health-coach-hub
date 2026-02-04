@@ -432,7 +432,7 @@ export function BulkInviteManager() {
               Drop your CSV file here or click to browse
             </p>
             <p className="text-sm text-optavia-gray">
-              Only .csv files are accepted (max 100 entries per upload)
+              Only .csv files are accepted (max 1,000 entries per upload)
             </p>
           </div>
         </CardContent>

@@ -447,7 +447,7 @@ export async function POST(request: NextRequest) {
             
             <div style="background-color: #fff8e1; padding: 12px 16px; border-radius: 8px; margin-top: 16px; border-left: 4px solid #ffc107;">
                 <p style="margin: 0; font-size: 13px; color: #856404;">
-                    <strong>⏰ Note:</strong> This invitation link will expire in 48 hours.
+                    <strong>⏰ Note:</strong> This invitation link will expire in 14 days.
                 </p>
             </div>
         </div>
@@ -629,7 +629,7 @@ ${coachRank ? `Your Coach Rank: ${coachRank}\n\n` : ""}Click the link below to s
 
 ${inviteLink}
 
-⏰ Note: This invitation link will expire in 48 hours.
+⏰ Note: This invitation link will expire in 14 days.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📚 NEW COACH ONBOARDING

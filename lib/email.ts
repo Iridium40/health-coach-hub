@@ -252,6 +252,49 @@ export async function sendHealthAssessmentEmail(data: HealthAssessmentEmailData)
 }
 
 /**
+ * Batch meeting email data - for sending to multiple recipients
+ */
+export interface BatchMeetingEmailData {
+  recipients: Array<{ to: string; fullName: string }>
+  meetingTitle: string
+  meetingDescription?: string
+  meetingDate: string
+  meetingTime: string
+  durationMinutes: number
+  callType: "coach_only" | "with_clients"
+  zoomLink?: string
+  zoomMeetingId?: string
+  zoomPasscode?: string
+  isRecurring?: boolean
+  recurrencePattern?: string
+}
+
+/**
+ * Send meeting notification emails to multiple recipients using batch API
+ */
+export async function sendBatchMeetingEmail(data: BatchMeetingEmailData): Promise<{ success: boolean; sent?: number; error?: string }> {
+  try {
+    const response = await fetch("/api/send-meeting-email-batch", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      return { success: false, error: result.error || "Failed to send batch emails" }
+    }
+
+    return { success: true, sent: result.sent }
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to send batch emails" }
+  }
+}
+
+/**
  * Send a calendar invite email with ICS attachment
  */
 export async function sendCalendarInviteEmail(data: CalendarInviteEmailData): Promise<{ success: boolean; error?: string }> {

@@ -23,7 +23,7 @@ interface InviteShareButtonProps {
   expiresInDays?: number
 }
 
-export function InviteShareButton({ invitedEmail, expiresInDays = 30 }: InviteShareButtonProps) {
+export function InviteShareButton({ invitedEmail, expiresInDays = 14 }: InviteShareButtonProps) {
   const { user } = useAuth()
   const { toast } = useToast()
   const supabase = createClient()
