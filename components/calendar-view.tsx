@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   Video, Clock, Users, UserCircle, ExternalLink, Copy, Check,
-  Grid3X3, List, Share2
+  Grid3X3, List, Share2, MapPin
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
@@ -18,6 +18,7 @@ import { expandRecurringEvents, type ExpandedZoomCall } from "@/lib/expand-recur
 import type { ZoomCall } from "@/lib/types"
 
 type ViewMode = "month" | "week"
+type EventTypeFilter = "all" | "meetings" | "events"
 
 export function CalendarView() {
   const { user } = useAuth()
@@ -30,6 +31,7 @@ export function CalendarView() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [sharedId, setSharedId] = useState<string | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<ExpandedZoomCall | null>(null)
+  const [eventTypeFilter, setEventTypeFilter] = useState<EventTypeFilter>("all")
   const supabase = createClient()
 
   useEffect(() => {
@@ -258,9 +260,21 @@ export function CalendarView() {
     return days
   }, [currentDate])
 
+  // Filter events based on type
+  const filteredCalls = useMemo(() => {
+    if (eventTypeFilter === "all") return expandedCalls
+    if (eventTypeFilter === "meetings") {
+      return expandedCalls.filter(call => call.zoom_link) // Has Zoom link = meeting
+    }
+    if (eventTypeFilter === "events") {
+      return expandedCalls.filter(call => !call.zoom_link) // No Zoom link = event
+    }
+    return expandedCalls
+  }, [expandedCalls, eventTypeFilter])
+
   // Get events for a specific date (using occurrence_date for recurring events)
   const getEventsForDate = (date: Date) => {
-    return expandedCalls.filter(call => {
+    return filteredCalls.filter(call => {
       const callDate = new Date(call.occurrence_date)
       return (
         callDate.getFullYear() === date.getFullYear() &&
@@ -406,19 +420,52 @@ export function CalendarView() {
         </h2>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-purple-500"></div>
-          <span className="text-optavia-gray">Coach Only</span>
+      {/* Filters and Legend */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        {/* Event Type Filter */}
+        <div className="flex gap-2">
+          <Button
+            variant={eventTypeFilter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setEventTypeFilter("all")}
+            className={`text-xs ${eventTypeFilter === "all" ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" : ""}`}
+          >
+            All
+          </Button>
+          <Button
+            variant={eventTypeFilter === "meetings" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setEventTypeFilter("meetings")}
+            className={`text-xs ${eventTypeFilter === "meetings" ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" : ""}`}
+          >
+            <Video className="h-3 w-3 mr-1" />
+            Meetings
+          </Button>
+          <Button
+            variant={eventTypeFilter === "events" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setEventTypeFilter("events")}
+            className={`text-xs ${eventTypeFilter === "events" ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" : ""}`}
+          >
+            <MapPin className="h-3 w-3 mr-1" />
+            Events
+          </Button>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-teal-500"></div>
-          <span className="text-optavia-gray">With Clients</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-          <span className="text-optavia-gray">Live Now</span>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-purple-500"></div>
+            <span className="text-optavia-gray">Coach Only</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-teal-500"></div>
+            <span className="text-optavia-gray">With Clients</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+            <span className="text-optavia-gray">Live Now</span>
+          </div>
         </div>
       </div>
 
