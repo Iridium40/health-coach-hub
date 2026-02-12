@@ -71,6 +71,7 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
   const [showForm, setShowForm] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterCategory, setFilterCategory] = useState<string>("All")
+  const [filterStatus, setFilterStatus] = useState<string>("All")
   const [savingOrder, setSavingOrder] = useState(false)
 
   // Form state
@@ -303,12 +304,10 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
     }
   }
 
-  const reorderResource = async (resourceId: string, direction: "up" | "down") => {
+  const reorderResource = async (resourceId: string, direction: "up" | "down", visibleList: ExternalResource[]) => {
     setSavingOrder(true)
 
-    // Work on the full list sorted by sort_order (global ordering, not per-category)
-    const sortedAll = [...resources].sort((a, b) => a.sort_order - b.sort_order)
-    const currentIndex = sortedAll.findIndex(r => r.id === resourceId)
+    const currentIndex = visibleList.findIndex(r => r.id === resourceId)
 
     if (currentIndex === -1) {
       setSavingOrder(false)
@@ -317,20 +316,18 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
 
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
 
-    if (newIndex < 0 || newIndex >= sortedAll.length) {
+    if (newIndex < 0 || newIndex >= visibleList.length) {
       setSavingOrder(false)
       return
     }
 
-    // Swap the two items
-    const updated = Array.from(sortedAll)
-    const [removed] = updated.splice(currentIndex, 1)
-    updated.splice(newIndex, 0, removed)
+    // Swap sort_order values between the two adjacent items in the filtered view
+    const currentItem = visibleList[currentIndex]
+    const swapItem = visibleList[newIndex]
 
-    // Only update the two affected resources (swap their sort_order values)
     const updates = [
-      { id: updated[currentIndex].id, sort_order: currentIndex + 1 },
-      { id: updated[newIndex].id, sort_order: newIndex + 1 },
+      { id: currentItem.id, sort_order: swapItem.sort_order },
+      { id: swapItem.id, sort_order: currentItem.sort_order },
     ]
 
     for (const update of updates) {
@@ -358,7 +355,8 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
         resource.url.toLowerCase().includes(searchQuery.toLowerCase())
       
       const matchesCategory = filterCategory === "All" || resource.category === filterCategory
-      return matchesSearch && matchesCategory
+      const matchesStatus = filterStatus === "All" || (filterStatus === "Active" ? resource.is_active : !resource.is_active)
+      return matchesSearch && matchesCategory && matchesStatus
     })
     .sort((a, b) => a.sort_order - b.sort_order)
 
@@ -639,6 +637,16 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-full sm:w-32 border-gray-300">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                <SelectItem value="All">All</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Hidden">Hidden</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -647,8 +655,8 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
             <CardContent className="py-8 text-center">
               <ExternalLink className="h-12 w-12 text-optavia-gray mx-auto mb-4" />
               <p className="text-optavia-gray">
-                {searchQuery || filterCategory !== "All" 
-                  ? "No resources match your search" 
+                {searchQuery || filterCategory !== "All" || filterStatus !== "All"
+                  ? "No resources match your filters" 
                   : "No resources found. Create your first resource!"}
               </p>
             </CardContent>
@@ -677,7 +685,7 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                                     size="icon"
                                     variant="outline"
                                     className="h-6 w-6 p-0 border-gray-300 hover:border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))]"
-                                    onClick={() => reorderResource(resource.id, "up")}
+                                    onClick={() => reorderResource(resource.id, "up", filteredResources)}
                                     disabled={index === 0 || savingOrder}
                                     title="Move up"
                                   >
@@ -687,7 +695,7 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                                     size="icon"
                                     variant="outline"
                                     className="h-6 w-6 p-0 border-gray-300 hover:border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))]"
-                                    onClick={() => reorderResource(resource.id, "down")}
+                                    onClick={() => reorderResource(resource.id, "down", filteredResources)}
                                     disabled={index === filteredResources.length - 1 || savingOrder}
                                     title="Move down"
                                   >
