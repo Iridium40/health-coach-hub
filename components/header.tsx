@@ -24,8 +24,8 @@ interface HeaderProps {
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
   onInviteClick?: () => void
-  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "admin" | "my-business" | "favorites" | "notifications" | "team"
-  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "admin" | "my-business" | "favorites" | "notifications" | "team") => void
+  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "admin" | "my-business" | "favorites" | "notifications" | "team"
+  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "admin" | "my-business" | "favorites" | "notifications" | "team") => void
 }
 
 export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab, onTabChange }: HeaderProps) {
@@ -48,11 +48,12 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   }
 
   // Determine active tab from pathname if not provided
-  type TabType = "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "admin" | "my-business" | "favorites" | "notifications" | "team"
+  type TabType = "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "admin" | "my-business" | "favorites" | "notifications" | "team"
   const getActiveTab = (): TabType => {
     if (activeTab) return activeTab
     if (pathname?.startsWith("/dashboard") || pathname === "/") return "dashboard"
     if (pathname?.startsWith("/training")) return "training"
+    if (pathname?.startsWith("/coaching-quick-links")) return "coaching-quicklinks"
     if (pathname?.startsWith("/metabolic-reset-events")) return "metabolic-reset-events"
     if (pathname?.startsWith("/resources")) return "resources"
     if (pathname?.startsWith("/recipes")) return "recipes"
@@ -63,14 +64,14 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   const currentActiveTab = getActiveTab()
 
   // Full nav items - filtered based on org_id
-  // Order: Calendar, Training, Metabolic Reset Events, Resources, Recipes, Dashboard (My Business is separate dropdown at end)
+  // Order: Calendar, Coaching Resource Library, Coaching Quicklinks, Meal Planning & Recipes, Outside Tools & Resources, Metabolic Reset Events (My Business is separate dropdown at end)
   const allNavItems = [
     { id: "calendar" as const, label: "Calendar", href: "/calendar", fullAccessOnly: true },
-    { id: "training" as const, label: "Training", href: "/training", fullAccessOnly: false },
+    { id: "training" as const, label: "Coaching Resource Library", href: "/training", fullAccessOnly: false },
+    { id: "coaching-quicklinks" as const, label: "Coaching Quicklinks", href: "/coaching-quick-links", fullAccessOnly: true },
+    { id: "recipes" as const, label: "Meal Planning & Recipes", href: "/recipes", fullAccessOnly: true },
+    { id: "resources" as const, label: "Outside Tools & Resources", href: "/resources", fullAccessOnly: true },
     { id: "metabolic-reset-events" as const, label: "Metabolic Reset Events", href: "/metabolic-reset-events", fullAccessOnly: false },
-    { id: "resources" as const, label: "Resources", href: "/resources", fullAccessOnly: true },
-    { id: "recipes" as const, label: "Recipes", href: "/recipes", fullAccessOnly: true },
-    { id: "dashboard" as const, label: "Dashboard", href: "/dashboard", fullAccessOnly: true },
   ]
   
   // Filter nav items based on org access
@@ -173,10 +174,10 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
           </div>
         </div>
 
-        {/* Desktop Navigation Menu - Order: Calendar | Training | Resources | Recipes | Dashboard | My Business */}
+        {/* Desktop Navigation Menu - Order: Calendar | Coaching Resource Library | Coaching Quicklinks | Meal Planning & Recipes | Outside Tools & Resources | Metabolic Reset Events | My Business */}
         {user && (
           <nav className="hidden md:flex items-center justify-center gap-6 lg:gap-8 xl:gap-10 border-t border-optavia-border py-2">
-            {/* Calendar, Training, Resources, Recipes, Dashboard - in order from navItems array */}
+            {/* Nav items in order from navItems array */}
             {navItems.map((item) => {
               const isActive = currentActiveTab === item.id
               return (
@@ -235,11 +236,11 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
           </nav>
         )}
 
-        {/* Mobile Navigation Menu (Dropdown) - Order: Calendar, Training, Resources, Recipes, Dashboard, My Business */}
+        {/* Mobile Navigation Menu (Dropdown) */}
         {user && mobileMenuOpen && (
           <nav className="md:hidden border-t border-optavia-border bg-white">
             <div className="flex flex-col">
-              {/* Calendar, Training, Resources, Recipes, Dashboard - in order from navItems array */}
+              {/* Nav items in order from navItems array */}
               {navItems.map((item) => {
                 const isActive = currentActiveTab === item.id
                 return (

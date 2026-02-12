@@ -41,7 +41,6 @@ import { Progress } from "@/components/ui/progress"
 
 // Dashboard Components
 import { CoachTip, PipelineSnapshot, TodaysPriorities, RankProgressCard, QuickActions, NextTrainingCard } from "@/components/dashboard/index"
-import { TodaysFocus } from "@/components/dashboard/TodaysFocus"
 import { getProgramDay } from "@/hooks/use-clients"
 
 // Lazy-load heavy modals/tools to reduce initial dashboard JS (big win at scale)
@@ -382,44 +381,11 @@ export function DashboardOverview() {
         <p className="text-optavia-gray text-base sm:text-lg">
           {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
-        <div className="mt-4 flex justify-center px-2">
-          <Link href="/coaching-quick-links">
-            <Button
-              className="group w-full max-w-sm sm:w-auto bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))]/90 text-white font-bold tracking-wide shadow-lg hover:shadow-xl transition-all ring-2 ring-[hsl(var(--optavia-green))]/25 whitespace-normal leading-tight"
-              size="lg"
-            >
-              <Link2 className="h-5 w-5 mr-2 text-white/95 group-hover:text-white" />
-              COACHING QUICK LINKS
-            </Button>
-          </Link>
-        </div>
       </div>
 
       {/* Announcements */}
       <Announcements />
 
-      {/* Today's Focus - Combined Training + Today's Tasks */}
-      <div className="mt-6">
-        <TodaysFocus
-          user={user}
-          userRank={profile?.coach_rank || null}
-          isNewCoach={profile?.is_new_coach}
-          clients={clients}
-          prospects={prospects}
-          upcomingMeetings={upcomingMeetings}
-          loadingMeetings={loadingMeetings}
-          needsAttention={needsAttention}
-          toggleTouchpoint={toggleTouchpoint}
-          completeClientCheckIn={completeDashboardClientCheckIn}
-          logProspectFollowUp={logDashboardProspectFollowUp}
-          dismissMilestone={dismissMilestoneForToday}
-          isMilestoneDismissed={isMilestoneDismissedToday}
-          onCelebrateClick={(client) => {
-            setMilestoneClient(client)
-            setShowMilestoneModal(true)
-          }}
-        />
-      </div>
 
       {/* Coach Tip of the Day */}
       <div className="mt-6">
