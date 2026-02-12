@@ -24,8 +24,8 @@ interface HeaderProps {
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
   onInviteClick?: () => void
-  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "admin" | "my-business" | "favorites" | "notifications" | "team"
-  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "admin" | "my-business" | "favorites" | "notifications" | "team") => void
+  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team"
+  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team") => void
 }
 
 export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab, onTabChange }: HeaderProps) {
@@ -48,7 +48,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   }
 
   // Determine active tab from pathname if not provided
-  type TabType = "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "admin" | "my-business" | "favorites" | "notifications" | "team"
+  type TabType = "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team"
   const getActiveTab = (): TabType => {
     if (activeTab) return activeTab
     if (pathname?.startsWith("/dashboard") || pathname === "/") return "dashboard"
@@ -66,12 +66,13 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   // Full nav items - filtered based on org_id
   // Order: Calendar, Coaching Resource Library, Coaching Quicklinks, Meal Planning & Recipes, Outside Tools & Resources, Metabolic Reset Events (My Business is separate dropdown at end)
   const allNavItems = [
-    { id: "calendar" as const, label: "Calendar", href: "/calendar", fullAccessOnly: true },
-    { id: "training" as const, label: "Coaching Resource Library", href: "/training", fullAccessOnly: false },
-    { id: "coaching-quicklinks" as const, label: "Coaching Quicklinks", href: "/coaching-quick-links", fullAccessOnly: true },
-    { id: "recipes" as const, label: "Meal Planning & Recipes", href: "/recipes", fullAccessOnly: true },
-    { id: "resources" as const, label: "Outside Tools & Resources", href: "/resources", fullAccessOnly: true },
-    { id: "metabolic-reset-events" as const, label: "Metabolic Reset Events", href: "/metabolic-reset-events", fullAccessOnly: false },
+    { id: "calendar" as const, label: "Calendar", href: "/calendar", fullAccessOnly: true, external: false },
+    { id: "team-padlets" as const, label: "Team Padlets", href: "https://docs.google.com/document/d/1nLXcyXJBbrVxnJfv7cdPpgJj-jSr9r8oghxdUSQ_hOs/edit?tab=t.0", fullAccessOnly: true, external: true },
+    { id: "training" as const, label: "Coaching Resource Library", href: "/training", fullAccessOnly: false, external: false },
+    { id: "coaching-quicklinks" as const, label: "Coaching Quicklinks", href: "/coaching-quick-links", fullAccessOnly: true, external: false },
+    { id: "recipes" as const, label: "Meal Planning & Recipes", href: "/recipes", fullAccessOnly: true, external: false },
+    { id: "resources" as const, label: "Outside Tools & Resources", href: "/resources", fullAccessOnly: true, external: false },
+    { id: "metabolic-reset-events" as const, label: "Metabolic Reset Events", href: "/metabolic-reset-events", fullAccessOnly: false, external: false },
   ]
   
   // Filter nav items based on org access
@@ -180,6 +181,26 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
             {/* Nav items in order from navItems array */}
             {navItems.map((item) => {
               const isActive = currentActiveTab === item.id
+              const className = `pb-2 lg:pb-3 px-2 lg:px-4 xl:px-6 font-heading font-semibold text-xs lg:text-sm xl:text-base transition-colors relative whitespace-nowrap ${
+                isActive
+                  ? "text-[hsl(var(--optavia-green))]"
+                  : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
+              }`
+
+              if (item.external) {
+                return (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={className}
+                  >
+                    {item.label}
+                  </a>
+                )
+              }
+
               return (
                 <Link
                   key={item.id}
@@ -188,11 +209,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                     setMobileMenuOpen(false)
                     onTabChange?.(item.id)
                   }}
-                  className={`pb-2 lg:pb-3 px-2 lg:px-4 xl:px-6 font-heading font-semibold text-xs lg:text-sm xl:text-base transition-colors relative whitespace-nowrap ${
-                    isActive
-                      ? "text-[hsl(var(--optavia-green))]"
-                      : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
-                  }`}
+                  className={className}
                 >
                   {item.label}
                   {isActive && (
@@ -243,6 +260,27 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
               {/* Nav items in order from navItems array */}
               {navItems.map((item) => {
                 const isActive = currentActiveTab === item.id
+                const mobileClassName = `px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 ${
+                  isActive
+                    ? "text-[hsl(var(--optavia-green))] bg-green-50"
+                    : "text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
+                }`
+
+                if (item.external) {
+                  return (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={mobileClassName}
+                    >
+                      {item.label}
+                    </a>
+                  )
+                }
+
                 return (
                   <Link
                     key={item.id}
@@ -251,11 +289,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                       setMobileMenuOpen(false)
                       onTabChange?.(item.id)
                     }}
-                    className={`px-4 py-3 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 ${
-                      isActive
-                        ? "text-[hsl(var(--optavia-green))] bg-green-50"
-                        : "text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
-                    }`}
+                    className={mobileClassName}
                   >
                     {item.label}
                   </Link>
