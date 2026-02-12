@@ -386,7 +386,12 @@ export function DashboardOverview() {
       {/* Announcements */}
       <Announcements />
 
-      {/* Quick Actions - contextual based on current state */}
+      {/* Coach Tip of the Day */}
+      <div className="mt-6">
+        <CoachTip />
+      </div>
+
+      {/* Dashboard - contextual quick actions */}
       <div className="mt-6">
         {(() => {
           const today = new Date().toISOString().split("T")[0]
@@ -416,11 +421,6 @@ export function DashboardOverview() {
             />
           )
         })()}
-      </div>
-
-      {/* Coach Tip of the Day */}
-      <div className="mt-6">
-        <CoachTip />
       </div>
 
       {/* Section 2: Pipeline Snapshot (4 stat cards) */}
