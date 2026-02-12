@@ -321,20 +321,21 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
       return
     }
 
-    // Swap sort_order values between the two adjacent items in the filtered view
-    const currentItem = visibleList[currentIndex]
-    const swapItem = visibleList[newIndex]
+    // Move the item in the list
+    const reordered = Array.from(visibleList)
+    const [removed] = reordered.splice(currentIndex, 1)
+    reordered.splice(newIndex, 0, removed)
 
-    const updates = [
-      { id: currentItem.id, sort_order: swapItem.sort_order },
-      { id: swapItem.id, sort_order: currentItem.sort_order },
-    ]
-
-    for (const update of updates) {
-      await supabase
-        .from("external_resources")
-        .update({ sort_order: update.sort_order })
-        .eq("id", update.id)
+    // Re-index the entire filtered list with sequential sort_order values
+    // This eliminates duplicate sort_order issues from legacy data
+    for (let i = 0; i < reordered.length; i++) {
+      const newOrder = i + 1
+      if (reordered[i].sort_order !== newOrder) {
+        await supabase
+          .from("external_resources")
+          .update({ sort_order: newOrder })
+          .eq("id", reordered[i].id)
+      }
     }
 
     toast({ title: "Success", description: "Resource order updated" })
