@@ -23,7 +23,6 @@ import {
   ChevronDown,
   ChevronUp,
   Pencil,
-  Phone,
 } from "lucide-react"
 import { ReminderButton } from "@/components/reminders-panel"
 import { ClientContextualResources } from "@/components/resources"
@@ -124,15 +123,6 @@ export const ClientCard = memo(function ClientCard({
                 day: "numeric",
               })}
             </div>
-            {client.phone && (
-              <a
-                href={`tel:${client.phone}`}
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-0.5"
-              >
-                <Phone className="h-3 w-3" />
-                {client.phone}
-              </a>
-            )}
           </div>
         </div>
 

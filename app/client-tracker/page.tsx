@@ -130,13 +130,12 @@ export default function ClientTrackerPage() {
   // Edit client state
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
-  const [editForm, setEditForm] = useState({ label: "", phone: "", startDate: "" })
+  const [editForm, setEditForm] = useState({ label: "", startDate: "" })
 
   const openEditModal = (client: Client) => {
     setEditingClient(client)
     setEditForm({
       label: client.label,
-      phone: client.phone || "",
       startDate: client.start_date,
     })
     setShowEditModal(true)
@@ -146,7 +145,6 @@ export default function ClientTrackerPage() {
     if (!editingClient || !editForm.label.trim() || !editForm.startDate) return
     const success = await updateClient(editingClient.id, {
       label: editForm.label.trim(),
-      phone: editForm.phone.trim() || null,
       start_date: editForm.startDate,
     })
     if (success) {
@@ -193,7 +191,6 @@ export default function ClientTrackerPage() {
 
   const [newClient, setNewClient] = useState({
     label: "",
-    phone: "",
     startDate: today,
   })
 
@@ -405,10 +402,9 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     
     await addClient({
       label: newClient.label,
-      phone: newClient.phone || undefined,
       start_date: newClient.startDate,
     })
-    setNewClient({ label: "", phone: "", startDate: today })
+    setNewClient({ label: "", startDate: today })
     setShowAddModal(false)
     
     // Check if new count is a milestone (5, 10, 15, 20, 25, etc.)
@@ -758,15 +754,6 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                           day: "numeric",
                         })}
                       </div>
-                      {client.phone && (
-                        <a
-                          href={`tel:${client.phone}`}
-                          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-0.5"
-                        >
-                          <Phone className="h-3 w-3" />
-                          {client.phone}
-                        </a>
-                      )}
                     </div>
                   </div>
 
@@ -1001,22 +988,6 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               </p>
             </div>
             <div>
-              <Label>Phone Number (optional)</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  value={newClient.phone}
-                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                  placeholder="e.g., 555-123-4567"
-                  className="pl-10"
-                  type="tel"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                For sending SMS reminders about scheduled check-ins
-              </p>
-            </div>
-            <div>
               <Label>Start Date *</Label>
               <Input
                 type="date"
@@ -1064,19 +1035,6 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 placeholder="e.g., Jennifer, Mike"
                 maxLength={50}
               />
-            </div>
-            <div>
-              <Label>Phone Number (optional)</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  placeholder="e.g., 555-123-4567"
-                  className="pl-10"
-                  type="tel"
-                />
-              </div>
             </div>
             <div>
               <Label>Start Date *</Label>
