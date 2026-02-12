@@ -71,7 +71,7 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
   const [showForm, setShowForm] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterCategory, setFilterCategory] = useState<string>("All")
-  const [filterStatus, setFilterStatus] = useState<string>("All")
+  const [filterStatus, setFilterStatus] = useState<string>("Active")
   const [savingOrder, setSavingOrder] = useState(false)
 
   // Form state
