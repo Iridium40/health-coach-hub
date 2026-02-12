@@ -25,9 +25,26 @@ CREATE POLICY "Anyone can read dashboard_buttons"
   TO authenticated
   USING (true);
 
-CREATE POLICY "Admins can manage dashboard_buttons"
-  ON dashboard_buttons FOR ALL
+CREATE POLICY "Admins can update dashboard_buttons"
+  ON dashboard_buttons FOR UPDATE
   TO authenticated
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND user_role = 'admin')
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND LOWER(user_role) = 'admin')
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND LOWER(user_role) = 'admin')
+  );
+
+CREATE POLICY "Admins can insert dashboard_buttons"
+  ON dashboard_buttons FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND LOWER(user_role) = 'admin')
+  );
+
+CREATE POLICY "Admins can delete dashboard_buttons"
+  ON dashboard_buttons FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND LOWER(user_role) = 'admin')
   );

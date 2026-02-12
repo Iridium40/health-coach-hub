@@ -99,19 +99,30 @@ export function AdminDashboardButtons({ onClose }: { onClose?: () => void }) {
     let hasError = false
 
     for (const [buttonId, changes] of Object.entries(editedButtons)) {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("dashboard_buttons")
         .update({
           ...changes,
           updated_at: new Date().toISOString(),
         })
         .eq("id", buttonId)
+        .select()
 
       if (error) {
         hasError = true
         toast({
           title: "Error",
           description: `Failed to update button: ${error.message}`,
+          variant: "destructive",
+        })
+        break
+      }
+
+      if (!data || data.length === 0) {
+        hasError = true
+        toast({
+          title: "Error",
+          description: "Update failed — please check that your admin permissions are configured in the database.",
           variant: "destructive",
         })
         break
