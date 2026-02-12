@@ -53,6 +53,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
     if (activeTab) return activeTab
     if (pathname?.startsWith("/dashboard") || pathname === "/") return "dashboard"
     if (pathname?.startsWith("/training")) return "training"
+    if (pathname?.startsWith("/team-padlets")) return "team-padlets"
     if (pathname?.startsWith("/coaching-quick-links")) return "coaching-quicklinks"
     if (pathname?.startsWith("/metabolic-reset-events")) return "metabolic-reset-events"
     if (pathname?.startsWith("/resources")) return "resources"
@@ -67,7 +68,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   // Order: Calendar, Coaching Resource Library, Coaching Quicklinks, Meal Planning & Recipes, Outside Tools & Resources, Metabolic Reset Events (My Business is separate dropdown at end)
   const allNavItems = [
     { id: "calendar" as const, label: "Calendar", href: "/calendar", fullAccessOnly: true, external: false },
-    { id: "team-padlets" as const, label: "Team Padlets", href: "https://docs.google.com/document/d/1nLXcyXJBbrVxnJfv7cdPpgJj-jSr9r8oghxdUSQ_hOs/edit?tab=t.0", fullAccessOnly: true, external: true },
+    { id: "team-padlets" as const, label: "Team Padlets", href: "/team-padlets", fullAccessOnly: true, external: false },
     { id: "training" as const, label: "Coaching Resource Library", href: "/training", fullAccessOnly: false, external: false },
     { id: "coaching-quicklinks" as const, label: "Coaching Quicklinks", href: "/coaching-quick-links", fullAccessOnly: true, external: false },
     { id: "recipes" as const, label: "Meal Planning & Recipes", href: "/recipes", fullAccessOnly: true, external: false },
