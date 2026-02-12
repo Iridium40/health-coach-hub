@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useReminders, type Reminder, type ReminderPriority, type EntityType } from "@/hooks/use-reminders"
+import { useSmartAlerts, type SmartAlert } from "@/hooks/use-smart-alerts"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,6 +28,9 @@ import {
   AlertCircle,
   User,
   Target,
+  AlertTriangle,
+  Sparkles,
+  Users,
 } from "lucide-react"
 
 interface RemindersPanelProps {
@@ -445,10 +449,52 @@ function ReminderCard({
   )
 }
 
+// Smart Alert Card Component
+function SmartAlertCard({ alert }: { alert: SmartAlert }) {
+  const severityStyles = {
+    urgent: "bg-red-50 border-red-200",
+    high: "bg-orange-50 border-orange-200",
+    normal: "bg-blue-50 border-blue-200",
+  }
+  const severityIcon = {
+    urgent: <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />,
+    high: <AlertCircle className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />,
+    normal: <Clock className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />,
+  }
+  const severityBadge = {
+    urgent: "bg-red-100 text-red-700",
+    high: "bg-orange-100 text-orange-700",
+    normal: "bg-blue-100 text-blue-700",
+  }
+
+  return (
+    <div className={`rounded-lg border p-3 transition-all ${severityStyles[alert.severity]}`}>
+      <div className="flex items-start gap-3">
+        {severityIcon[alert.severity]}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h4 className="font-medium text-gray-800 text-sm">{alert.title}</h4>
+          </div>
+          <p className="text-xs text-gray-600 mb-2">{alert.description}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className={severityBadge[alert.severity]}>
+              {alert.severity}
+            </Badge>
+            <Badge className={alert.entityType === "client" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}>
+              {alert.entityType === "client" ? "👤" : "🎯"} {alert.entityName}
+            </Badge>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Main Reminders Panel
 export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
   const { reminders, loading, stats, getUpcoming, getCompleted, completeReminder, uncompleteReminder, deleteReminder, isOverdue, isDueToday } = useReminders()
-  const [filterView, setFilterView] = useState<"upcoming" | "completed" | "all">("upcoming")
+  const { alerts, stats: alertStats } = useSmartAlerts()
+  const [filterView, setFilterView] = useState<"alerts" | "upcoming" | "completed" | "all">("alerts")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null)
 
@@ -468,6 +514,8 @@ export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
 
   if (!isOpen) return null
 
+  const totalBadgeItems = alertStats.total + stats.overdue + stats.dueToday
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -476,9 +524,14 @@ export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
-                My Reminders
+                Notifications
               </DialogTitle>
               <div className="flex items-center gap-2">
+                {alertStats.urgent > 0 && (
+                  <Badge className="bg-red-100 text-red-700">
+                    {alertStats.urgent} urgent
+                  </Badge>
+                )}
                 {stats.overdue > 0 && (
                   <Badge className="bg-red-100 text-red-700">
                     {stats.overdue} overdue
@@ -497,28 +550,58 @@ export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
           <div className="flex-shrink-0 border-b">
             <div className="flex gap-1">
               {([
-                { id: "upcoming", label: "Upcoming", count: stats.active },
-                { id: "completed", label: "Completed", count: stats.completed },
-                { id: "all", label: "All", count: stats.total },
-              ] as const).map((tab) => (
+                { id: "alerts" as const, label: "Alerts", count: alertStats.total },
+                { id: "upcoming" as const, label: "Reminders", count: stats.active },
+                { id: "completed" as const, label: "Completed", count: stats.completed },
+                { id: "all" as const, label: "All", count: stats.total },
+              ]).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setFilterView(tab.id)}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
                     filterView === tab.id
                       ? "border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))]"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  {tab.label} ({tab.count})
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span className={`ml-1 ${
+                      tab.id === "alerts" && tab.count > 0
+                        ? "text-red-600 font-bold"
+                        : ""
+                    }`}>
+                      ({tab.count})
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Reminders List */}
+          {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {loading ? (
+            {filterView === "alerts" ? (
+              // Smart Alerts View
+              alerts.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">✨</div>
+                  <p className="text-gray-500">No alerts — you're all caught up!</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Alerts appear when clients or prospects need your attention.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-500 pb-1">
+                    Based on client check-ins, milestones, and prospect activity.
+                  </p>
+                  {alerts.map((alert) => (
+                    <SmartAlertCard key={alert.id} alert={alert} />
+                  ))}
+                </>
+              )
+            ) : loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--optavia-green))] mx-auto" />
               </div>
@@ -553,7 +636,10 @@ export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
           {/* Add Button */}
           <div className="flex-shrink-0 p-4 border-t">
             <Button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => {
+                setFilterView("upcoming")
+                setShowCreateModal(true)
+              }}
               className="w-full bg-[hsl(var(--optavia-green))]"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -580,20 +666,26 @@ export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
 export function RemindersBell() {
   const [isOpen, setIsOpen] = useState(false)
   const { stats } = useReminders()
+  const { stats: alertStats } = useSmartAlerts()
 
-  const badgeCount = stats.active
-  const hasOverdue = stats.overdue > 0
+  // Badge shows smart alerts + active reminders
+  const badgeCount = alertStats.total + stats.active
+  const hasUrgent = alertStats.urgent > 0 || stats.overdue > 0
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-        title="Reminders"
+        className={`relative p-2 hover:bg-gray-100 rounded-lg transition-colors ${
+          hasUrgent ? "text-red-500 hover:text-red-700" : "text-gray-600 hover:text-gray-800"
+        }`}
+        title={badgeCount > 0 ? `${badgeCount} notifications` : "Notifications"}
       >
-        <Bell className="h-5 w-5" />
+        <Bell className={`h-5 w-5 ${hasUrgent ? "animate-bounce" : ""}`} />
         {badgeCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-red-500">
+          <span className={`absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full ${
+            hasUrgent ? "bg-red-500" : "bg-orange-500"
+          }`}>
             {badgeCount > 9 ? "9+" : badgeCount}
           </span>
         )}
