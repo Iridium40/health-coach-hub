@@ -176,7 +176,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
 
         {/* Desktop Navigation Menu - Order: Calendar | Coaching Resource Library | Coaching Quicklinks | Meal Planning & Recipes | Outside Tools & Resources | Metabolic Reset Events | My Business */}
         {user && (
-          <nav className="hidden md:flex items-center justify-center gap-6 lg:gap-8 xl:gap-10 border-t border-optavia-border py-2">
+          <nav className="hidden md:flex items-center justify-center flex-wrap gap-x-2 lg:gap-x-4 xl:gap-x-6 gap-y-1 border-t border-optavia-border py-2">
             {/* Nav items in order from navItems array */}
             {navItems.map((item) => {
               const isActive = currentActiveTab === item.id
@@ -188,7 +188,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                     setMobileMenuOpen(false)
                     onTabChange?.(item.id)
                   }}
-                  className={`pb-3 lg:pb-4 px-4 lg:px-6 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 ${
+                  className={`pb-2 lg:pb-3 px-2 lg:px-4 xl:px-6 font-heading font-semibold text-xs lg:text-sm xl:text-base transition-colors relative whitespace-nowrap ${
                     isActive
                       ? "text-[hsl(var(--optavia-green))]"
                       : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
@@ -207,7 +207,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className={`pb-3 lg:pb-4 px-4 lg:px-6 font-heading font-semibold text-sm lg:text-base transition-colors relative whitespace-nowrap flex-shrink-0 flex items-center gap-1 ${
+                    className={`pb-2 lg:pb-3 px-2 lg:px-4 xl:px-6 font-heading font-semibold text-xs lg:text-sm xl:text-base transition-colors relative whitespace-nowrap flex items-center gap-1 ${
                       isBusinessPage
                         ? "text-[hsl(var(--optavia-green))]"
                         : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"

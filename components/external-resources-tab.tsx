@@ -19,7 +19,6 @@ import { ToolCard } from "@/components/coach-tools/tool-card"
 import { WaterCalculator } from "@/components/coach-tools/water-calculator"
 import { ExerciseGuide } from "@/components/coach-tools/exercise-guide"
 import { MetabolicHealthInfo } from "@/components/coach-tools/metabolic-health-info"
-import { ClientOnboardingDialog } from "@/components/coach-tools/client-onboarding-dialog"
 import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
 import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
 import { OPTAVIAReferenceGuide } from "@/components/coach-tools/optavia-reference-guide"
@@ -38,14 +37,6 @@ interface Resource {
 
 // Coach Tools definitions
 const COACH_TOOLS = [
-  {
-    id: "client-onboarding",
-    title: "Client Onboarding Tool",
-    description: "Streamline new client onboarding with templates, checklists, and quick-copy messages.",
-    icon: Users,
-    component: ClientOnboardingDialog,
-    expandMode: "dialog" as const,
-  },
   {
     id: "client-troubleshooting",
     title: "Client Troubleshooting Guide",
@@ -112,7 +103,6 @@ export function ExternalResourcesTab() {
         .from("external_resources")
         .select("*")
         .eq("is_active", true)
-        .order("category", { ascending: true })
         .order("sort_order", { ascending: true })
 
       if (!error && data) {
@@ -222,13 +212,7 @@ export function ExternalResourcesTab() {
         return false
       }
       return true
-    }).sort((a, b) => {
-      // Sort by category, then by sort_order
-      if (a.category !== b.category) {
-        return a.category.localeCompare(b.category)
-      }
-      return a.sort_order - b.sort_order
-    })
+    }).sort((a, b) => a.sort_order - b.sort_order)
   }, [dbResources, profile?.optavia_id])
 
   // Get pinned resources

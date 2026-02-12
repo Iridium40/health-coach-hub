@@ -305,34 +305,33 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
 
   const reorderResource = async (resourceId: string, direction: "up" | "down") => {
     setSavingOrder(true)
-    const resourceToMove = resources.find(r => r.id === resourceId)
-    if (!resourceToMove) {
+
+    // Work on the full list sorted by sort_order (global ordering, not per-category)
+    const sortedAll = [...resources].sort((a, b) => a.sort_order - b.sort_order)
+    const currentIndex = sortedAll.findIndex(r => r.id === resourceId)
+
+    if (currentIndex === -1) {
       setSavingOrder(false)
       return
     }
 
-    // Get all resources in the same category
-    const categoryResources = resources
-      .filter(r => r.category === resourceToMove.category)
-      .sort((a, b) => a.sort_order - b.sort_order)
-
-    const currentIndex = categoryResources.findIndex(r => r.id === resourceId)
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
 
-    if (newIndex < 0 || newIndex >= categoryResources.length) {
+    if (newIndex < 0 || newIndex >= sortedAll.length) {
       setSavingOrder(false)
       return
     }
 
-    const updatedResources = Array.from(categoryResources)
-    const [removed] = updatedResources.splice(currentIndex, 1)
-    updatedResources.splice(newIndex, 0, removed)
+    // Swap the two items
+    const updated = Array.from(sortedAll)
+    const [removed] = updated.splice(currentIndex, 1)
+    updated.splice(newIndex, 0, removed)
 
-    // Update sort_order for affected resources
-    const updates = updatedResources.map((r, idx) => ({
-      id: r.id,
-      sort_order: idx + 1,
-    }))
+    // Only update the two affected resources (swap their sort_order values)
+    const updates = [
+      { id: updated[currentIndex].id, sort_order: currentIndex + 1 },
+      { id: updated[newIndex].id, sort_order: newIndex + 1 },
+    ]
 
     for (const update of updates) {
       await supabase
@@ -351,24 +350,17 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
   const availableCategories = ["All", ...CATEGORIES]
 
   // Filter resources
-  const filteredResources = resources.filter(resource => {
-    const matchesSearch = 
-      resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.url.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesCategory = filterCategory === "All" || resource.category === filterCategory
-    return matchesSearch && matchesCategory
-  })
-
-  // Group by category (matching the public resources page)
-  const groupedResources = filteredResources.reduce((acc, resource) => {
-    if (!acc[resource.category]) {
-      acc[resource.category] = []
-    }
-    acc[resource.category].push(resource)
-    return acc
-  }, {} as Record<string, ExternalResource[]>)
+  const filteredResources = resources
+    .filter(resource => {
+      const matchesSearch = 
+        resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        resource.url.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      const matchesCategory = filterCategory === "All" || resource.category === filterCategory
+      return matchesSearch && matchesCategory
+    })
+    .sort((a, b) => a.sort_order - b.sort_order)
 
   if (!isAdmin) {
     return (
@@ -650,7 +642,7 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
           </div>
         </div>
 
-        {Object.keys(groupedResources).length === 0 ? (
+        {filteredResources.length === 0 ? (
           <Card className="bg-gray-50 border border-gray-200">
             <CardContent className="py-8 text-center">
               <ExternalLink className="h-12 w-12 text-optavia-gray mx-auto mb-4" />
@@ -662,27 +654,11 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
-            {/* Sort by the category order to match public resources page */}
-            {CATEGORIES
-              .filter(cat => groupedResources[cat])
-              .map((cat) => {
-                const categoryResources = groupedResources[cat]
-                return (
-                <div key={cat} className="space-y-2">
-                  <h3 className="font-semibold text-optavia-dark flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs bg-[hsl(var(--optavia-green-light))] border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green-dark))]">
-                      {cat}
-                    </Badge>
-                    <span className="text-sm text-optavia-gray font-normal">
-                      ({categoryResources.length} resource{categoryResources.length !== 1 ? "s" : ""})
-                    </span>
-                  </h3>
-                  
-                  <div className="space-y-2">
-                    {categoryResources
-                      .sort((a, b) => a.sort_order - b.sort_order)
-                      .map((resource, index) => (
+          <div className="space-y-2">
+            <p className="text-sm text-optavia-gray mb-2">
+              {filteredResources.length} resource{filteredResources.length !== 1 ? "s" : ""} — use arrows to reorder
+            </p>
+            {filteredResources.map((resource, index) => (
                         <Card 
                           key={resource.id} 
                           className={`border transition-colors ${
@@ -693,26 +669,31 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                         >
                           <CardContent className="py-3 px-4">
                             <div className="flex items-start gap-3">
-                              {/* Reorder buttons */}
-                              <div className="flex flex-col gap-0.5 pt-1">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-5 w-5 p-0"
-                                  onClick={() => reorderResource(resource.id, "up")}
-                                  disabled={index === 0 || savingOrder}
-                                >
-                                  <ChevronUp className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-5 w-5 p-0"
-                                  onClick={() => reorderResource(resource.id, "down")}
-                                  disabled={index === categoryResources.length - 1 || savingOrder}
-                                >
-                                  <ChevronDown className="h-3 w-3" />
-                                </Button>
+                              {/* Reorder controls */}
+                              <div className="flex items-center gap-1 pt-1">
+                                <span className="text-xs font-mono text-optavia-gray w-5 text-center">{index + 1}</span>
+                                <div className="flex flex-col gap-0.5">
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="h-6 w-6 p-0 border-gray-300 hover:border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))]"
+                                    onClick={() => reorderResource(resource.id, "up")}
+                                    disabled={index === 0 || savingOrder}
+                                    title="Move up"
+                                  >
+                                    <ChevronUp className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    className="h-6 w-6 p-0 border-gray-300 hover:border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))]"
+                                    onClick={() => reorderResource(resource.id, "down")}
+                                    disabled={index === filteredResources.length - 1 || savingOrder}
+                                    title="Move down"
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
 
                               {/* Content */}
@@ -723,6 +704,9 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                                       <h4 className="font-medium text-optavia-dark truncate">
                                         {resource.title}
                                       </h4>
+                                      <Badge variant="outline" className="text-xs bg-[hsl(var(--optavia-green-light))] border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green-dark))]">
+                                        {resource.category}
+                                      </Badge>
                                       {!resource.is_active && (
                                         <Badge variant="secondary" className="text-xs bg-gray-200">
                                           Hidden
@@ -821,10 +805,7 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
-                  </div>
-                </div>
-              )})}
+            ))}
           </div>
         )}
       </div>

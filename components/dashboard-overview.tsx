@@ -61,10 +61,6 @@ const MetabolicHealthInfo = dynamic(
   () => import("@/components/coach-tools/metabolic-health-info").then((m) => m.MetabolicHealthInfo),
   { ssr: false }
 )
-const ClientOnboardingDialog = dynamic(
-  () => import("@/components/coach-tools/client-onboarding-dialog").then((m) => m.ClientOnboardingDialog),
-  { ssr: false }
-)
 const ClientTroubleshootingDialog = dynamic(
   () => import("@/components/coach-tools/client-troubleshooting-dialog").then((m) => m.ClientTroubleshootingDialog),
   { ssr: false }
@@ -80,7 +76,6 @@ const OPTAVIAReferenceGuide = dynamic(
 
 // Coach Tools definitions
 const COACH_TOOLS: { id: string; title: string; icon: LucideIcon; component: React.ComponentType }[] = [
-  { id: "client-onboarding", title: "Client Onboarding Tool", icon: Users, component: ClientOnboardingDialog },
   { id: "client-troubleshooting", title: "Client Troubleshooting Guide", icon: Wrench, component: ClientTroubleshootingDialog },
   { id: "water-calculator", title: "Water Intake Calculator", icon: Droplets, component: WaterCalculator },
   { id: "exercise-guide", title: "Exercise & Motion Guide", icon: Dumbbell, component: ExerciseGuide },
