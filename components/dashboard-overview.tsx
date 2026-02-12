@@ -391,36 +391,9 @@ export function DashboardOverview() {
         <CoachTip />
       </div>
 
-      {/* Dashboard - contextual quick actions */}
+      {/* Dashboard Buttons */}
       <div className="mt-6">
-        {(() => {
-          const today = new Date().toISOString().split("T")[0]
-          const todayStart = new Date()
-          todayStart.setHours(0, 0, 0, 0)
-          const todayEnd = new Date()
-          todayEnd.setHours(23, 59, 59, 999)
-          
-          const overdueProspects = prospects ? prospects.filter(p => {
-            if (!p.next_action || ["converted", "coach", "not_interested"].includes(p.status)) return false
-            return new Date(p.next_action) < new Date(today)
-          }).length : 0
-          
-          const haScheduledToday = prospects ? prospects.filter(p => 
-            p.status === "ha_scheduled" && 
-            p.ha_scheduled_at && 
-            new Date(p.ha_scheduled_at) >= todayStart && 
-            new Date(p.ha_scheduled_at) <= todayEnd
-          ).length : 0
-          
-          return (
-            <QuickActions
-              overdueProspects={overdueProspects}
-              clientsNeedingCheckIn={clientStats.needsAttention}
-              haScheduledToday={haScheduledToday}
-              trainingPercentage={trainingProgress.percentage}
-            />
-          )
-        })()}
+        <QuickActions />
       </div>
 
       {/* Section 2: Pipeline Snapshot (4 stat cards) */}
