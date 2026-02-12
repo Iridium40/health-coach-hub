@@ -386,129 +386,8 @@ export function DashboardOverview() {
       {/* Announcements */}
       <Announcements />
 
-
-      {/* Coach Tip of the Day */}
+      {/* Quick Actions - contextual based on current state */}
       <div className="mt-6">
-        <CoachTip />
-      </div>
-
-      {/* Section 2: Pipeline Snapshot (4 stat cards) */}
-      <div className="mt-6">
-        <PipelineSnapshot
-          clients={clients}
-          clientStats={clientStats}
-          prospects={prospects}
-          prospectStats={prospectStats}
-        />
-      </div>
-
-      {/* Main Grid: Quick Links + Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        {/* Quick Links Card */}
-        <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-lg flex items-center gap-2 text-optavia-dark">
-                  <Pin className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
-                  Quick Links
-                </CardTitle>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <Info className="h-4 w-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
-                      <p className="font-semibold text-gray-700 mb-1">Quick Links</p>
-                      <p className="text-sm text-gray-600">
-                        Your pinned coach tools, external resource links, and bookmarked training resources from the Resources and Training pages.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Link href="/resources">
-                <Button variant="ghost" size="sm" className="text-[hsl(var(--optavia-green))] hover:bg-green-50 -mr-2 text-xs">
-                  Manage
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {hasPinnedItems ? (
-              <div className="space-y-2">
-                {pinnedTools.map((tool) => {
-                  const IconComponent = tool.icon
-                  return (
-                    <button
-                      key={tool.id}
-                      onClick={() => setOpenToolId(tool.id)}
-                      className="w-full flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] bg-[hsl(var(--optavia-green-light))] hover:bg-green-100 transition-colors cursor-pointer group text-left"
-                    >
-                      <IconComponent className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
-                      <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1 truncate">
-                        {tool.title}
-                      </span>
-                      <ChevronRight className="h-3 w-3 text-optavia-gray flex-shrink-0" />
-                    </button>
-                  )
-                })}
-
-                {pinnedResources.map((resource) => (
-                  <a
-                    key={resource.id}
-                    href={resource.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-[hsl(var(--optavia-green))] bg-[hsl(var(--optavia-green-light))] hover:bg-green-100 transition-colors cursor-pointer group"
-                  >
-                    <Link2 className="h-4 w-4 text-[hsl(var(--optavia-green))] flex-shrink-0" />
-                    <span className="font-medium text-sm text-optavia-dark group-hover:text-[hsl(var(--optavia-green))] flex-1 truncate">
-                      {resource.title}
-                    </span>
-                    <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
-                  </a>
-                ))}
-
-                {/* Bookmarked Training Resources */}
-                {bookmarkedTrainingResources.map((resource) => (
-                  <a
-                    key={`bookmark-${resource.id}`}
-                    href={resource.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer group"
-                  >
-                    <Bookmark className="h-4 w-4 text-amber-500 fill-amber-400 flex-shrink-0" />
-                    <span className="font-medium text-sm text-optavia-dark group-hover:text-amber-600 flex-1 truncate">
-                      {resource.title}
-                    </span>
-                    <ExternalLink className="h-3 w-3 text-optavia-gray flex-shrink-0" />
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <Pin className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-optavia-gray mb-3">No quick links yet</p>
-                <Link href="/resources">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))]"
-                  >
-                    <Pin className="h-3 w-3 mr-1" />
-                    Browse Resources
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Smart Quick Actions - contextual based on current state */}
         {(() => {
           const today = new Date().toISOString().split("T")[0]
           const todayStart = new Date()
@@ -539,20 +418,21 @@ export function DashboardOverview() {
         })()}
       </div>
 
-      {/* Business Growth (Rank Progress) */}
-      {rankData && (
-        <div className="mt-6">
-          <RankProgressCard
-            currentRank={rankData.current_rank}
-            nextRank={nextRank}
-            points={estimatedPoints}
-            scTeams={0}
-            edTeams={0}
-            fibcTeams={0}
-            gaps={gaps}
-          />
-        </div>
-      )}
+      {/* Coach Tip of the Day */}
+      <div className="mt-6">
+        <CoachTip />
+      </div>
+
+      {/* Section 2: Pipeline Snapshot (4 stat cards) */}
+      <div className="mt-6">
+        <PipelineSnapshot
+          clients={clients}
+          clientStats={clientStats}
+          prospects={prospects}
+          prospectStats={prospectStats}
+        />
+      </div>
+
 
       {/* Popular Recipes */}
       {popularRecipes.length > 0 && (
