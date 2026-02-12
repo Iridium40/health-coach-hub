@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { useClients, getDayPhase, getProgramDay, type ClientStatus, type RecurringFrequency, type Client } from "@/hooks/use-clients"
+import { useClients, getDayPhase, getProgramDay, parseLocalDate, type ClientStatus, type RecurringFrequency, type Client } from "@/hooks/use-clients"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,6 +56,7 @@ import {
   Search,
   Info,
   Video,
+  Pencil,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -126,6 +127,44 @@ export default function ClientTrackerPage() {
   const [clientEmail, setClientEmail] = useState<string>("")
   const [clientPhone, setClientPhone] = useState<string>("")
   
+  // Edit client state
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingClient, setEditingClient] = useState<Client | null>(null)
+  const [editForm, setEditForm] = useState({ label: "", phone: "", startDate: "" })
+
+  const openEditModal = (client: Client) => {
+    setEditingClient(client)
+    setEditForm({
+      label: client.label,
+      phone: client.phone || "",
+      startDate: client.start_date,
+    })
+    setShowEditModal(true)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingClient || !editForm.label.trim() || !editForm.startDate) return
+    const success = await updateClient(editingClient.id, {
+      label: editForm.label.trim(),
+      phone: editForm.phone.trim() || null,
+      start_date: editForm.startDate,
+    })
+    if (success) {
+      toast({
+        title: "Client Updated",
+        description: `${editForm.label.trim()} has been updated.`,
+      })
+      setShowEditModal(false)
+      setEditingClient(null)
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to update client. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   // Meeting type state (Phone vs Zoom)
   const [meetingType, setMeetingType] = useState<"phone" | "zoom">("phone")
   const [zoomLink, setZoomLink] = useState("")
@@ -389,7 +428,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       return [
         c.label,
         c.status.charAt(0).toUpperCase() + c.status.slice(1),
-        new Date(c.start_date).toLocaleDateString(),
+        parseLocalDate(c.start_date).toLocaleDateString(),
         programDay.toString(),
         phase.label,
         c.is_coach_prospect ? "Yes" : "No",
@@ -714,11 +753,20 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
                         {phase.label} • Started{" "}
-                        {new Date(client.start_date).toLocaleDateString("en-US", {
+                        {parseLocalDate(client.start_date).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
                         })}
                       </div>
+                      {client.phone && (
+                        <a
+                          href={`tel:${client.phone}`}
+                          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-0.5"
+                        >
+                          <Phone className="h-3 w-3" />
+                          {client.phone}
+                        </a>
+                      )}
                     </div>
                   </div>
 
@@ -846,8 +894,17 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                     </div>
                   )}
 
-                  {/* Secondary Actions: Coach, Remind & Pause/Resume */}
+                  {/* Secondary Actions: Edit, Coach, Remind & Pause/Resume */}
                   <div className="mt-3 pt-3 border-t flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditModal(client)}
+                      title="Edit client"
+                    >
+                      <Pencil className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Edit</span>
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -984,6 +1041,62 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               className="bg-[hsl(var(--optavia-green))]"
             >
               Add Client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Client Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Client</DialogTitle>
+            <DialogDescription>
+              Update client details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Label / Nickname *</Label>
+              <Input
+                value={editForm.label}
+                onChange={(e) => setEditForm({ ...editForm, label: e.target.value })}
+                placeholder="e.g., Jennifer, Mike"
+                maxLength={50}
+              />
+            </div>
+            <div>
+              <Label>Phone Number (optional)</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="e.g., 555-123-4567"
+                  className="pl-10"
+                  type="tel"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Start Date *</Label>
+              <Input
+                type="date"
+                value={editForm.startDate}
+                onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={!editForm.label.trim() || !editForm.startDate}
+              className="bg-[hsl(var(--optavia-green))]"
+            >
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

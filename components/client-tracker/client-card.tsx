@@ -22,10 +22,12 @@ import {
   Lightbulb,
   ChevronDown,
   ChevronUp,
+  Pencil,
+  Phone,
 } from "lucide-react"
 import { ReminderButton } from "@/components/reminders-panel"
 import { ClientContextualResources } from "@/components/resources"
-import { getDayPhase, getProgramDay, type Client, type ClientStatus } from "@/hooks/use-clients"
+import { getDayPhase, getProgramDay, parseLocalDate, type Client, type ClientStatus } from "@/hooks/use-clients"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
 
 interface ClientCardProps {
@@ -38,6 +40,7 @@ interface ClientCardProps {
   onOpenScheduleModal: (client: Client) => void
   onSendSMS: (client: Client) => void
   onClearSchedule: (clientId: string) => void
+  onEdit: (client: Client) => void
   needsAttention: (client: Client) => boolean
 }
 
@@ -51,6 +54,7 @@ export const ClientCard = memo(function ClientCard({
   onOpenScheduleModal,
   onSendSMS,
   onClearSchedule,
+  onEdit,
   needsAttention,
 }: ClientCardProps) {
   const [showResources, setShowResources] = useState(false)
@@ -115,11 +119,20 @@ export const ClientCard = memo(function ClientCard({
             </div>
             <div className="text-sm text-gray-500 mt-1">
               {phase.label} • Started{" "}
-              {new Date(client.start_date).toLocaleDateString("en-US", {
+              {parseLocalDate(client.start_date).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
               })}
             </div>
+            {client.phone && (
+              <a
+                href={`tel:${client.phone}`}
+                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-0.5"
+              >
+                <Phone className="h-3 w-3" />
+                {client.phone}
+              </a>
+            )}
           </div>
         </div>
 
@@ -254,8 +267,17 @@ export const ClientCard = memo(function ClientCard({
           </div>
         )}
 
-        {/* Secondary Actions: Coach, Remind & Pause/Resume */}
+        {/* Secondary Actions: Edit, Coach, Remind & Pause/Resume */}
         <div className="mt-3 pt-3 border-t flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(client)}
+            title="Edit client"
+          >
+            <Pencil className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Edit</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"

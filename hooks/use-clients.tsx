@@ -74,11 +74,16 @@ export function getDayPhase(day: number): DayPhase {
   return { label: `Day ${day}`, color: '#4caf50', bg: '#e8f5e9' }
 }
 
+/** Parse a YYYY-MM-DD string as a local date (avoids UTC midnight shift). */
+export function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 export function getProgramDay(startDate: string): number {
-  const start = new Date(startDate)
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+  const startDay = parseLocalDate(startDate)
   const diffTime = today.getTime() - startDay.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
   return Math.max(1, diffDays)
