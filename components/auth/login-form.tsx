@@ -86,6 +86,14 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
               </button>
             </div>
           </div>
+          <div className="flex justify-end">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-[hsl(var(--optavia-green))] hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          </div>
           <Button type="submit" className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </Button>
