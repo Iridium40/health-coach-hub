@@ -32,9 +32,18 @@ import {
   Sparkles,
 } from "lucide-react"
 
+interface SmartAlertsData {
+  alerts: SmartAlert[]
+  stats: { total: number; urgent: number; high: number; clientAlerts: number; prospectAlerts: number }
+  dismissAlert: (alertId: string) => void
+  checkInClient: (alertId: string, clientId: string) => Promise<boolean>
+  celebrateMilestone: (alertId: string, clientId: string, programDay: number) => Promise<boolean>
+}
+
 interface RemindersPanelProps {
   isOpen: boolean
   onClose: () => void
+  smartAlerts: SmartAlertsData
 }
 
 interface CreateReminderModalProps {
@@ -563,9 +572,9 @@ function SmartAlertCard({
 }
 
 // Main Reminders Panel
-export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
+export function RemindersPanel({ isOpen, onClose, smartAlerts }: RemindersPanelProps) {
   const { reminders, loading, stats, getUpcoming, getCompleted, completeReminder, uncompleteReminder, deleteReminder, isOverdue, isDueToday } = useReminders()
-  const { alerts, stats: alertStats, dismissAlert, checkInClient, celebrateMilestone } = useSmartAlerts()
+  const { alerts, stats: alertStats, dismissAlert, checkInClient, celebrateMilestone } = smartAlerts
   const [filterView, setFilterView] = useState<"alerts" | "upcoming" | "completed" | "all">("alerts")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null)
@@ -744,11 +753,11 @@ export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
 export function RemindersBell() {
   const [isOpen, setIsOpen] = useState(false)
   const { stats } = useReminders()
-  const { stats: alertStats } = useSmartAlerts()
+  const smartAlerts = useSmartAlerts()
 
   // Badge shows smart alerts + active reminders
-  const badgeCount = alertStats.total + stats.active
-  const hasUrgent = alertStats.urgent > 0 || stats.overdue > 0
+  const badgeCount = smartAlerts.stats.total + stats.active
+  const hasUrgent = smartAlerts.stats.urgent > 0 || stats.overdue > 0
 
   return (
     <>
@@ -768,7 +777,7 @@ export function RemindersBell() {
           </span>
         )}
       </button>
-      <RemindersPanel isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <RemindersPanel isOpen={isOpen} onClose={() => setIsOpen(false)} smartAlerts={smartAlerts} />
     </>
   )
 }
