@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@/lib/supabase/client"
+import { createClient, resetClient } from "@/lib/supabase/client"
 import { Footer } from "@/components/footer"
 import { Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react"
+import Link from "next/link"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -22,9 +23,49 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [ready, setReady] = useState(false)
+  const [sessionError, setSessionError] = useState(false)
 
   const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword
   const passwordLongEnough = password.length >= 6
+
+  // Listen for the PASSWORD_RECOVERY event from Supabase
+  // This fires when the user arrives via the reset link (both PKCE and implicit flows)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "PASSWORD_RECOVERY") {
+          // User arrived from the reset password email link - show the form
+          setReady(true)
+        } else if (event === "SIGNED_IN" && session) {
+          // Also handle case where session is established (PKCE flow)
+          // Check if we came from a recovery flow by checking URL hash
+          if (window.location.hash.includes("type=recovery")) {
+            setReady(true)
+          }
+        }
+      }
+    )
+
+    // Also check if user already has a session (e.g., from auth callback route)
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setReady(true)
+      } else {
+        // Give the auth state change listener a moment to fire
+        setTimeout(() => {
+          setReady((current) => {
+            if (!current) setSessionError(true)
+            return current
+          })
+        }, 3000)
+      }
+    }
+    checkSession()
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,10 +104,12 @@ export default function ResetPasswordPage() {
 
     // Sign out so user logs in fresh with new password
     await supabase.auth.signOut()
+    resetClient()
     setSuccess(true)
     setLoading(false)
   }
 
+  // Success state
   if (success) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
@@ -91,7 +134,7 @@ export default function ResetPasswordPage() {
               </p>
               <div className="pt-4">
                 <Button
-                  onClick={() => router.push("/login")}
+                  onClick={() => { window.location.href = "/login" }}
                   className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
                 >
                   Sign In
@@ -105,10 +148,77 @@ export default function ResetPasswordPage() {
     )
   }
 
+  // Invalid/expired link state
+  if (sessionError && !ready) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+          <div className="mb-8 sm:mb-12">
+            <img
+              src="/branding/ca_logo.png"
+              alt="Coaching Amplifier"
+              className="h-16 sm:h-20 md:h-24 w-auto mx-auto"
+            />
+          </div>
+          <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 shadow-lg">
+            <CardContent className="pt-8 pb-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+                <XCircle className="h-8 w-8 text-red-500" />
+              </div>
+              <h2 className="text-xl font-heading font-bold text-optavia-dark">
+                Invalid or Expired Link
+              </h2>
+              <p className="text-optavia-gray text-sm">
+                This password reset link is invalid or has expired. Please request a new one.
+              </p>
+              <div className="pt-4 space-y-2">
+                <Link href="/forgot-password">
+                  <Button className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white">
+                    Request New Link
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button variant="outline" className="w-full">
+                    Back to Sign In
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
+  // Loading state while waiting for session
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+          <div className="mb-8 sm:mb-12">
+            <img
+              src="/branding/ca_logo.png"
+              alt="Coaching Amplifier"
+              className="h-16 sm:h-20 md:h-24 w-auto mx-auto"
+            />
+          </div>
+          <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 shadow-lg">
+            <CardContent className="pt-8 pb-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4" />
+              <p className="text-optavia-gray">Verifying reset link...</p>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
+  // Password form
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-        {/* Logo */}
         <div className="mb-8 sm:mb-12">
           <img
             src="/branding/ca_logo.png"

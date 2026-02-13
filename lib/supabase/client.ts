@@ -17,3 +17,7 @@ export function createClient() {
   return browserClient
 }
 
+export function resetClient() {
+  browserClient = null
+}
+
