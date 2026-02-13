@@ -20,21 +20,20 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [loginError, setLoginError] = useState("")
   const { signIn } = useAuth()
   const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setLoginError("")
 
     const { error } = await signIn(email, password)
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      })
+      // Show a user-friendly message near the form
+      setLoginError("Invalid email or password. Please try again.")
     } else {
       onSuccess?.()
     }
@@ -57,7 +56,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
               type="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setLoginError("") }}
               required
               disabled={loading}
               className="bg-white border-gray-300 text-optavia-dark"
@@ -71,7 +70,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setLoginError("") }}
                 required
                 disabled={loading}
                 className="bg-white border-gray-300 text-optavia-dark pr-10"
@@ -85,6 +84,9 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            {loginError && (
+              <p className="text-sm text-red-600 font-medium">{loginError}</p>
+            )}
           </div>
           <div className="flex justify-end">
             <Link
