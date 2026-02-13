@@ -7,7 +7,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
-import { ArrowLeft, Users, BookOpen, TrendingUp, UserCheck, Calendar, Target } from "lucide-react"
+import { ArrowLeft, Users, TrendingUp, UserCheck, Calendar, Target } from "lucide-react"
 
 interface ReportStats {
   totalUsers: number
@@ -17,7 +17,6 @@ interface ReportStats {
   activePercent30Days: number
   newCoaches: number
   experiencedCoaches: number
-  totalCompletedResources: number
   totalActiveProspects: number
   totalActiveClients: number
   totalHAScheduled: number
@@ -72,11 +71,6 @@ export default function AdminReportsPage() {
       const activePercent7Days = Math.round(((activeUsers7Days || 0) / total) * 100)
       const activePercent30Days = Math.round(((activeUsers30Days || 0) / total) * 100)
 
-      // Get total completed resources
-      const { count: totalCompletedResources } = await supabase
-        .from("user_progress")
-        .select("*", { count: "exact", head: true })
-
       // Get total active prospects (status = 'new' or 'interested') across all coaches
       const { count: totalActiveProspects } = await supabase
         .from("prospects")
@@ -114,7 +108,6 @@ export default function AdminReportsPage() {
         activePercent30Days,
         newCoaches,
         experiencedCoaches,
-        totalCompletedResources: totalCompletedResources || 0,
         totalActiveProspects: totalActiveProspects || 0,
         totalActiveClients: totalActiveClients || 0,
         totalHAScheduled: totalHAScheduled || 0,
@@ -204,19 +197,6 @@ export default function AdminReportsPage() {
                       style={{ width: `${stats.activePercent30Days}%` }}
                     />
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border border-gray-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-optavia-gray">Resources Completed</CardTitle>
-                  <BookOpen className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-optavia-dark">{stats.totalCompletedResources}</div>
-                  <p className="text-xs text-optavia-gray mt-1">
-                    Total across all coaches
-                  </p>
                 </CardContent>
               </Card>
 
