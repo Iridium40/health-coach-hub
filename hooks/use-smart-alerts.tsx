@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState, useCallback } from "react"
 import { useClients, getProgramDay, getDayPhase, type Client } from "@/hooks/use-clients"
 import { useProspects, type Prospect } from "@/hooks/use-prospects"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
@@ -17,6 +17,7 @@ export interface SmartAlert {
   entityType: "client" | "prospect"
   entityName: string
   entityId: string
+  programDay?: number // for milestone alerts
 }
 
 /**
@@ -24,13 +25,16 @@ export interface SmartAlert {
  * These are not stored in the database — they're derived in real time.
  */
 export function useSmartAlerts() {
-  const { clients } = useClients()
+  const { clients, toggleTouchpoint, updateClient } = useClients()
   const { prospects } = useProspects()
+
+  // Dismissed alerts persist for this session only
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
 
   const today = new Date().toISOString().split("T")[0]
   const now = new Date()
 
-  const alerts = useMemo(() => {
+  const allAlerts = useMemo(() => {
     const result: SmartAlert[] = []
 
     // --- CLIENT ALERTS ---
@@ -71,6 +75,7 @@ export function useSmartAlerts() {
           entityType: "client",
           entityName: client.label,
           entityId: client.id,
+          programDay,
         })
       }
 
@@ -222,6 +227,41 @@ export function useSmartAlerts() {
     return result
   }, [clients, prospects, today, now])
 
+  // Filter out dismissed alerts
+  const alerts = useMemo(
+    () => allAlerts.filter((a) => !dismissedIds.has(a.id)),
+    [allAlerts, dismissedIds]
+  )
+
+  // Dismiss an alert for this session
+  const dismissAlert = useCallback((alertId: string) => {
+    setDismissedIds((prev) => new Set([...prev, alertId]))
+  }, [])
+
+  // Check in a client (marks am_done) and dismiss the alert
+  const checkInClient = useCallback(
+    async (alertId: string, clientId: string) => {
+      const success = await toggleTouchpoint(clientId, "am_done")
+      if (success) {
+        setDismissedIds((prev) => new Set([...prev, alertId]))
+      }
+      return success
+    },
+    [toggleTouchpoint]
+  )
+
+  // Mark a milestone as celebrated and dismiss
+  const celebrateMilestone = useCallback(
+    async (alertId: string, clientId: string, programDay: number) => {
+      const success = await updateClient(clientId, { last_celebrated_day: programDay })
+      if (success) {
+        setDismissedIds((prev) => new Set([...prev, alertId]))
+      }
+      return success
+    },
+    [updateClient]
+  )
+
   const stats = useMemo(
     () => ({
       total: alerts.length,
@@ -233,5 +273,5 @@ export function useSmartAlerts() {
     [alerts]
   )
 
-  return { alerts, stats }
+  return { alerts, stats, dismissAlert, checkInClient, celebrateMilestone }
 }

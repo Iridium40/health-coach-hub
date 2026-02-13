@@ -30,7 +30,6 @@ import {
   Target,
   AlertTriangle,
   Sparkles,
-  Users,
 } from "lucide-react"
 
 interface RemindersPanelProps {
@@ -450,7 +449,20 @@ function ReminderCard({
 }
 
 // Smart Alert Card Component
-function SmartAlertCard({ alert }: { alert: SmartAlert }) {
+function SmartAlertCard({
+  alert,
+  onCheckIn,
+  onCelebrate,
+  onDismiss,
+}: {
+  alert: SmartAlert
+  onCheckIn: (alertId: string, clientId: string) => Promise<boolean>
+  onCelebrate: (alertId: string, clientId: string, programDay: number) => Promise<boolean>
+  onDismiss: (alertId: string) => void
+}) {
+  const { toast } = useToast()
+  const [acting, setActing] = useState(false)
+
   const severityStyles = {
     urgent: "bg-red-50 border-red-200",
     high: "bg-orange-50 border-orange-200",
@@ -465,6 +477,32 @@ function SmartAlertCard({ alert }: { alert: SmartAlert }) {
     urgent: "bg-red-100 text-red-700",
     high: "bg-orange-100 text-orange-700",
     normal: "bg-blue-100 text-blue-700",
+  }
+
+  const isClientCheckIn =
+    alert.entityType === "client" &&
+    ["check-in", "critical-phase"].includes(alert.category)
+
+  const isMilestone =
+    alert.entityType === "client" && alert.category === "milestone"
+
+  const handleCheckIn = async () => {
+    setActing(true)
+    const success = await onCheckIn(alert.id, alert.entityId)
+    setActing(false)
+    if (success) {
+      toast({ title: "Checked In", description: `${alert.entityName} marked as checked in.` })
+    }
+  }
+
+  const handleCelebrate = async () => {
+    if (!alert.programDay) return
+    setActing(true)
+    const success = await onCelebrate(alert.id, alert.entityId, alert.programDay)
+    setActing(false)
+    if (success) {
+      toast({ title: "Celebrated!", description: `Milestone marked for ${alert.entityName}.` })
+    }
   }
 
   return (
@@ -484,6 +522,40 @@ function SmartAlertCard({ alert }: { alert: SmartAlert }) {
               {alert.entityType === "client" ? "👤" : "🎯"} {alert.entityName}
             </Badge>
           </div>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200/60">
+            {isClientCheckIn && (
+              <Button
+                size="sm"
+                disabled={acting}
+                onClick={handleCheckIn}
+                className="bg-green-600 hover:bg-green-700 text-white text-xs h-7 px-3"
+              >
+                <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                {acting ? "..." : "Checked In"}
+              </Button>
+            )}
+            {isMilestone && (
+              <Button
+                size="sm"
+                disabled={acting}
+                onClick={handleCelebrate}
+                className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-7 px-3"
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1" />
+                {acting ? "..." : "Celebrated"}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDismiss(alert.id)}
+              className="text-gray-500 hover:text-gray-700 text-xs h-7 px-3"
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Dismiss
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -493,7 +565,7 @@ function SmartAlertCard({ alert }: { alert: SmartAlert }) {
 // Main Reminders Panel
 export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
   const { reminders, loading, stats, getUpcoming, getCompleted, completeReminder, uncompleteReminder, deleteReminder, isOverdue, isDueToday } = useReminders()
-  const { alerts, stats: alertStats } = useSmartAlerts()
+  const { alerts, stats: alertStats, dismissAlert, checkInClient, celebrateMilestone } = useSmartAlerts()
   const [filterView, setFilterView] = useState<"alerts" | "upcoming" | "completed" | "all">("alerts")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null)
@@ -597,7 +669,13 @@ export function RemindersPanel({ isOpen, onClose }: RemindersPanelProps) {
                     Based on client check-ins, milestones, and prospect activity.
                   </p>
                   {alerts.map((alert) => (
-                    <SmartAlertCard key={alert.id} alert={alert} />
+                    <SmartAlertCard
+                      key={alert.id}
+                      alert={alert}
+                      onCheckIn={checkInClient}
+                      onCelebrate={celebrateMilestone}
+                      onDismiss={dismissAlert}
+                    />
                   ))}
                 </>
               )
