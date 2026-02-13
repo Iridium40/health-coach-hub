@@ -229,12 +229,12 @@ export function MealPlanner({ recipes, coachName, coachId, coachOptaviaId }: Mea
         
         <div className="flex gap-2">
           <Button
-            variant="outline"
             onClick={autoFillMeals}
-            className="gap-2 border-gray-300"
+            className="gap-2 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white shadow-md px-6"
+            size="lg"
           >
-            <Wand2 className="h-4 w-4" />
-            Auto-Fill
+            <Wand2 className="h-5 w-5" />
+            Auto-Fill Week
           </Button>
           {hasMeals && (
             <>
