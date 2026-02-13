@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Calendar } from "lucide-react"
+import { Calendar, Wand2, Send, ShoppingCart, ArrowRight } from "lucide-react"
 import type { UserData, Recipe } from "@/lib/types"
 
 interface RecipesTabProps {
@@ -80,20 +80,55 @@ export const RecipesTab = memo(function RecipesTab({ userData, setUserData, togg
   return (
     <div>
       {/* Title and Description */}
-      <div className="text-center py-4 sm:py-8 mb-6">
-        <h2 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark mb-3 sm:mb-4">
+      <div className="text-center py-4 sm:py-6 mb-4">
+        <h2 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark mb-2 sm:mb-3">
           Lean & Green Recipes
         </h2>
-        <p className="text-optavia-gray text-base sm:text-lg max-w-2xl mx-auto px-4 mb-4">
+        <p className="text-optavia-gray text-base sm:text-lg max-w-2xl mx-auto px-4">
           Discover delicious Lean & Green meal recipes to share with your clients and support their health journey.
         </p>
-        <Button
-          onClick={() => router.push("/meal-planner")}
-          className="gap-2 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
-        >
-          <Calendar className="h-4 w-4" />
-          Create Meal Plan
-        </Button>
+      </div>
+
+      {/* Meal Plan CTA Banner */}
+      <div className="mb-8 mx-auto max-w-4xl">
+        <div className="relative overflow-hidden rounded-xl border border-[hsl(var(--optavia-green))]/20 bg-gradient-to-br from-[hsl(var(--optavia-green-light))] to-white p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex-1 text-center sm:text-left">
+              <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                <Calendar className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+                <h3 className="font-heading font-bold text-lg sm:text-xl text-optavia-dark">
+                  Weekly Meal Planner
+                </h3>
+              </div>
+              <p className="text-optavia-gray text-sm sm:text-base mb-4">
+                Build a full week of Lean & Green meals in minutes. Auto-populate meals with one click, 
+                customize the plan, then send it directly to your client — complete with a grocery list.
+              </p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2 text-sm text-optavia-gray mb-5">
+                <span className="flex items-center gap-1.5">
+                  <Wand2 className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
+                  Auto-fill a full week
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <ShoppingCart className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
+                  Grocery list included
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Send className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
+                  Send directly to clients
+                </span>
+              </div>
+              <Button
+                onClick={() => router.push("/meal-planner")}
+                size="lg"
+                className="gap-2 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white shadow-md px-8"
+              >
+                Create Meal Plan
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search and Filter */}
