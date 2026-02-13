@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, LogOut, Bell, BarChart3, BellRing, UtensilsCrossed, Star, CalendarDays, BookOpen, Link2, MessageSquare, Video, UserPlus, Users, LayoutDashboard } from "lucide-react"
+import { User, LogOut, Bell, BarChart3, BellRing, UtensilsCrossed, Star, CalendarDays, BookOpen, Link2, MessageSquare, Video, Users, LayoutDashboard } from "lucide-react"
 import { useUserData } from "@/contexts/user-data-context"
 
 interface UserMenuProps {
@@ -131,46 +131,25 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
                   <span>Announcements</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onSelect={handleReportsClick}
+                  onSelect={() => router.push("/admin/bulk-invite")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  <span>Reports</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onSelect={() => router.push("/admin/recipes")}
-                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-                >
-                  <UtensilsCrossed className="mr-2 h-4 w-4" />
-                  <span>Recipes</span>
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Bulk Invite</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onSelect={() => router.push("/admin/zoom-calls")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <CalendarDays className="mr-2 h-4 w-4" />
-                  <span>Events</span>
+                  <span>Calendar</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onSelect={() => router.push("/admin/training")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <BookOpen className="mr-2 h-4 w-4" />
-                  <span>Training</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onSelect={() => router.push("/admin/resources")}
-                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-                >
-                  <Link2 className="mr-2 h-4 w-4" />
-                  <span>Resources</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onSelect={() => router.push("/admin/touchpoints")}
-                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  <span>Touchpoints</span>
+                  <span>Coaching Resource Library</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onSelect={() => router.push("/admin/dashboard-buttons")}
@@ -180,18 +159,32 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
                   <span>Dashboard Buttons</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onSelect={() => router.push("/admin/invite")}
+                  onSelect={() => router.push("/admin/recipes")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  <span>Invite Coach</span>
+                  <UtensilsCrossed className="mr-2 h-4 w-4" />
+                  <span>Meal Planning & Recipes</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onSelect={() => router.push("/admin/bulk-invite")}
+                  onSelect={() => router.push("/admin/resources")}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Bulk Invite</span>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  <span>Outside Tools & Resources</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onSelect={handleReportsClick}
+                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  <span>Reports</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onSelect={() => router.push("/admin/touchpoints")}
+                  className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  <span>Touchpoints</span>
                 </DropdownMenuItem>
               </>
             )}
