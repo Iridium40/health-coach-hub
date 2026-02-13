@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Calendar, Wand2, Send, ShoppingCart, ArrowRight } from "lucide-react"
+import { Calendar, Sparkles, ShoppingCart, Share2, ChevronRight } from "lucide-react"
 import type { UserData, Recipe } from "@/lib/types"
 
 interface RecipesTabProps {
@@ -91,41 +91,60 @@ export const RecipesTab = memo(function RecipesTab({ userData, setUserData, togg
 
       {/* Meal Plan CTA Banner */}
       <div className="mb-8 mx-auto max-w-4xl">
-        <div className="relative overflow-hidden rounded-xl border border-[hsl(var(--optavia-green))]/20 bg-gradient-to-br from-[hsl(var(--optavia-green-light))] to-white p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="flex-1 text-center sm:text-left">
-              <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                <Calendar className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
-                <h3 className="font-heading font-bold text-lg sm:text-xl text-optavia-dark">
-                  Weekly Meal Planner
-                </h3>
+        <div className="relative overflow-hidden rounded-2xl border-2 border-[hsl(var(--optavia-green))]/15 bg-gradient-to-br from-[hsl(var(--optavia-green-light))]/40 via-white to-white p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-10">
+            {/* Left content */}
+            <div className="flex-1 text-center lg:text-left">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[hsl(var(--optavia-green))]/10 text-[hsl(var(--optavia-green))] text-xs font-semibold mb-4">
+                <Sparkles className="h-3.5 w-3.5" />
+                Meal Planning Made Easy
               </div>
-              <p className="text-optavia-gray text-sm sm:text-base mb-4">
-                Build a full week of Lean & Green meals in minutes. Auto-populate meals with one click, 
-                customize the plan, then send it directly to your client — complete with a grocery list.
+              <h3 className="font-heading font-bold text-xl sm:text-2xl text-optavia-dark mb-3">
+                Build a Weekly Meal Plan in Minutes
+              </h3>
+              <p className="text-optavia-gray text-sm sm:text-base mb-5 max-w-lg mx-auto lg:mx-0">
+                Select recipes, auto-populate a full 7-day plan, and instantly generate a shareable grocery list for your clients or anyone.
               </p>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2 text-sm text-optavia-gray mb-5">
-                <span className="flex items-center gap-1.5">
-                  <Wand2 className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
-                  Auto-fill a full week
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <ShoppingCart className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
-                  Grocery list included
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Send className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
-                  Send directly to clients
-                </span>
-              </div>
               <Button
                 onClick={() => router.push("/meal-planner")}
                 size="lg"
-                className="gap-2 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white shadow-md px-8"
+                className="gap-2 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white shadow-md px-8 rounded-lg"
               >
+                <Calendar className="h-4 w-4" />
                 Create Meal Plan
-                <ArrowRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" />
               </Button>
+            </div>
+
+            {/* Right feature cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 w-full lg:w-auto">
+              <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-[hsl(var(--optavia-green))]/10 flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-optavia-dark">7-Day Plans</p>
+                  <p className="text-xs text-optavia-gray">Auto-populated weekly meals</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+                  <ShoppingCart className="h-5 w-5 text-teal-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-optavia-dark">Grocery List</p>
+                  <p className="text-xs text-optavia-gray">Auto-generated from recipes</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 col-span-2 lg:col-span-1 max-w-[240px] mx-auto lg:max-w-none lg:mx-0 w-full">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <Share2 className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-optavia-dark">Share Instantly</p>
+                  <p className="text-xs text-optavia-gray">Send to clients or anyone</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
