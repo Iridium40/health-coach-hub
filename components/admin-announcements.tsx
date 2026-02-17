@@ -188,7 +188,7 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
       // Send email notifications
       const { data: usersData, error: usersError } = await supabase
         .from("profiles")
-        .select("id, email, full_name")
+        .select("id, email, full_name, notification_email")
         .not("email", "is", null)
 
       if (!usersError && usersData) {
@@ -214,8 +214,9 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
         
         for (const u of usersToEmail) {
           try {
+            const recipientEmail = u.notification_email || u.email!
             await sendAnnouncementEmail({
-              to: u.email!,
+              to: recipientEmail,
               fullName: u.full_name || "Coach",
               announcementTitle: announcement.title,
               announcementContent: announcement.content,
@@ -224,7 +225,7 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
             emailsSent++
             await delay(600) // Throttle to stay under rate limit
           } catch (emailErr) {
-            console.error(`Failed to send email to ${u.email}:`, emailErr)
+            console.error(`Failed to send email to ${u.notification_email || u.email}:`, emailErr)
           }
         }
 
@@ -325,7 +326,7 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
           // Get all users with email notifications enabled
           const { data: usersData, error: usersError } = await supabase
             .from("profiles")
-            .select("id, email, full_name")
+            .select("id, email, full_name, notification_email")
             .not("email", "is", null)
 
           if (!usersError && usersData) {
@@ -350,8 +351,9 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
             
             for (const user of usersToEmail) {
               try {
+                const recipientEmail = user.notification_email || user.email!
                 await sendAnnouncementEmail({
-                  to: user.email!,
+                  to: recipientEmail,
                   fullName: user.full_name || "Coach",
                   announcementTitle: title,
                   announcementContent: content,
@@ -360,7 +362,7 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
                 // Wait 600ms between emails (allows ~1.6 emails/sec, under the 2/sec limit)
                 await delay(600)
               } catch (emailErr) {
-                console.error(`Failed to send email to ${user.email}:`, emailErr)
+                console.error(`Failed to send email to ${user.notification_email || user.email}:`, emailErr)
               }
             }
 

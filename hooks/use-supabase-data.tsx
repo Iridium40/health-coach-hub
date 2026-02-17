@@ -206,12 +206,13 @@ export function useSupabaseData(user: User | null) {
       }
 
       // Send badge award emails for new badges (in parallel)
-      if (profile.email && notificationSettings?.email_notifications) {
+      const badgeRecipientEmail = profile.notification_email || profile.email
+      if (badgeRecipientEmail && notificationSettings?.email_notifications) {
         const emailPromises = newBadges.map(badge => {
           const badgeInfo = badgeConfig[badge.category]
           if (badgeInfo) {
             return sendBadgeEmail({
-              to: profile.email!,
+              to: badgeRecipientEmail,
               fullName: profile.full_name || "Coach",
               badgeName: badgeInfo.name,
               badgeCategory: badge.category,

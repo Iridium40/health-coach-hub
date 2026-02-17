@@ -473,7 +473,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
         // Get all users with email notifications enabled
         const { data: usersData, error: usersError } = await supabase
           .from("profiles")
-          .select("id, email, full_name")
+          .select("id, email, full_name, notification_email")
           .not("email", "is", null)
 
         if (!usersError && usersData) {
@@ -508,7 +508,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
           // Send batch emails using Resend batch API (up to 100 at once)
           if (usersToEmail.length > 0) {
             const recipients = usersToEmail.map(u => ({
-              to: u.email!,
+              to: u.notification_email || u.email!,
               fullName: u.full_name || "Coach"
             }))
 
