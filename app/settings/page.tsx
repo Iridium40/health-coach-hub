@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -11,7 +11,7 @@ import { useUserData } from "@/contexts/user-data-context"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { User, Bell, Video } from "lucide-react"
 
-export default function SettingsPage() {
+function SettingsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, authLoading, profile } = useUserData()
@@ -108,5 +108,22 @@ export default function SettingsPage() {
       </main>
       <Footer />
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
+            <p className="text-optavia-gray">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <SettingsContent />
+    </Suspense>
   )
 }
