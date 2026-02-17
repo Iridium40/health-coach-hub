@@ -487,12 +487,10 @@ export default function CoachTrackerPage() {
                     <button
                       key={stage.id}
                       onClick={() => setFilterStage(filterStage === stage.id ? "all" : stage.id)}
-                      className={`relative flex flex-col items-center p-3 sm:p-4 rounded-xl border-2 bg-white hover:shadow-lg transition-all hover:scale-[1.03] cursor-pointer group ${
-                        isActive ? "ring-2 ring-offset-1" : ""
-                      }`}
+                      className="relative flex flex-col items-center p-3 sm:p-4 rounded-xl border-2 bg-white hover:shadow-lg transition-all hover:scale-[1.03] cursor-pointer group"
                       style={{
                         borderColor: isActive ? cfg.color : cfg.borderColor,
-                        ringColor: isActive ? cfg.color : undefined,
+                        boxShadow: isActive ? `0 0 0 2px ${cfg.color}33` : undefined,
                       }}
                     >
                       <span className="text-xl sm:text-2xl mb-1">{stage.icon}</span>
