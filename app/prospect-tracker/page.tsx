@@ -112,7 +112,7 @@ export default function ProspectTrackerPage() {
     getDaysUntil,
   } = useProspects()
 
-  const { addClient } = useClients()
+  const { addClient, stats: clientStats } = useClients()
   const { user, profile } = useUserData()
   const { toast } = useToast()
 
@@ -682,6 +682,47 @@ Talking Points:
             </Card>
           </div>
         </TooltipProvider>
+
+        {/* Compact Pipeline Stages */}
+        <div className="mb-6 overflow-x-auto">
+          <div className="flex items-center gap-1 sm:gap-0 min-w-max">
+            {[
+              { id: "new", label: "New", icon: "🆕", color: "#2196f3", count: stats.new },
+              { id: "interested", label: "Interested", icon: "🔥", color: "#ff9800", count: stats.interested },
+              { id: "ha_scheduled", label: "HA Scheduled", icon: "📅", color: "#9c27b0", count: stats.haScheduled },
+              { id: "client", label: "Client", icon: "⭐", color: "#4caf50", count: clientStats.active },
+              { id: "coach", label: "Future Coach", icon: "🚀", color: "#e91e63", count: clientStats.coachProspects },
+            ].map((stage, index, arr) => (
+              <div key={stage.id} className="flex items-center">
+                <button
+                  onClick={() => {
+                    if (stage.id === "client" || stage.id === "coach") {
+                      window.location.href = "/client-tracker"
+                    } else {
+                      setFilterStatus(stage.id as any)
+                    }
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:shadow-md transition-all hover:scale-[1.02] cursor-pointer group"
+                  style={{ borderColor: `${stage.color}40` }}
+                >
+                  <span className="text-base leading-none">{stage.icon}</span>
+                  <span
+                    className="text-xl font-bold leading-none"
+                    style={{ color: stage.color }}
+                  >
+                    {stage.count}
+                  </span>
+                  <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide leading-none">
+                    {stage.label}
+                  </span>
+                </button>
+                {index < arr.length - 1 && (
+                  <ChevronRight className="h-4 w-4 text-gray-300 mx-0.5 flex-shrink-0" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Search, Filter and View Toggle */}
         <div className="flex flex-col gap-4 mb-6">
