@@ -217,16 +217,6 @@ export default function ClientTrackerPage() {
 
   // Meeting type state (Phone vs Zoom)
   const [meetingType, setMeetingType] = useState<"phone" | "zoom">("phone")
-  const [zoomLink, setZoomLink] = useState("")
-  const [zoomMeetingId, setZoomMeetingId] = useState("")
-  const [zoomPasscode, setZoomPasscode] = useState("")
-  
-  // Prefill zoom details from profile when meeting type changes to Zoom
-  const prefillZoomDetails = () => {
-    if (profile?.zoom_link && !zoomLink) setZoomLink(profile.zoom_link)
-    if (profile?.zoom_meeting_id && !zoomMeetingId) setZoomMeetingId(profile.zoom_meeting_id)
-    if (profile?.zoom_passcode && !zoomPasscode) setZoomPasscode(profile.zoom_passcode)
-  }
   
   // Debounce search term for better performance
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
@@ -369,11 +359,11 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     let meetingDetails = ""
     let location = ""
     
-    if (meetingType === "zoom" && zoomLink) {
-      meetingDetails = `\n\n📹 Zoom Meeting:\n${zoomLink}`
-      if (zoomMeetingId) meetingDetails += `\nMeeting ID: ${zoomMeetingId}`
-      if (zoomPasscode) meetingDetails += `\nPasscode: ${zoomPasscode}`
-      location = zoomLink
+    if (meetingType === "zoom" && profile?.zoom_link) {
+      meetingDetails = `\n\n📹 Zoom Meeting:\n${profile.zoom_link}`
+      if (profile.zoom_meeting_id) meetingDetails += `\nMeeting ID: ${profile.zoom_meeting_id}`
+      if (profile.zoom_passcode) meetingDetails += `\nPasscode: ${profile.zoom_passcode}`
+      location = profile.zoom_link
     } else if (meetingType === "phone") {
       meetingDetails = "\n\n📱 Phone Call"
       if (clientPhone) meetingDetails += `\nCall: ${clientPhone}`
@@ -458,12 +448,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     }
 
     setShowScheduleModal(false)
-    
-    // Reset zoom fields
     setMeetingType("phone")
-    setZoomLink("")
-    setZoomMeetingId("")
-    setZoomPasscode("")
     
     const recurringLabel = recurringFrequency !== "none" 
       ? ` (${RECURRING_OPTIONS.find(r => r.value === recurringFrequency)?.label})`
@@ -1274,10 +1259,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setMeetingType("zoom")
-                      prefillZoomDetails()
-                    }}
+                    onClick={() => setMeetingType("zoom")}
                     className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
                       meetingType === "zoom"
                         ? "border-purple-600 bg-purple-50 text-purple-700"
@@ -1290,39 +1272,45 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 </div>
               </div>
 
-              {/* Zoom Details (shown when Zoom is selected) */}
+              {/* Zoom Details (shown when Zoom is selected) - read-only from profile */}
               {meetingType === "zoom" && (
                 <div className="space-y-3 bg-purple-50 border border-purple-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-purple-700 text-sm font-medium">
                     <Video className="h-4 w-4" />
                     Zoom Meeting Details
                   </div>
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="Zoom Link (e.g., https://zoom.us/j/...)"
-                      value={zoomLink}
-                      onChange={(e) => setZoomLink(e.target.value)}
-                      className="bg-white"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
+                  {profile?.zoom_link ? (
+                    <div className="space-y-2">
                       <Input
-                        placeholder="Meeting ID"
-                        value={zoomMeetingId}
-                        onChange={(e) => setZoomMeetingId(e.target.value)}
-                        className="bg-white"
+                        value={profile.zoom_link}
+                        readOnly
+                        className="bg-white/60 text-gray-700 cursor-default"
                       />
-                      <Input
-                        placeholder="Passcode"
-                        value={zoomPasscode}
-                        onChange={(e) => setZoomPasscode(e.target.value)}
-                        className="bg-white"
-                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          value={profile.zoom_meeting_id || ""}
+                          readOnly
+                          placeholder="No Meeting ID"
+                          className="bg-white/60 text-gray-700 cursor-default"
+                        />
+                        <Input
+                          value={profile.zoom_passcode || ""}
+                          readOnly
+                          placeholder="No Passcode"
+                          className="bg-white/60 text-gray-700 cursor-default"
+                        />
+                      </div>
+                      <p className="text-xs text-purple-500">
+                        Managed in My Settings → Zoom tab
+                      </p>
                     </div>
-                  </div>
-                  {!profile?.zoom_link && (
-                    <p className="text-xs text-purple-600">
-                      💡 Tip: Save your default Zoom details in Settings → Zoom Room to auto-fill
-                    </p>
+                  ) : (
+                    <div className="text-center py-3">
+                      <p className="text-sm text-purple-700 font-medium">No Zoom details configured</p>
+                      <p className="text-xs text-purple-600 mt-1">
+                        Go to <strong>My Settings → Zoom</strong> tab to enter your Zoom link, meeting ID, and passcode.
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
@@ -1370,11 +1358,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setShowScheduleModal(false)
-              // Reset zoom fields
               setMeetingType("phone")
-              setZoomLink("")
-              setZoomMeetingId("")
-              setZoomPasscode("")
             }}>
               Cancel
             </Button>

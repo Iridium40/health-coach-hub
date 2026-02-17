@@ -47,6 +47,7 @@ interface ProspectCardProps {
   onUpdateProspect: (id: string, updates: Partial<Prospect>) => Promise<boolean>
   onDelete: (id: string) => void
   onEdit: (prospect: Prospect) => void
+  onCheckIn: (prospect: Prospect) => void
   onScheduleHA: (prospect: Prospect) => void
   onSendHASMS: (prospect: Prospect) => void
   onClearHA: (prospectId: string) => void
@@ -60,6 +61,7 @@ export const ProspectCard = memo(function ProspectCard({
   onUpdateProspect,
   onDelete,
   onEdit,
+  onCheckIn,
   onScheduleHA,
   onSendHASMS,
   onClearHA,
@@ -68,6 +70,16 @@ export const ProspectCard = memo(function ProspectCard({
   const [showResources, setShowResources] = useState(false)
   const config = statusConfig[prospect.status]
   const isOverdue = daysUntil !== null && daysUntil < 0
+
+  // Calculate days since last contact
+  const daysSinceLastAction = prospect.last_action
+    ? Math.floor(
+        (new Date().setHours(0, 0, 0, 0) -
+          new Date(prospect.last_action + "T00:00:00").getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    : null
+  const needsCheckIn = daysSinceLastAction !== null && daysSinceLastAction >= 7
 
   const handleCompleteHA = async () => {
     await onUpdateProspect(prospect.id, {
@@ -83,7 +95,11 @@ export const ProspectCard = memo(function ProspectCard({
   return (
     <Card
       className={`transition-shadow hover:shadow-md ${
-        isOverdue ? "border-orange-300 bg-orange-50" : ""
+        isOverdue
+          ? "border-orange-300 bg-orange-50"
+          : needsCheckIn
+          ? "border-amber-300 bg-amber-50/30"
+          : ""
       }`}
     >
       <CardContent className="p-4">
@@ -105,7 +121,7 @@ export const ProspectCard = memo(function ProspectCard({
                 {config.label}
               </Badge>
             </div>
-            <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+            <div className="flex items-center gap-3 text-sm text-gray-500 mt-1 flex-wrap">
               <span>
                 {sourceOptions.find((s) => s.value === prospect.source)?.label}
               </span>
@@ -113,6 +129,16 @@ export const ProspectCard = memo(function ProspectCard({
                 <span className="flex items-center gap-1">
                   <ArrowRight className="h-3 w-3" />
                   {actionTypeLabels[prospect.action_type]}
+                </span>
+              )}
+              {prospect.last_action && (
+                <span className={`flex items-center gap-1 ${needsCheckIn ? "text-amber-600 font-medium" : ""}`}>
+                  •{" "}
+                  {daysSinceLastAction === 0
+                    ? "Contacted today"
+                    : daysSinceLastAction === 1
+                    ? "1 day ago"
+                    : `${daysSinceLastAction} days ago`}
                 </span>
               )}
             </div>
@@ -209,8 +235,22 @@ export const ProspectCard = memo(function ProspectCard({
             <Button
               variant="outline"
               size="sm"
+              onClick={() => onCheckIn(prospect)}
+              className={`flex-1 ${
+                needsCheckIn
+                  ? "text-amber-600 border-amber-300 hover:bg-amber-50"
+                  : "text-green-600 border-green-200 hover:bg-green-50"
+              }`}
+              title={daysSinceLastAction !== null ? `Last contact: ${daysSinceLastAction} day(s) ago` : "Log a check-in"}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              <span className="text-xs sm:text-sm">Check In</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => onScheduleHA(prospect)}
-              className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+              className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50"
               title="Schedule HA"
             >
               <CalendarPlus className="h-4 w-4 mr-1" />

@@ -108,6 +108,7 @@ export default function ProspectTrackerPage() {
     addProspect,
     updateProspect,
     deleteProspect,
+    logAction,
     getFilteredProspects,
     getDaysUntil,
   } = useProspects()
@@ -142,16 +143,6 @@ export default function ProspectTrackerPage() {
   
   // Meeting type state (Phone vs Zoom)
   const [haMeetingType, setHaMeetingType] = useState<"phone" | "zoom">("phone")
-  const [haZoomLink, setHaZoomLink] = useState("")
-  const [haZoomMeetingId, setHaZoomMeetingId] = useState("")
-  const [haZoomPasscode, setHaZoomPasscode] = useState("")
-  
-  // Prefill zoom details from profile when meeting type changes to Zoom
-  const prefillZoomDetails = () => {
-    if (profile?.zoom_link && !haZoomLink) setHaZoomLink(profile.zoom_link)
-    if (profile?.zoom_meeting_id && !haZoomMeetingId) setHaZoomMeetingId(profile.zoom_meeting_id)
-    if (profile?.zoom_passcode && !haZoomPasscode) setHaZoomPasscode(profile.zoom_passcode)
-  }
 
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -274,11 +265,11 @@ Talking Points:
     let meetingDetails = ""
     let location = ""
     
-    if (haMeetingType === "zoom" && haZoomLink) {
-      meetingDetails = `\n\n📹 Zoom Meeting:\n${haZoomLink}`
-      if (haZoomMeetingId) meetingDetails += `\nMeeting ID: ${haZoomMeetingId}`
-      if (haZoomPasscode) meetingDetails += `\nPasscode: ${haZoomPasscode}`
-      location = haZoomLink
+    if (haMeetingType === "zoom" && profile?.zoom_link) {
+      meetingDetails = `\n\n📹 Zoom Meeting:\n${profile.zoom_link}`
+      if (profile.zoom_meeting_id) meetingDetails += `\nMeeting ID: ${profile.zoom_meeting_id}`
+      if (profile.zoom_passcode) meetingDetails += `\nPasscode: ${profile.zoom_passcode}`
+      location = profile.zoom_link
     } else if (haMeetingType === "phone") {
       meetingDetails = "\n\n📱 Phone Call"
       if (prospectPhone) meetingDetails += `\nCall: ${prospectPhone}`
@@ -358,11 +349,7 @@ Talking Points:
       
       setShowHAScheduleModal(false)
       setSchedulingProspect(null)
-      // Reset zoom fields
       setHaMeetingType("phone")
-      setHaZoomLink("")
-      setHaZoomMeetingId("")
-      setHaZoomPasscode("")
     } else {
       toast({
         title: "Failed to schedule HA",
@@ -459,6 +446,16 @@ Talking Points:
     setShowConvertModal(false)
     setConvertingProspect(null)
     setClientStartDate("")
+  }
+
+  const handleCheckIn = async (prospect: Prospect) => {
+    const success = await logAction(prospect.id, 3)
+    if (success) {
+      toast({
+        title: "✅ Checked In!",
+        description: `Contact logged for ${prospect.label}. Follow-up set for 3 days.`,
+      })
+    }
   }
 
   const handleDelete = (id: string) => {
@@ -720,12 +717,24 @@ Talking Points:
             const config = statusConfig[prospect.status]
             const daysUntil = getDaysUntil(prospect.next_action)
             const isOverdue = daysUntil !== null && daysUntil < 0
+            const daysSinceLastAction = prospect.last_action
+              ? Math.floor(
+                  (new Date().setHours(0, 0, 0, 0) -
+                    new Date(prospect.last_action + "T00:00:00").getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )
+              : null
+            const needsCheckIn = daysSinceLastAction !== null && daysSinceLastAction >= 7
 
             return (
               <Card
                 key={prospect.id}
                 className={`transition-shadow hover:shadow-md ${
-                  isOverdue ? "border-orange-300 bg-orange-50" : ""
+                  isOverdue
+                    ? "border-orange-300 bg-orange-50"
+                    : needsCheckIn
+                    ? "border-amber-300 bg-amber-50/30"
+                    : ""
                 }`}
               >
                 <CardContent className="p-4">
@@ -747,12 +756,22 @@ Talking Points:
                           {config.label}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                      <div className="flex items-center gap-3 text-sm text-gray-500 mt-1 flex-wrap">
                         <span>{sourceOptions.find(s => s.value === prospect.source)?.label}</span>
                         {prospect.action_type && (
                           <span className="flex items-center gap-1">
                             <ArrowRight className="h-3 w-3" />
                             {actionTypeLabels[prospect.action_type]}
+                          </span>
+                        )}
+                        {prospect.last_action && (
+                          <span className={`flex items-center gap-1 ${needsCheckIn ? "text-amber-600 font-medium" : ""}`}>
+                            •{" "}
+                            {daysSinceLastAction === 0
+                              ? "Contacted today"
+                              : daysSinceLastAction === 1
+                              ? "1 day ago"
+                              : `${daysSinceLastAction} days ago`}
                           </span>
                         )}
                       </div>
@@ -869,32 +888,23 @@ Talking Points:
                     </div>
                   )}
 
-                  {/* Action Buttons - All on same row */}
-                  <div className="mt-4 flex gap-2">
-                    {/* Status Select */}
-                    <Select
-                      value={prospect.status}
-                      onValueChange={(value) => handleUpdateStatus(prospect.id, value as ProspectStatus)}
-                    >
-                      <SelectTrigger className="flex-1 min-w-0">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(statusConfig)
-                          .filter(([key]) => 
-                            // Show current status + all except ha_scheduled and coach
-                            key === prospect.status || !["ha_scheduled", "coach"].includes(key)
-                          )
-                          .map(([key, value]) => (
-                            <SelectItem key={key} value={key}>
-                              {value.icon} {value.label}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-
-                    {/* Schedule HA Button */}
-                    {prospect.status !== "converted" && prospect.status !== "coach" && (
+                  {/* Primary Action Buttons */}
+                  {prospect.status !== "converted" && prospect.status !== "coach" && (
+                    <div className="mt-4 flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCheckIn(prospect)}
+                        className={`flex-1 ${
+                          needsCheckIn
+                            ? "text-amber-600 border-amber-300 hover:bg-amber-50"
+                            : "text-green-600 border-green-200 hover:bg-green-50"
+                        }`}
+                        title={daysSinceLastAction !== null ? `Last contact: ${daysSinceLastAction} day(s) ago` : "Log a check-in"}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        <span className="text-xs sm:text-sm">Check In</span>
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -908,54 +918,82 @@ Talking Points:
                           setProspectPhone((prospect as any).phone || "")
                           setShowHAScheduleModal(true)
                         }}
-                        className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+                        className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50"
                         title="Schedule HA"
                       >
                         <CalendarPlus className="h-4 w-4 mr-1" />
-                        <span className="text-xs sm:text-sm">Schedule</span>
+                        <span className="text-xs sm:text-sm">Schedule HA</span>
                       </Button>
-                    )}
-                  </div>
-
-                  {/* Secondary Actions: Edit, Remind & Delete */}
-                  <div className="mt-3 pt-3 border-t flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setEditingProspect(prospect)
-                        setShowEditModal(true)
-                      }}
-                      title="Edit"
-                    >
-                      <Edit2 className="h-4 w-4 mr-1" />
-                      <span className="text-xs sm:text-sm">Edit</span>
-                    </Button>
-
-                    <ReminderButton
-                      entityType="prospect"
-                      entityId={prospect.id}
-                      entityName={prospect.label}
-                      variant="outline"
-                    />
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(prospect.id)}
-                      title="Delete"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      <span className="text-xs sm:text-sm">Delete</span>
-                    </Button>
-                  </div>
-
-                  {prospect.notes && (
-                    <div className="mt-3 pt-3 border-t text-sm text-gray-600">
-                      📝 {prospect.notes}
                     </div>
                   )}
+
+                  {/* Secondary Actions: Status + Edit + Remind + Delete */}
+                  <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-2">
+                    <Select
+                      value={prospect.status}
+                      onValueChange={(value) => handleUpdateStatus(prospect.id, value as ProspectStatus)}
+                    >
+                      <SelectTrigger className="w-full sm:w-auto sm:flex-1 sm:min-w-0 h-9 text-xs sm:text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(statusConfig)
+                          .filter(([key]) => 
+                            key === prospect.status || !["ha_scheduled", "coach"].includes(key)
+                          )
+                          .map(([key, value]) => (
+                            <SelectItem key={key} value={key}>
+                              {value.icon} {value.label}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingProspect(prospect)
+                          setShowEditModal(true)
+                        }}
+                        title="Edit"
+                      >
+                        <Edit2 className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Edit</span>
+                      </Button>
+                      <ReminderButton
+                        entityType="prospect"
+                        entityId={prospect.id}
+                        entityName={prospect.label}
+                        variant="outline"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(prospect.id)}
+                        title="Delete"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Delete</span>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Notes - clickable to edit */}
+                  <button
+                    onClick={() => {
+                      setEditingProspect(prospect)
+                      setShowEditModal(true)
+                    }}
+                    className="mt-3 pt-3 border-t w-full text-left text-sm hover:bg-gray-50 rounded-b-lg transition-colors cursor-pointer"
+                  >
+                    {prospect.notes ? (
+                      <span className="text-gray-600">📝 {prospect.notes}</span>
+                    ) : (
+                      <span className="text-gray-400 italic">📝 Add notes...</span>
+                    )}
+                  </button>
                 </CardContent>
               </Card>
             )
@@ -1301,10 +1339,7 @@ Talking Points:
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setHaMeetingType("zoom")
-                      prefillZoomDetails()
-                    }}
+                    onClick={() => setHaMeetingType("zoom")}
                     className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
                       haMeetingType === "zoom"
                         ? "border-blue-600 bg-blue-50 text-blue-700"
@@ -1317,39 +1352,45 @@ Talking Points:
                 </div>
               </div>
 
-              {/* Zoom Details (shown when Zoom is selected) */}
+              {/* Zoom Details (shown when Zoom is selected) - read-only from profile */}
               {haMeetingType === "zoom" && (
                 <div className="space-y-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
                     <Video className="h-4 w-4" />
                     Zoom Meeting Details
                   </div>
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="Zoom Link (e.g., https://zoom.us/j/...)"
-                      value={haZoomLink}
-                      onChange={(e) => setHaZoomLink(e.target.value)}
-                      className="bg-white"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
+                  {profile?.zoom_link ? (
+                    <div className="space-y-2">
                       <Input
-                        placeholder="Meeting ID"
-                        value={haZoomMeetingId}
-                        onChange={(e) => setHaZoomMeetingId(e.target.value)}
-                        className="bg-white"
+                        value={profile.zoom_link}
+                        readOnly
+                        className="bg-white/60 text-gray-700 cursor-default"
                       />
-                      <Input
-                        placeholder="Passcode"
-                        value={haZoomPasscode}
-                        onChange={(e) => setHaZoomPasscode(e.target.value)}
-                        className="bg-white"
-                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          value={profile.zoom_meeting_id || ""}
+                          readOnly
+                          placeholder="No Meeting ID"
+                          className="bg-white/60 text-gray-700 cursor-default"
+                        />
+                        <Input
+                          value={profile.zoom_passcode || ""}
+                          readOnly
+                          placeholder="No Passcode"
+                          className="bg-white/60 text-gray-700 cursor-default"
+                        />
+                      </div>
+                      <p className="text-xs text-blue-500">
+                        Managed in My Settings → Zoom tab
+                      </p>
                     </div>
-                  </div>
-                  {!profile?.zoom_link && (
-                    <p className="text-xs text-blue-600">
-                      💡 Tip: Save your default Zoom details in Settings → Zoom Room to auto-fill
-                    </p>
+                  ) : (
+                    <div className="text-center py-3">
+                      <p className="text-sm text-blue-700 font-medium">No Zoom details configured</p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Go to <strong>My Settings → Zoom</strong> tab to enter your Zoom link, meeting ID, and passcode.
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
@@ -1391,11 +1432,7 @@ Talking Points:
               onClick={() => {
                 setShowHAScheduleModal(false)
                 setSchedulingProspect(null)
-                // Reset zoom fields
                 setHaMeetingType("phone")
-                setHaZoomLink("")
-                setHaZoomMeetingId("")
-                setHaZoomPasscode("")
               }}
             >
               Cancel
