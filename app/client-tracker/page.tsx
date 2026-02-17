@@ -65,6 +65,7 @@ import { ClientJourneyGuide } from "@/components/client-journey-guide"
 import { ReminderButton } from "@/components/reminders-panel"
 import { GraduationCap, Trophy, Heart, Download } from "lucide-react"
 import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
+import { sendCalendarInviteEmail } from "@/lib/email"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
 import { useUserData } from "@/contexts/user-data-context"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
@@ -104,7 +105,7 @@ export default function ClientTrackerPage() {
     getFilteredClients,
   } = useClients()
   const { toast } = useToast()
-  const { profile } = useUserData()
+  const { user, profile } = useUserData()
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [showTextModal, setShowTextModal] = useState(false)
@@ -377,6 +378,34 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       return
     }
     
+    // Send calendar invite to the coach so they can save it to their calendar
+    const coachEmail = profile?.notification_email || user?.email
+    if (coachEmail) {
+      const calEvent = generateCalendarEvent()
+      if (calEvent) {
+        sendCalendarInviteEmail({
+          to: coachEmail,
+          toName: profile?.full_name || "Coach",
+          fromEmail: coachEmail,
+          fromName: profile?.full_name || "Coaching Amplifier",
+          eventTitle: calEvent.title,
+          eventDescription: calEvent.description,
+          startDate: calEvent.startDate.toISOString(),
+          endDate: calEvent.endDate.toISOString(),
+          eventType: "check-in",
+        }).then((result) => {
+          if (result.success) {
+            toast({
+              title: "📧 Calendar invite sent to you",
+              description: `Check ${coachEmail} for the calendar invite`,
+            })
+          }
+        }).catch(() => {
+          // Silent fail - the check-in was still saved successfully
+        })
+      }
+    }
+
     setShowScheduleModal(false)
     
     // Reset zoom fields
@@ -1272,21 +1301,6 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 </div>
               )}
 
-              {/* Calendar Options with Email/SMS */}
-              {generateCalendarEvent() && (
-                <ScheduleCalendarOptions
-                  event={generateCalendarEvent()!}
-                  recipientName={selectedClient.label}
-                  recipientEmail={clientEmail}
-                  recipientPhone={clientPhone}
-                  onEmailChange={setClientEmail}
-                  onPhoneChange={setClientPhone}
-                  onScheduleComplete={handleSaveSchedule}
-                  eventType="check-in"
-                  recurringFrequency={recurringFrequency}
-                />
-              )}
-
               {/* Info - only show for recurring */}
               {recurringFrequency !== "none" && (
                 <div className="bg-purple-50 rounded-lg p-3 text-sm text-purple-700 flex items-start gap-2">
@@ -1294,6 +1308,35 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                   <span>
                     We'll track your recurring schedule and auto-advance to the next check-in date.
                   </span>
+                </div>
+              )}
+
+              {/* Primary Save & Schedule Button */}
+              <Button
+                onClick={handleSaveSchedule}
+                className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base"
+                size="lg"
+              >
+                <CalendarPlus className="h-5 w-5 mr-2" />
+                Save & Schedule
+              </Button>
+
+              {/* Optional: Notify Client */}
+              {generateCalendarEvent() && (
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-3">
+                    Optional — Notify Client
+                  </p>
+                  <ScheduleCalendarOptions
+                    event={generateCalendarEvent()!}
+                    recipientName={selectedClient.label}
+                    recipientEmail={clientEmail}
+                    recipientPhone={clientPhone}
+                    onEmailChange={setClientEmail}
+                    onPhoneChange={setClientPhone}
+                    eventType="check-in"
+                    recurringFrequency={recurringFrequency}
+                  />
                 </div>
               )}
             </div>
