@@ -30,7 +30,10 @@ export function ShareProfile() {
     return null
   }
 
-  const profileUrl = `https://www.optavia.com/us/en/coach/${profile.optavia_id}`
+  // optavia_id now stores the full URL directly
+  const profileUrl = profile.optavia_id.startsWith("http")
+    ? profile.optavia_id
+    : `https://www.optavia.com/us/en/coach/${profile.optavia_id}`
   
   // Generate QR code using QRServer API
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(profileUrl)}`

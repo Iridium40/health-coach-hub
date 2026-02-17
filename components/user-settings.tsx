@@ -9,14 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useUserData } from "@/contexts/user-data-context"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
-import { Upload, X, UserCheck } from "lucide-react"
-
-interface SponsorInfo {
-  id: string
-  full_name: string | null
-  email: string | null
-  avatar_url: string | null
-}
+import { Upload, X } from "lucide-react"
 
 interface UserSettingsProps {
   onClose?: () => void
@@ -26,9 +19,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const {
     user,
     profile,
-    completedResources,
-    bookmarks,
-    favoriteRecipes,
     updateProfile,
     refreshData,
   } = useUserData()
@@ -39,9 +29,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const [fullName, setFullName] = useState(profile?.full_name || "")
   const [optaviaId, setOptaviaId] = useState(profile?.optavia_id || "")
   const [phoneNumber, setPhoneNumber] = useState(profile?.phone_number || "")
-  const [sponsorInfo, setSponsorInfo] = useState<SponsorInfo | null>(null)
-  const [loadingSponsor, setLoadingSponsor] = useState(false)
-
   // Update local state when profile changes
   useEffect(() => {
     if (profile) {
@@ -55,39 +42,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
       setPhoneNumber("")
     }
   }, [profile])
-
-  // Load sponsor information
-  useEffect(() => {
-    const loadSponsorInfo = async () => {
-      if (!profile?.sponsor_id) {
-        setSponsorInfo(null)
-        return
-      }
-
-      setLoadingSponsor(true)
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, avatar_url")
-          .eq("id", profile.sponsor_id)
-          .single()
-
-        if (error) {
-          console.error("Error loading sponsor info:", error)
-          setSponsorInfo(null)
-        } else {
-          setSponsorInfo(data)
-        }
-      } catch (error) {
-        console.error("Error loading sponsor info:", error)
-        setSponsorInfo(null)
-      } finally {
-        setLoadingSponsor(false)
-      }
-    }
-
-    loadSponsorInfo()
-  }, [profile?.sponsor_id, supabase])
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -259,8 +213,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
     return "U"
   }
 
-  const totalResources = completedResources.length + bookmarks.length + favoriteRecipes.length
-
   // Check if user is a coach (not admin) - coaches have read-only profile fields except Full Name
   const isCoach = profile?.user_role?.toLowerCase() !== "admin"
 
@@ -366,12 +318,12 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="optaviaId" className="text-optavia-dark">Optavia ID</Label>
+              <Label htmlFor="optaviaId" className="text-optavia-dark">Your Optavia Coach Website Link</Label>
               <Input
                 id="optaviaId"
                 value={optaviaId}
                 onChange={(e) => setOptaviaId(e.target.value)}
-                placeholder="Enter your Optavia ID"
+                placeholder="https://www.optavia.com/us/en/coach/yourname"
                 disabled={isCoach}
                 readOnly={isCoach}
                 className={`${
@@ -381,47 +333,7 @@ export function UserSettings({ onClose }: UserSettingsProps) {
                 } text-optavia-dark`}
               />
               {isCoach && (
-                <p className="text-xs text-optavia-gray">Contact an admin to update your Optavia ID</p>
-              )}
-            </div>
-
-            {/* Sponsoring Coach Section */}
-            <div className="space-y-2">
-              <Label className="text-optavia-dark flex items-center gap-2">
-                <UserCheck className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
-                Sponsoring Coach
-              </Label>
-              {loadingSponsor ? (
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="animate-pulse flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                    <div className="space-y-2">
-                      <div className="h-4 w-24 bg-gray-200 rounded"></div>
-                      <div className="h-3 w-32 bg-gray-200 rounded"></div>
-                    </div>
-                  </div>
-                </div>
-              ) : sponsorInfo ? (
-                <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border-2 border-[hsl(var(--optavia-green))]">
-                      <AvatarImage src={sponsorInfo.avatar_url || undefined} alt={sponsorInfo.full_name || "Sponsor"} />
-                      <AvatarFallback className="bg-[hsl(var(--optavia-green))] text-white text-sm">
-                        {sponsorInfo.full_name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "SC"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="font-semibold text-optavia-dark">{sponsorInfo.full_name || "Unknown"}</div>
-                      <div className="text-sm text-optavia-gray">{sponsorInfo.email}</div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-optavia-gray">
-                    No sponsoring coach linked to your account.
-                  </p>
-                </div>
+                <p className="text-xs text-optavia-gray">Contact an admin to update your Optavia Coach Website Link</p>
               )}
             </div>
 
@@ -431,34 +343,6 @@ export function UserSettings({ onClose }: UserSettingsProps) {
             >
               Save Changes
             </Button>
-          </CardContent>
-        </Card>
-
-        {/* Progress Summary */}
-        <Card className="bg-white border border-gray-200 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-optavia-dark">Your Progress</CardTitle>
-            <CardDescription className="text-optavia-gray">Overview of your activity</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-optavia-dark">Completed Training</span>
-                <span className="text-sm text-optavia-gray font-semibold">{completedResources.length}</span>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-optavia-dark">Bookmarks</span>
-                <span className="text-sm text-optavia-gray font-semibold">{bookmarks.length}</span>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-optavia-dark">Favorite Recipes</span>
-                <span className="text-sm text-optavia-gray font-semibold">{favoriteRecipes.length}</span>
-              </div>
-            </div>
           </CardContent>
         </Card>
 

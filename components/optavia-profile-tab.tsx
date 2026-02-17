@@ -9,7 +9,10 @@ interface OptaviaProfileTabProps {
 }
 
 export function OptaviaProfileTab({ optaviaId }: OptaviaProfileTabProps) {
-  const profileUrl = `https://www.optavia.com/us/en/coach/${optaviaId}`
+  // optavia_id now stores the full URL directly; fall back to appending for legacy values
+  const profileUrl = optaviaId.startsWith("http")
+    ? optaviaId
+    : `https://www.optavia.com/us/en/coach/${optaviaId}`
 
   return (
     <div className="space-y-4 sm:space-y-6">
