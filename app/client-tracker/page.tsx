@@ -165,7 +165,7 @@ export default function ClientTrackerPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [clientToClear, setClientToClear] = useState<string | null>(null)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
-  const [filterStatus, setFilterStatus] = useState<ClientStatus | "all">("active")
+  const [filterStatus, setFilterStatus] = useState<ClientStatus | "all">("all")
   const [searchTerm, setSearchTerm] = useState("")
   
   // Schedule state
@@ -701,13 +701,14 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
           <div className="flex items-center justify-between gap-2">
             {/* Filter Tabs */}
             <div className="flex gap-1 sm:gap-2 flex-wrap">
-              {(["all", "active", "goal_achieved", "future_coach", "coach_launched"] as const).map((status) => {
+              {(["all", "active", "goal_achieved", "future_coach", "coach_launched", "paused"] as const).map((status) => {
                 const filterLabels: Record<string, string> = {
                   all: "All",
                   active: "Client",
                   goal_achieved: "Goal Achieved",
                   future_coach: "Future Coach",
                   coach_launched: "Coach Launched",
+                  paused: "Paused",
                 }
                 return (
                   <Button
@@ -810,129 +811,124 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                     </div>
                   </div>
 
-                  {/* Scheduled Time & Action Buttons */}
-                  {client.status === "active" && (
-                    <div className="mt-4 space-y-3">
-                      {/* Scheduled Time Display */}
-                      {client.next_scheduled_at && (
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <Badge 
-                            className={`flex items-center gap-1 ${
-                              new Date(client.next_scheduled_at) < new Date() 
-                                ? "bg-red-100 text-red-700" 
-                                : "bg-green-100 text-green-700"
-                            }`}
-                          >
-                            <Calendar className="h-3 w-3" />
-                            {new Date(client.next_scheduled_at).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                            {" "}
-                            {new Date(client.next_scheduled_at).toLocaleTimeString("en-US", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
-                            {client.recurring_frequency && client.recurring_frequency !== "none" && (
-                              <Repeat className="h-3 w-3 ml-1" />
-                            )}
-                          </Badge>
-                          {client.phone && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => sendSMS(client)}
-                              className="h-7 w-7 p-0 text-green-500 hover:text-green-700 hover:bg-green-50"
-                              title="Send SMS reminder"
-                            >
-                              <Send className="h-3 w-3" />
-                            </Button>
-                          )}
-                          {/* Complete Check-in Button - only show if date is today or past */}
-                          {new Date(client.next_scheduled_at!).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0) && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                updateClient(client.id, { 
-                                  next_scheduled_at: null,
-                                  recurring_frequency: null,
-                                  recurring_day: null,
-                                  recurring_time: null 
-                                })
-                                toggleTouchpoint(client.id, "am_done")
-                                toast({
-                                  title: "✅ Check-in Completed!",
-                                  description: "Great job staying connected with your client!",
-                                })
-                              }}
-                              className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
-                              title="Mark check-in as completed"
-                            >
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            </Button>
-                          )}
-                          {/* Cancel Check-in Button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setClientToClear(client.id)
-                              setShowClearConfirm(true)
-                            }}
-                            className="h-7 w-7 p-0 bg-red-100 hover:bg-red-200 rounded-full"
-                            title="Cancel scheduled check-in"
-                          >
-                            <X className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </div>
+                  {/* Scheduled Time Display */}
+                  {client.next_scheduled_at && (
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
+                      <Badge 
+                        className={`flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium ${
+                          new Date(client.next_scheduled_at) < new Date() 
+                            ? "bg-red-100 text-red-700 border border-red-200" 
+                            : "bg-green-100 text-green-700 border border-green-200"
+                        }`}
+                      >
+                        <Calendar className="h-3.5 w-3.5" />
+                        {new Date(client.next_scheduled_at).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                        {" "}
+                        {new Date(client.next_scheduled_at).toLocaleTimeString("en-US", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                        {client.recurring_frequency && client.recurring_frequency !== "none" && (
+                          <Repeat className="h-3 w-3 ml-1" />
+                        )}
+                      </Badge>
+                      {client.phone && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => sendSMS(client)}
+                          className="h-7 w-7 p-0 text-green-500 hover:text-green-700 hover:bg-green-50"
+                          title="Send SMS reminder"
+                        >
+                          <Send className="h-3 w-3" />
+                        </Button>
                       )}
-
-                      {/* Action Buttons - All 3 on same row */}
-                      <div className="flex gap-2">
-                        {/* Check-in Button */}
+                      {/* Complete Check-in Button - only show if date is today or past */}
+                      {new Date(client.next_scheduled_at!).setHours(0,0,0,0) <= new Date().setHours(0,0,0,0) && (
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          onClick={() => toggleTouchpoint(client.id, "am_done")}
-                          className={`flex-1 ${client.am_done 
-                            ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200" 
-                            : "text-green-600 border-green-200 hover:bg-green-50"
-                          }`}
+                          onClick={() => {
+                            updateClient(client.id, { 
+                              next_scheduled_at: null,
+                              recurring_frequency: null,
+                              recurring_day: null,
+                              recurring_time: null 
+                            })
+                            toggleTouchpoint(client.id, "am_done")
+                            toast({
+                              title: "✅ Check-in Completed!",
+                              description: "Great job staying connected with your client!",
+                            })
+                          }}
+                          className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
+                          title="Mark check-in as completed"
                         >
-                          {client.am_done ? (
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                          ) : (
-                            <Circle className="h-4 w-4 mr-1" />
-                          )}
-                          <span className="text-xs sm:text-sm">{client.am_done ? "Checked In" : "Check In"}</span>
+                          <CheckCircle className="h-4 w-4 text-green-600" />
                         </Button>
-                        {/* Text Button - highlighted for milestones */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openTextTemplates(client)}
-                          className={`flex-1 ${isMilestoneDay(programDay)
-                            ? "bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200 animate-pulse"
-                            : "text-blue-600 border-blue-200 hover:bg-blue-50"
-                          }`}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          <span className="text-xs sm:text-sm">{isMilestoneDay(programDay) ? "Celebrate!" : "Text"}</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openScheduleModal(client)}
-                          className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50"
-                        >
-                          <CalendarPlus className="h-4 w-4 mr-1" />
-                          <span className="text-xs sm:text-sm">Schedule</span>
-                        </Button>
-                      </div>
+                      )}
+                      {/* Cancel Check-in Button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setClientToClear(client.id)
+                          setShowClearConfirm(true)
+                        }}
+                        className="h-7 w-7 p-0 bg-red-100 hover:bg-red-200 rounded-full"
+                        title="Cancel scheduled check-in"
+                      >
+                        <X className="h-4 w-4 text-red-600" />
+                      </Button>
                     </div>
                   )}
+
+                  {/* Primary Action Buttons */}
+                  <div className="mt-4 flex gap-2">
+                    {/* Check-in Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleTouchpoint(client.id, "am_done")}
+                      className={`flex-1 ${client.am_done 
+                        ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200" 
+                        : "text-green-600 border-green-200 hover:bg-green-50"
+                      }`}
+                    >
+                      {client.am_done ? (
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                      ) : (
+                        <Circle className="h-4 w-4 mr-1" />
+                      )}
+                      <span className="text-xs sm:text-sm">{client.am_done ? "Checked In" : "Check In"}</span>
+                    </Button>
+                    {/* Text Button - highlighted for milestones */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openTextTemplates(client)}
+                      className={`flex-1 ${isMilestoneDay(programDay)
+                        ? "bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200 animate-pulse"
+                        : "text-blue-600 border-blue-200 hover:bg-blue-50"
+                      }`}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      <span className="text-xs sm:text-sm">{isMilestoneDay(programDay) ? "Celebrate!" : "Text"}</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openScheduleModal(client)}
+                      className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50"
+                    >
+                      <CalendarPlus className="h-4 w-4 mr-1" />
+                      <span className="text-xs sm:text-sm">Schedule</span>
+                    </Button>
+                  </div>
 
                   {/* Secondary Actions: Status, Edit, Remind */}
                   <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-2">
