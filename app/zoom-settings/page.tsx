@@ -2,53 +2,20 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { ZoomSettings } from "@/components/zoom-settings"
-import { useUserData } from "@/contexts/user-data-context"
 
 export default function ZoomSettingsPage() {
   const router = useRouter()
-  const { user, authLoading } = useUserData()
 
-  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace("/login")
-    }
-  }, [authLoading, user, router])
-
-  // Show loading only during initial auth check
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
-          <p className="text-optavia-gray">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show redirecting for unauthenticated users
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
-          <p className="text-optavia-gray">Redirecting...</p>
-        </div>
-      </div>
-    )
-  }
+    router.replace("/settings?tab=zoom")
+  }, [router])
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Header activeTab="training" />
-      <main className="flex-1 bg-white">
-        <ZoomSettings onClose={() => router.push("/dashboard")} />
-      </main>
-      <Footer />
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
+        <p className="text-optavia-gray">Redirecting...</p>
+      </div>
     </div>
   )
 }

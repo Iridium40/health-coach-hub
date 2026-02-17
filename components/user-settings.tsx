@@ -13,9 +13,10 @@ import { Upload, X } from "lucide-react"
 
 interface UserSettingsProps {
   onClose?: () => void
+  embedded?: boolean
 }
 
-export function UserSettings({ onClose }: UserSettingsProps) {
+export function UserSettings({ onClose, embedded = false }: UserSettingsProps) {
   const {
     user,
     profile,
@@ -217,15 +218,17 @@ export function UserSettings({ onClose }: UserSettingsProps) {
   const isCoach = profile?.user_role?.toLowerCase() !== "admin"
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark">Settings</h1>
-        {onClose && (
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
+    <div className={embedded ? "" : "container mx-auto px-4 py-8 max-w-4xl"}>
+      {!embedded && (
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark">Settings</h1>
+          {onClose && (
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* Profile Section */}

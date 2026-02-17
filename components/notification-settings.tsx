@@ -10,7 +10,11 @@ import { useUserData } from "@/contexts/user-data-context"
 import { useToast } from "@/hooks/use-toast"
 import { Bell, Mail, Check } from "lucide-react"
 
-export function NotificationSettings() {
+interface NotificationSettingsProps {
+  embedded?: boolean
+}
+
+export function NotificationSettings({ embedded = false }: NotificationSettingsProps = {}) {
   const { profile, notificationSettings, updateNotificationSettings, updateProfile, user } = useUserData()
   const { toast } = useToast()
   const [notificationEmail, setNotificationEmail] = useState("")
@@ -61,11 +65,13 @@ export function NotificationSettings() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Bell className="h-7 w-7 text-[hsl(var(--optavia-green))]" />
-        <h1 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark">Notification Settings</h1>
-      </div>
+    <div className={embedded ? "" : "container mx-auto px-4 py-8 max-w-4xl"}>
+      {!embedded && (
+        <div className="flex items-center gap-3 mb-6">
+          <Bell className="h-7 w-7 text-[hsl(var(--optavia-green))]" />
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark">Notification Settings</h1>
+        </div>
+      )}
 
       {/* Notification Email Card */}
       <Card className="bg-white border border-gray-200 shadow-lg mb-6">
