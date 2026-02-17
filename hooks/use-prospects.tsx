@@ -52,7 +52,7 @@ export const statusConfig: Record<ProspectStatus, { label: string; color: string
   new: { label: 'New', color: '#2196f3', bg: '#e3f2fd', icon: '🆕' },
   interested: { label: 'Interested', color: '#ff9800', bg: '#fff3e0', icon: '🔥' },
   ha_scheduled: { label: 'HA Scheduled', color: '#9c27b0', bg: '#f3e5f5', icon: '📅' },
-  converted: { label: 'Client!', color: '#4caf50', bg: '#e8f5e9', icon: '⭐' },
+  converted: { label: 'Client Won!', color: '#4caf50', bg: '#e8f5e9', icon: '🎉' },
   coach: { label: 'Future Coach', color: '#00A651', bg: '#e8f5e9', icon: '🚀' },
   not_interested: { label: 'Not Interested', color: '#78909c', bg: '#eceff1', icon: '🔄' },
   not_closed: { label: 'Not Closed', color: '#ef5350', bg: '#ffebee', icon: '🔄' }

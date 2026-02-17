@@ -112,7 +112,7 @@ export default function ProspectTrackerPage() {
     getDaysUntil,
   } = useProspects()
 
-  const { addClient, stats: clientStats } = useClients()
+  const { addClient } = useClients()
   const { user, profile } = useUserData()
   const { toast } = useToast()
 
@@ -609,22 +609,17 @@ Talking Points:
         <ErrorBoundary>
         {/* Pipeline Stages */}
         <div className="mb-6">
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             {[
-              { id: "new", label: "New", icon: "🆕", color: "#2196f3", borderColor: "#bbdefb", bgColor: "#e3f2fd", count: stats.new },
-              { id: "interested", label: "Interested", icon: "🔥", color: "#ff9800", borderColor: "#ffe0b2", bgColor: "#fff3e0", count: stats.interested },
-              { id: "ha_scheduled", label: "HA Scheduled", icon: "📅", color: "#9c27b0", borderColor: "#e1bee7", bgColor: "#f3e5f5", count: stats.haScheduled },
-              { id: "client", label: "Client", icon: "⭐", color: "#4caf50", borderColor: "#c8e6c9", bgColor: "#e8f5e9", count: clientStats.active },
-              { id: "coach", label: "Future Coach", icon: "🚀", color: "#e91e63", borderColor: "#f8bbd0", bgColor: "#fce4ec", count: clientStats.coachProspects },
+              { id: "new", label: "New", icon: "🆕", color: "#2196f3", borderColor: "#bbdefb", count: stats.new },
+              { id: "interested", label: "Interested", icon: "🔥", color: "#ff9800", borderColor: "#ffe0b2", count: stats.interested },
+              { id: "ha_scheduled", label: "HA Scheduled", icon: "📅", color: "#9c27b0", borderColor: "#e1bee7", count: stats.haScheduled },
+              { id: "converted", label: "Client Won", icon: "🎉", color: "#4caf50", borderColor: "#c8e6c9", count: stats.converted },
             ].map((stage, index, arr) => (
               <button
                 key={stage.id}
                 onClick={() => {
-                  if (stage.id === "client" || stage.id === "coach") {
-                    window.location.href = "/client-tracker"
-                  } else {
-                    setFilterStatus(stage.id as any)
-                  }
+                  setFilterStatus(stage.id as any)
                 }}
                 className="relative flex flex-col items-center p-3 sm:p-4 rounded-xl border-2 bg-white hover:shadow-lg transition-all hover:scale-[1.03] cursor-pointer group"
                 style={{ borderColor: stage.borderColor }}

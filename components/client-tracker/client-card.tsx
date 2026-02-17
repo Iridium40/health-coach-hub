@@ -101,7 +101,22 @@ export const ClientCard = memo(function ClientCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-gray-900">{client.label}</span>
-              {client.is_coach_prospect && (
+              {client.status === "goal_achieved" && (
+                <Badge className="bg-orange-100 text-orange-700 flex items-center gap-1">
+                  🏆 Goal Achieved
+                </Badge>
+              )}
+              {client.status === "future_coach" && (
+                <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1">
+                  💎 Future Coach
+                </Badge>
+              )}
+              {client.status === "coach_launched" && (
+                <Badge className="bg-pink-100 text-pink-700 flex items-center gap-1">
+                  🚀 Coach Launched
+                </Badge>
+              )}
+              {client.is_coach_prospect && client.status === "active" && (
                 <Badge className="bg-orange-100 text-orange-700 flex items-center gap-1">
                   <Star className="h-3 w-3" />
                   Coach Prospect

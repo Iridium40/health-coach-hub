@@ -11,6 +11,8 @@ interface ClientStats {
   needsAttention: number
   milestonesToday: number
   coachProspects: number
+  futureCoach: number
+  coachLaunched: number
 }
 
 interface ProspectStats {
@@ -115,7 +117,7 @@ export function PipelineSnapshot({ clients, clientStats, prospects, prospectStat
       </Link>
 
       {/* Future Coaches */}
-      <Link href="/client-tracker?filter=coach_prospect" className="block">
+      <Link href="/client-tracker" className="block">
         <div className="p-4 rounded-lg bg-white border border-amber-200 hover:shadow-md transition-shadow cursor-pointer h-full">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-600">Future Coaches</span>
@@ -124,7 +126,7 @@ export function PipelineSnapshot({ clients, clientStats, prospects, prospectStat
             </Badge>
           </div>
           <div className="text-2xl font-bold text-amber-600">
-            {clientStats.coachProspects}
+            {clientStats.futureCoach + clientStats.coachLaunched}
           </div>
           <div className="text-xs text-gray-500">potential team members</div>
         </div>

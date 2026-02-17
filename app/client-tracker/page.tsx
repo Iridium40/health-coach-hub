@@ -594,89 +594,45 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
 
       <div className="container mx-auto px-4 py-6">
         <ErrorBoundary>
-        {/* Stats */}
-        <TooltipProvider>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4 text-center relative">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
-                    <p className="font-semibold text-green-700 mb-1">Active Clients</p>
-                    <p className="text-sm text-gray-600">Clients currently on program with "Active" status.</p>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="text-3xl font-bold text-[hsl(var(--optavia-green))]">{stats.active}</div>
-                <div className="text-sm text-gray-500">Active</div>
-              </CardContent>
-            </Card>
-            <Card className={stats.needsAttention > 0 ? "border-orange-300 bg-orange-50" : ""}>
-              <CardContent className="p-4 text-center relative">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
-                    <p className="font-semibold text-orange-700 mb-2">🚨 "Needs Attention" Triggers</p>
-                    <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
-                      <li><strong>Scheduled check-in is due</strong> — Meeting date is today or past</li>
-                      <li><strong>10+ days since last check-in</strong> — Time to reach out!</li>
-                      <li><strong>Never checked in</strong> — New client needs first touchpoint</li>
-                    </ol>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="text-3xl font-bold text-orange-500">{stats.needsAttention}</div>
-                <div className="text-sm text-gray-500">Need Attention</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center relative">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
-                    <p className="font-semibold text-purple-700 mb-1">Coach Prospects</p>
-                    <p className="text-sm text-gray-600">Active clients you've marked as potential future coaches. Keep nurturing these relationships!</p>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="text-3xl font-bold text-purple-500">{stats.coachProspects}</div>
-                <div className="text-sm text-gray-500">Coach Prospects</div>
-              </CardContent>
-            </Card>
-            <Card className={stats.milestonesToday > 0 ? "border-yellow-300 bg-yellow-50" : ""}>
-              <CardContent className="p-4 text-center relative">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
-                    <p className="font-semibold text-yellow-700 mb-1">🎉 Milestones Today</p>
-                    <p className="text-sm text-gray-600">Clients hitting key milestones today:</p>
-                    <ul className="text-sm text-gray-600 mt-1 space-y-0.5">
-                      <li>• <strong>Day 7</strong> — Week 1 Complete!</li>
-                      <li>• <strong>Day 14</strong> — 2 Weeks!</li>
-                      <li>• <strong>Day 21</strong> — Habit Formed!</li>
-                      <li>• <strong>Day 30</strong> — ONE MONTH!</li>
-                    </ul>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="text-3xl font-bold text-yellow-600">{stats.milestonesToday}</div>
-                <div className="text-sm text-gray-500">Milestones Today</div>
-              </CardContent>
-            </Card>
+        {/* Pipeline Stages */}
+        <div className="mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            {[
+              { id: "active", label: "Client", icon: "⭐", color: "#4caf50", borderColor: "#c8e6c9", count: stats.active },
+              { id: "goal_achieved", label: "Goal Achieved", icon: "🏆", color: "#ff9800", borderColor: "#ffe0b2", count: stats.goalAchieved },
+              { id: "future_coach", label: "Future Coach", icon: "💎", color: "#9c27b0", borderColor: "#e1bee7", count: stats.futureCoach },
+              { id: "coach_launched", label: "Coach Launched", icon: "🚀", color: "#e91e63", borderColor: "#f8bbd0", count: stats.coachLaunched },
+            ].map((stage, index, arr) => (
+              <button
+                key={stage.id}
+                onClick={() => setFilterStatus(stage.id as any)}
+                className={`relative flex flex-col items-center p-3 sm:p-4 rounded-xl border-2 bg-white hover:shadow-lg transition-all hover:scale-[1.03] cursor-pointer ${
+                  filterStatus === stage.id ? "ring-2 ring-offset-1 shadow-md" : ""
+                }`}
+                style={{ 
+                  borderColor: stage.borderColor,
+                  ...(filterStatus === stage.id ? { ringColor: stage.color } : {}),
+                }}
+              >
+                <span className="text-xl sm:text-2xl mb-1">{stage.icon}</span>
+                <span
+                  className="text-2xl sm:text-3xl font-bold"
+                  style={{ color: stage.color }}
+                >
+                  {stage.count}
+                </span>
+                <span className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wide mt-0.5">
+                  {stage.label}
+                </span>
+                {index < arr.length - 1 && (
+                  <ChevronRight
+                    className="hidden sm:block absolute -right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-300 z-10"
+                  />
+                )}
+              </button>
+            ))}
           </div>
-        </TooltipProvider>
+        </div>
 
         {/* Search, Filter and View Toggle */}
         <div className="flex flex-col gap-4 mb-6">
@@ -693,18 +649,27 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
           
           <div className="flex items-center justify-between gap-2">
             {/* Filter Tabs */}
-            <div className="flex gap-2">
-              {(["active", "paused", "all"] as const).map((status) => (
-                <Button
-                  key={status}
-                  variant={filterStatus === status ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilterStatus(status)}
-                  className={filterStatus === status ? "bg-[hsl(var(--optavia-green))]" : ""}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </Button>
-              ))}
+            <div className="flex gap-1 sm:gap-2 flex-wrap">
+              {(["all", "active", "goal_achieved", "future_coach", "coach_launched"] as const).map((status) => {
+                const filterLabels: Record<string, string> = {
+                  all: "All",
+                  active: "Client",
+                  goal_achieved: "Goal Achieved",
+                  future_coach: "Future Coach",
+                  coach_launched: "Coach Launched",
+                }
+                return (
+                  <Button
+                    key={status}
+                    variant={filterStatus === status ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilterStatus(status)}
+                    className={`text-xs sm:text-sm px-2 sm:px-3 ${filterStatus === status ? "bg-[hsl(var(--optavia-green))]" : ""}`}
+                  >
+                    {filterLabels[status]}
+                  </Button>
+                )
+              })}
             </div>
 
             {/* Export */}

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
 
 // Types
-export type ClientStatus = 'active' | 'paused' | 'completed' | 'churned'
+export type ClientStatus = 'active' | 'goal_achieved' | 'future_coach' | 'coach_launched' | 'paused' | 'completed' | 'churned'
 
 export type RecurringFrequency = 'none' | 'weekly' | 'biweekly' | 'monthly'
 
@@ -104,6 +104,9 @@ export function useClients() {
   // Server-side stats (RPC) so we don't need to load all rows for counts
   const [stats, setStats] = useState({
     active: 0,
+    goalAchieved: 0,
+    futureCoach: 0,
+    coachLaunched: 0,
     paused: 0,
     completed: 0,
     needsAttention: 0,
@@ -132,6 +135,9 @@ export function useClients() {
       setStatsLoading(false)
       setStats({
         active: 0,
+        goalAchieved: 0,
+        futureCoach: 0,
+        coachLaunched: 0,
         paused: 0,
         completed: 0,
         needsAttention: 0,
@@ -148,6 +154,9 @@ export function useClients() {
         setStats((prev) => ({
           ...prev,
           active: Number((data as any).active ?? prev.active),
+          goalAchieved: Number((data as any).goalAchieved ?? prev.goalAchieved),
+          futureCoach: Number((data as any).futureCoach ?? prev.futureCoach),
+          coachLaunched: Number((data as any).coachLaunched ?? prev.coachLaunched),
           paused: Number((data as any).paused ?? prev.paused),
           completed: Number((data as any).completed ?? prev.completed),
           needsAttention: Number((data as any).needsAttention ?? prev.needsAttention),
@@ -369,6 +378,9 @@ export function useClients() {
     setStats((prev) => ({
       ...prev,
       active: prev.active || clients.filter(c => c.status === 'active').length,
+      goalAchieved: prev.goalAchieved || clients.filter(c => c.status === 'goal_achieved').length,
+      futureCoach: prev.futureCoach || clients.filter(c => c.status === 'future_coach').length,
+      coachLaunched: prev.coachLaunched || clients.filter(c => c.status === 'coach_launched').length,
       paused: prev.paused || clients.filter(c => c.status === 'paused').length,
       completed: prev.completed || clients.filter(c => c.status === 'completed').length,
       needsAttention: prev.needsAttention || clients.filter(c => c.status === 'active' && needsAttention(c)).length,

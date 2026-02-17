@@ -102,11 +102,11 @@ export function PipelineView() {
         </Card>
       </div>
 
-      {/* Pipeline Stages */}
+      {/* Prospect Pipeline */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Pipeline Stages</CardTitle>
+            <CardTitle className="text-lg">Prospect Pipeline</CardTitle>
             <Link href="/prospect-tracker">
               <Button size="sm" className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white">
                 <Plus className="h-4 w-4 mr-1" />
@@ -116,35 +116,64 @@ export function PipelineView() {
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="overflow-x-auto pb-4">
+          <div className="overflow-x-auto pb-2">
             <div className="flex items-start min-w-max">
-              {stages.map((stage, index) => (
+              {stages.filter(s => ["new", "interested", "ha_scheduled", "client_won"].includes(s.id)).map((stage, index, arr) => (
                 <PipelineStage
                   key={stage.id}
                   stage={stage}
                   isFirst={index === 0}
-                  isLast={index === stages.length - 1}
+                  isLast={index === arr.length - 1}
                 />
               ))}
             </div>
           </div>
 
           {/* Empty state */}
-          {stages.every(s => s.count === 0) && (
-            <div className="text-center py-8 text-gray-500">
-              <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p className="font-medium">Your pipeline is empty</p>
-              <p className="text-sm text-gray-400 mt-1 mb-4">
+          {stages.filter(s => ["new", "interested", "ha_scheduled", "client_won"].includes(s.id)).every(s => s.count === 0) && (
+            <div className="text-center py-6 text-gray-500">
+              <Users className="h-10 w-10 mx-auto mb-2 opacity-30" />
+              <p className="font-medium text-sm">No prospects yet</p>
+              <p className="text-xs text-gray-400 mt-1 mb-3">
                 Add your first prospect to start building your pipeline
               </p>
               <Link href="/prospect-tracker">
-                <Button className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button size="sm" className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white">
+                  <Plus className="h-4 w-4 mr-1" />
                   Add to 100's List
                 </Button>
               </Link>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Client Journey */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Client Journey</CardTitle>
+            <Link href="/client-tracker">
+              <Button size="sm" variant="outline" className="text-[hsl(var(--optavia-green))] border-[hsl(var(--optavia-green))]">
+                <Heart className="h-4 w-4 mr-1" />
+                My Clients
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="overflow-x-auto pb-2">
+            <div className="flex items-start min-w-max">
+              {stages.filter(s => ["client", "goal_achieved", "future_coach", "coach_launched"].includes(s.id)).map((stage, index, arr) => (
+                <PipelineStage
+                  key={stage.id}
+                  stage={stage}
+                  isFirst={index === 0}
+                  isLast={index === arr.length - 1}
+                />
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
 

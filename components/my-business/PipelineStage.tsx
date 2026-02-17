@@ -14,24 +14,36 @@ import type { PipelineStage as PipelineStageType } from "@/hooks/use-pipeline"
 // Stage descriptions for the info popups
 const STAGE_DESCRIPTIONS: Record<string, { title: string; description: string }> = {
   new: {
-    title: "New Prospects",
-    description: "People you've just added to your 100's list. These are initial contacts who haven't yet been reached out to or qualified.",
+    title: "New",
+    description: "First contact made — social media, referral, warm market, or someone who expressed curiosity. Time for initial outreach!",
   },
   interested: {
     title: "Interested",
-    description: "Contacts who have shown interest in learning more about OPTAVIA. They've engaged with you and are considering the program.",
+    description: "Prospect has engaged back positively. They've asked questions or expressed openness. Build rapport and introduce the Health Assessment.",
   },
   ha_scheduled: {
     title: "HA Scheduled",
-    description: "Prospects who have a Health Assessment scheduled. This is a key conversion step - they're ready to learn their personalized health plan!",
+    description: "Health Assessment is booked. This is the critical conversion point — send reminders and have program materials ready!",
+  },
+  client_won: {
+    title: "Client Won!",
+    description: "They said yes and are starting the program! Time for onboarding, first order, and setting expectations.",
   },
   client: {
-    title: "Active Clients",
-    description: "People who have started their OPTAVIA journey. They're actively on the program and working toward their health goals.",
+    title: "Client",
+    description: "Active on the program, receiving regular coaching support. Weekly check-ins, meal plan support, and habit building.",
   },
-  coach_prospect: {
-    title: "Future Coaches",
-    description: "Clients who show potential and interest in becoming OPTAVIA coaches. They could be your future team members!",
+  goal_achieved: {
+    title: "Goal Achieved",
+    description: "Client has hit their primary health goal! Celebrate the milestone and transition to Optimal Health and the 'pay it forward' concept.",
+  },
+  future_coach: {
+    title: "Future Coach",
+    description: "Client has expressed interest in becoming a coach. Share business opportunity details and begin mentorship conversations.",
+  },
+  coach_launched: {
+    title: "Coach Launched!",
+    description: "They've officially signed up as an OPTAVIA coach! Onboard into your team with a 30-day game plan and upline resources.",
   },
 }
 
@@ -44,7 +56,8 @@ interface PipelineStageProps {
 export function PipelineStage({ stage, isFirst, isLast }: PipelineStageProps) {
   // Determine link based on stage
   const getLink = () => {
-    if (stage.id === "client" || stage.id === "coach_prospect") {
+    const clientStages = ["client", "goal_achieved", "future_coach", "coach_launched"]
+    if (clientStages.includes(stage.id)) {
       return "/client-tracker"
     }
     return `/prospect-tracker?status=${stage.id}`
