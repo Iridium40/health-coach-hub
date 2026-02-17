@@ -21,7 +21,6 @@ import {
   ChevronUp,
   Trash2,
 } from "lucide-react"
-import { ReminderButton } from "@/components/reminders-panel"
 import {
   type Coach,
   type CoachStage,
@@ -247,11 +246,7 @@ export const CoachCard = memo(function CoachCard({
                 <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => onRank(coach)}>
                   <Award className="h-3 w-3 mr-1" /> Rank
                 </Button>
-                <ReminderButton
-                  entityType="coach"
-                  entityId={coach.id}
-                  entityLabel={coach.label}
-                />
+                {/* Reminder support for coaches can be added once EntityType is extended */}
                 {/* Stage movement buttons */}
                 {stageIdx < STAGES_ORDER.length - 1 && (
                   <Button

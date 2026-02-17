@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { useClients, getDayPhase, getProgramDay, parseLocalDate, type ClientStatus, type RecurringFrequency, type Client } from "@/hooks/use-clients"
+import { useCoaches } from "@/hooks/use-coaches"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +36,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Users,
   Plus,
@@ -106,6 +114,48 @@ export default function ClientTrackerPage() {
   } = useClients()
   const { toast } = useToast()
   const { user, profile } = useUserData()
+  const { addCoach: addDownlineCoach, coaches: downlineCoaches } = useCoaches()
+
+  // Status configuration for the dropdown
+  const CLIENT_STATUS_CONFIG: Record<ClientStatus, { label: string; icon: string; color: string; bg: string }> = {
+    active: { label: "Client", icon: "⭐", color: "#4caf50", bg: "#e8f5e9" },
+    goal_achieved: { label: "Goal Achieved", icon: "🏆", color: "#f59e0b", bg: "#fffbeb" },
+    future_coach: { label: "Future Coach", icon: "💎", color: "#8b5cf6", bg: "#f5f3ff" },
+    coach_launched: { label: "Coach Launched", icon: "🚀", color: "#ec4899", bg: "#fdf2f8" },
+    paused: { label: "Paused", icon: "⏸️", color: "#6b7280", bg: "#f3f4f6" },
+    completed: { label: "Completed", icon: "✅", color: "#10b981", bg: "#ecfdf5" },
+    churned: { label: "Churned", icon: "❌", color: "#ef4444", bg: "#fef2f2" },
+  }
+
+  // Handle client status change — auto-creates a coach tracker entry for coach stages
+  const handleClientStatusChange = async (clientId: string, newStatus: ClientStatus) => {
+    const client = clients.find(c => c.id === clientId)
+    if (!client) return
+
+    const success = await updateStatus(clientId, newStatus)
+    if (!success) return
+
+    // Auto-create a downline coach entry when a client transitions to a coach stage
+    if (newStatus === "future_coach" || newStatus === "coach_launched") {
+      const alreadyInCoachTracker = downlineCoaches.some(
+        c => c.label.toLowerCase() === client.label.toLowerCase()
+      )
+      if (!alreadyInCoachTracker) {
+        const coachResult = await addDownlineCoach({
+          label: client.label,
+          stage: newStatus === "coach_launched" ? "new_coach" : "new_coach",
+          rank: 1,
+          launch_date: new Date().toISOString().split("T")[0],
+        })
+        if (coachResult) {
+          toast({
+            title: "Added to Coach Tracker",
+            description: `${client.label} has been added to your Coach Tracker as a new coach.`,
+          })
+        }
+      }
+    }
+  }
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [showTextModal, setShowTextModal] = useState(false)
@@ -724,14 +774,22 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-gray-900">{client.label}</span>
-                        {client.is_coach_prospect && (
+                        {client.status !== "active" && CLIENT_STATUS_CONFIG[client.status] && (
+                          <Badge
+                            style={{
+                              backgroundColor: CLIENT_STATUS_CONFIG[client.status].bg,
+                              color: CLIENT_STATUS_CONFIG[client.status].color,
+                            }}
+                            className="flex items-center gap-1"
+                          >
+                            {CLIENT_STATUS_CONFIG[client.status].icon} {CLIENT_STATUS_CONFIG[client.status].label}
+                          </Badge>
+                        )}
+                        {client.is_coach_prospect && client.status === "active" && (
                           <Badge className="bg-orange-100 text-orange-700 flex items-center gap-1">
                             <Star className="h-3 w-3" />
                             Coach Prospect
                           </Badge>
-                        )}
-                        {client.status === "paused" && (
-                          <Badge variant="secondary">Paused</Badge>
                         )}
                         {phase.milestone && (
                           <Badge
@@ -875,8 +933,24 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                     </div>
                   )}
 
-                  {/* Secondary Actions: Edit, Coach, Remind & Pause/Resume */}
+                  {/* Secondary Actions: Status, Edit, Remind */}
                   <div className="mt-3 pt-3 border-t flex items-center gap-2">
+                    {/* Status Dropdown */}
+                    <Select
+                      value={client.status}
+                      onValueChange={(value) => handleClientStatusChange(client.id, value as ClientStatus)}
+                    >
+                      <SelectTrigger className="flex-1 min-w-0 h-9 text-xs sm:text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.entries(CLIENT_STATUS_CONFIG) as [ClientStatus, typeof CLIENT_STATUS_CONFIG[ClientStatus]][]).map(([key, cfg]) => (
+                          <SelectItem key={key} value={key}>
+                            {cfg.icon} {cfg.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button
                       variant="outline"
                       size="sm"
@@ -886,39 +960,12 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                       <Pencil className="h-4 w-4 sm:mr-1" />
                       <span className="hidden sm:inline">Edit</span>
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleCoachProspect(client.id)}
-                      className={client.is_coach_prospect ? "bg-orange-50 text-orange-700" : ""}
-                    >
-                      <Star className="h-4 w-4 sm:mr-1" />
-                      <span className="hidden sm:inline">{client.is_coach_prospect ? "Coach" : "Coach?"}</span>
-                    </Button>
                     <ReminderButton
                       entityType="client"
                       entityId={client.id}
                       entityName={client.label}
                       variant="outline"
                     />
-                    {client.status === "active" ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateStatus(client.id, "paused")}
-                      >
-                        Pause
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateStatus(client.id, "active")}
-                        className="text-green-600"
-                      >
-                        Resume
-                      </Button>
-                    )}
                   </div>
 
                   {client.notes && (
