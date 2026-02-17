@@ -83,7 +83,6 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
 
   // Updated My Business items per Phase 5 UX redesign
   const businessItems = [
-    { label: "Pipeline", href: "/prospect-pipeline", description: "Overview of your journey" },
     { label: "100's List Tracker", href: "/prospect-tracker", description: "Track your pipeline" },
     { label: "Client Tracker", href: "/client-tracker", description: "Touchpoints & milestones" },
     // { label: "Downline Overview", href: "/coach/downline", description: "Track your team's progress" }, // Hidden for now
@@ -92,7 +91,6 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
 
   const isBusinessPage = pathname?.startsWith("/prospect-tracker") || 
                          pathname?.startsWith("/client-tracker") || 
-                         pathname?.startsWith("/prospect-pipeline") ||
                          // pathname?.startsWith("/coach/downline") || // Hidden for now
                          pathname?.startsWith("/my-business")
 
