@@ -1381,14 +1381,14 @@ Talking Points:
                         />
                       </div>
                       <p className="text-xs text-blue-500">
-                        Managed in My Settings → Zoom tab
+                        Managed in <Link href="/settings" className="underline hover:text-blue-700 font-medium">My Settings → Zoom</Link> tab
                       </p>
                     </div>
                   ) : (
                     <div className="text-center py-3">
                       <p className="text-sm text-blue-700 font-medium">No Zoom details configured</p>
                       <p className="text-xs text-blue-600 mt-1">
-                        Go to <strong>My Settings → Zoom</strong> tab to enter your Zoom link, meeting ID, and passcode.
+                        Go to <Link href="/settings" className="underline hover:text-blue-800 font-semibold">My Settings → Zoom</Link> tab to enter your Zoom link, meeting ID, and passcode.
                       </p>
                     </div>
                   )}

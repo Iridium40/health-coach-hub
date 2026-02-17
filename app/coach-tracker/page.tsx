@@ -50,6 +50,9 @@ import {
   ChevronRight,
   Download,
   Mail,
+  CalendarPlus,
+  Phone,
+  Video,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -130,6 +133,7 @@ export default function CoachTrackerPage() {
   const [scheduleMinute, setScheduleMinute] = useState<string>("00")
   const [scheduleAmPm, setScheduleAmPm] = useState<"AM" | "PM">("AM")
   const [scheduleEmails, setScheduleEmails] = useState<string>("")
+  const [meetingType, setMeetingType] = useState<"phone" | "zoom">("phone")
 
   // Filtered coaches
   const filteredCoaches = useMemo(() => {
@@ -261,6 +265,7 @@ export default function CoachTrackerPage() {
     setScheduleMinute("00")
     setScheduleAmPm("AM")
     setScheduleEmails(profile?.notification_email || user?.email || "")
+    setMeetingType("phone")
     setShowScheduleModal(true)
   }
 
@@ -326,6 +331,15 @@ export default function CoachTrackerPage() {
         const endDate = new Date(targetDate)
         endDate.setMinutes(endDate.getMinutes() + 30)
 
+        let description = `Coaching call with ${selectedCoach.label}\nRank: ${getRankTitle(selectedCoach.rank)}\nStage: ${stageConfig[selectedCoach.stage].label}`
+        if (meetingType === "zoom" && profile?.zoom_link) {
+          description += `\n\nZoom Meeting:\n${profile.zoom_link}`
+          if (profile.zoom_meeting_id) description += `\nMeeting ID: ${profile.zoom_meeting_id}`
+          if (profile.zoom_passcode) description += `\nPasscode: ${profile.zoom_passcode}`
+        } else if (meetingType === "phone") {
+          description += `\n\nMeeting Type: Phone Call`
+        }
+
         Promise.all(
           emails.map((toEmail) =>
             sendCalendarInviteEmail({
@@ -334,7 +348,7 @@ export default function CoachTrackerPage() {
               fromEmail,
               fromName: profile?.full_name || "Coaching Amplifier",
               eventTitle: `Coach 1:1: ${selectedCoach.label}`,
-              eventDescription: `Coaching call with ${selectedCoach.label}\nRank: ${getRankTitle(selectedCoach.rank)}\nStage: ${stageConfig[selectedCoach.stage].label}`,
+              eventDescription: description,
               startDate: targetDate.toISOString(),
               endDate: endDate.toISOString(),
               eventType: "check-in",
@@ -907,98 +921,205 @@ export default function CoachTrackerPage() {
       <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Schedule 1:1</DialogTitle>
-            {selectedCoach && (
-              <DialogDescription>
-                Set up a coaching call with {selectedCoach.label}
-              </DialogDescription>
-            )}
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarPlus className="h-5 w-5 text-purple-600" />
+              Schedule 1:1
+            </DialogTitle>
+            <DialogDescription>Set up a coaching call with your downline coach.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            {/* Day of Week */}
-            <div>
-              <Label>Day</Label>
-              <div className="grid grid-cols-7 gap-1 mt-1">
-                {DAYS_OF_WEEK.map((day) => (
-                  <Button
-                    key={day.value}
-                    variant={scheduleDay === day.value ? "default" : "outline"}
-                    size="sm"
-                    className={`text-xs px-0 ${
-                      scheduleDay === day.value ? "bg-[hsl(var(--optavia-green))]" : ""
-                    }`}
-                    onClick={() => setScheduleDay(day.value)}
+          {selectedCoach && (
+            <div className="space-y-6">
+              {/* Coach Info */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="font-medium text-gray-900">{selectedCoach.label}</div>
+                <div className="text-sm text-gray-500">
+                  {stageConfig[selectedCoach.stage].icon} {stageConfig[selectedCoach.stage].label} • {getRankTitle(selectedCoach.rank)}
+                </div>
+              </div>
+
+              {/* Day Picker */}
+              <div>
+                <Label className="text-sm font-medium mb-3 block">Select Day</Label>
+                <div className="grid grid-cols-7 gap-1">
+                  {DAYS_OF_WEEK.map((day) => (
+                    <button
+                      key={day.value}
+                      onClick={() => setScheduleDay(day.value)}
+                      className={`p-2 rounded-lg text-center transition-colors ${
+                        scheduleDay === day.value
+                          ? "bg-purple-600 text-white"
+                          : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      <div className="text-xs font-medium">{day.short}</div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Next {DAYS_OF_WEEK[scheduleDay].full}: {getNextDayDate(scheduleDay).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </p>
+              </div>
+
+              {/* Time Picker */}
+              <div>
+                <Label className="text-sm font-medium mb-3 block">Select Time</Label>
+                <div className="flex items-center gap-2 justify-center">
+                  <select
+                    value={scheduleHour}
+                    onChange={(e) => setScheduleHour(parseInt(e.target.value))}
+                    className="w-16 h-12 text-center text-lg font-medium border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   >
-                    {day.short}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Time */}
-            <div>
-              <Label>Time</Label>
-              <div className="flex gap-2 mt-1">
-                <Select value={String(scheduleHour)} onValueChange={(v) => setScheduleHour(Number(v))}>
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
                     {HOUR_OPTIONS.map((h) => (
-                      <SelectItem key={h} value={String(h)}>{h}</SelectItem>
+                      <option key={h} value={h}>{h}</option>
                     ))}
-                  </SelectContent>
-                </Select>
-                <span className="self-center text-gray-400 font-bold">:</span>
-                <Select value={scheduleMinute} onValueChange={setScheduleMinute}>
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+                  </select>
+                  <span className="text-2xl font-bold text-gray-400">:</span>
+                  <select
+                    value={scheduleMinute}
+                    onChange={(e) => setScheduleMinute(e.target.value)}
+                    className="w-16 h-12 text-center text-lg font-medium border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  >
                     {MINUTE_OPTIONS.map((m) => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                      <option key={m} value={m}>{m}</option>
                     ))}
-                  </SelectContent>
-                </Select>
-                <Select value={scheduleAmPm} onValueChange={(v) => setScheduleAmPm(v as "AM" | "PM")}>
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AM">AM</SelectItem>
-                    <SelectItem value="PM">PM</SelectItem>
-                  </SelectContent>
-                </Select>
+                  </select>
+                  <div className="flex rounded-lg border overflow-hidden">
+                    <button
+                      onClick={() => setScheduleAmPm("AM")}
+                      className={`px-4 h-12 font-medium transition-colors ${
+                        scheduleAmPm === "AM"
+                          ? "bg-purple-600 text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      AM
+                    </button>
+                    <button
+                      onClick={() => setScheduleAmPm("PM")}
+                      className={`px-4 h-12 font-medium transition-colors ${
+                        scheduleAmPm === "PM"
+                          ? "bg-purple-600 text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      PM
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 text-center mt-2">30 minute coaching call</p>
+              </div>
+
+              {/* Meeting Type Selector */}
+              <div>
+                <Label className="text-sm font-medium mb-3 block">Meeting Type</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setMeetingType("phone")}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      meetingType === "phone"
+                        ? "border-purple-600 bg-purple-50 text-purple-700"
+                        : "border-gray-200 hover:border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    <Phone className="h-5 w-5" />
+                    <span className="font-medium">Phone</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMeetingType("zoom")}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      meetingType === "zoom"
+                        ? "border-purple-600 bg-purple-50 text-purple-700"
+                        : "border-gray-200 hover:border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    <Video className="h-5 w-5" />
+                    <span className="font-medium">Zoom</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Zoom Details (read-only from profile) */}
+              {meetingType === "zoom" && (
+                <div className="space-y-3 bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-purple-700 text-sm font-medium">
+                    <Video className="h-4 w-4" />
+                    Zoom Meeting Details
+                  </div>
+                  {profile?.zoom_link ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={profile.zoom_link}
+                        readOnly
+                        className="bg-white/60 text-gray-700 cursor-default"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          value={profile.zoom_meeting_id || ""}
+                          readOnly
+                          placeholder="No Meeting ID"
+                          className="bg-white/60 text-gray-700 cursor-default"
+                        />
+                        <Input
+                          value={profile.zoom_passcode || ""}
+                          readOnly
+                          placeholder="No Passcode"
+                          className="bg-white/60 text-gray-700 cursor-default"
+                        />
+                      </div>
+                      <p className="text-xs text-purple-500">
+                        Managed in <Link href="/settings" className="underline hover:text-purple-700 font-medium">My Settings → Zoom</Link> tab
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-3">
+                      <p className="text-sm text-purple-700 font-medium">No Zoom details configured</p>
+                      <p className="text-xs text-purple-600 mt-1">
+                        Go to <Link href="/settings" className="underline hover:text-purple-800 font-semibold">My Settings → Zoom</Link> tab to enter your Zoom link, meeting ID, and passcode.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Primary Save & Schedule Button */}
+              <Button
+                onClick={handleSaveSchedule}
+                className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base"
+                size="lg"
+              >
+                <CalendarPlus className="h-5 w-5 mr-2" />
+                Save & Schedule
+              </Button>
+
+              {/* Email Recipients */}
+              <div className="border-t border-gray-200 pt-4">
+                <p className="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-3">
+                  Optional — Send Calendar Invite
+                </p>
+                <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <Mail className="h-4 w-4 text-purple-500" />
+                  Email Recipients
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="email@example.com, another@example.com"
+                  value={scheduleEmails}
+                  onChange={(e) => setScheduleEmails(e.target.value)}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Separate multiple email addresses with commas
+                </p>
               </div>
             </div>
-
-            {/* Email Recipients */}
-            <div>
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Mail className="h-4 w-4 text-purple-500" />
-                Send Calendar Invite
-              </Label>
-              <Input
-                type="text"
-                placeholder="email@example.com, another@example.com"
-                value={scheduleEmails}
-                onChange={(e) => setScheduleEmails(e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Separate multiple email addresses with commas
-              </p>
-            </div>
-          </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowScheduleModal(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowScheduleModal(false)
+              setMeetingType("phone")
+            }}>
               Cancel
-            </Button>
-            <Button
-              onClick={handleSaveSchedule}
-              className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))]/90"
-            >
-              Save & Schedule
             </Button>
           </DialogFooter>
         </DialogContent>
