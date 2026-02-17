@@ -262,15 +262,6 @@ export default function CoachTrackerPage() {
     }
   }
 
-  const handleText = (coach: Coach) => {
-    const message = `Hi ${coach.label}! Just checking in — how's everything going with your business? Let me know if you need anything! 💪`
-    const smsUrl = `sms:?body=${encodeURIComponent(message)}`
-    window.open(smsUrl)
-    toast({
-      title: "Opening Messages",
-      description: `Sending message to ${coach.label}`,
-    })
-  }
 
   const openScheduleModal = (coach: Coach) => {
     setSelectedCoach(coach)
@@ -644,7 +635,6 @@ export default function CoachTrackerPage() {
                   onRank={(c) => { setSelectedCoach(c); setShowRankModal(true) }}
                   onCheckIn={handleCheckIn}
                   onStageChange={handleMove}
-                  onText={handleText}
                   onSchedule={openScheduleModal}
                   onCompleteSchedule={handleCompleteSchedule}
                   onClearSchedule={handleClearSchedule}

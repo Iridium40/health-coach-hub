@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select"
 import {
   CheckCircle,
-  MessageSquare,
   CalendarPlus,
   Edit2,
   Award,
@@ -37,7 +36,6 @@ interface CoachCardProps {
   onRank: (coach: Coach) => void
   onCheckIn: (coach: Coach) => void
   onStageChange: (coachId: string, newStage: CoachStage) => void
-  onText: (coach: Coach) => void
   onSchedule: (coach: Coach) => void
   onCompleteSchedule: (coach: Coach) => void
   onClearSchedule: (coach: Coach) => void
@@ -57,7 +55,6 @@ export const CoachCard = memo(function CoachCard({
   onRank,
   onCheckIn,
   onStageChange,
-  onText,
   onSchedule,
   onCompleteSchedule,
   onClearSchedule,
@@ -200,15 +197,6 @@ export const CoachCard = memo(function CoachCard({
           >
             <CheckCircle className="h-4 w-4 mr-1" />
             <span className="text-xs sm:text-sm">Check In</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
-            onClick={() => onText(coach)}
-          >
-            <MessageSquare className="h-4 w-4 mr-1" />
-            <span className="text-xs sm:text-sm">Text</span>
           </Button>
           <Button
             variant="outline"
