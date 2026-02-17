@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
 
 // Types
-export type ClientStatus = 'active' | 'goal_achieved' | 'future_coach' | 'coach_launched' | 'paused' | 'completed' | 'churned'
+export type ClientStatus = 'active' | 'goal_achieved' | 'future_coach' | 'coach_launched' | 'paused' | 'completed'
 
 export type RecurringFrequency = 'none' | 'weekly' | 'biweekly' | 'monthly'
 

@@ -49,6 +49,7 @@ import {
   Search,
   ChevronRight,
   Download,
+  Mail,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -128,6 +129,7 @@ export default function CoachTrackerPage() {
   const [scheduleHour, setScheduleHour] = useState<number>(9)
   const [scheduleMinute, setScheduleMinute] = useState<string>("00")
   const [scheduleAmPm, setScheduleAmPm] = useState<"AM" | "PM">("AM")
+  const [scheduleEmails, setScheduleEmails] = useState<string>("")
 
   // Filtered coaches
   const filteredCoaches = useMemo(() => {
@@ -276,7 +278,29 @@ export default function CoachTrackerPage() {
     setScheduleHour(9)
     setScheduleMinute("00")
     setScheduleAmPm("AM")
+    setScheduleEmails(profile?.notification_email || user?.email || "")
     setShowScheduleModal(true)
+  }
+
+  const handleCompleteSchedule = async (coach: Coach) => {
+    const success = await updateCoach(coach.id, { next_scheduled_at: null })
+    if (success) {
+      await checkInCoach(coach.id)
+      toast({
+        title: "Call Completed",
+        description: `Great job connecting with ${coach.label}! Check-in recorded.`,
+      })
+    }
+  }
+
+  const handleClearSchedule = async (coach: Coach) => {
+    const success = await updateCoach(coach.id, { next_scheduled_at: null })
+    if (success) {
+      toast({
+        title: "Schedule Cleared",
+        description: `Scheduled call with ${coach.label} has been cancelled.`,
+      })
+    }
   }
 
   const getNextDayDate = (dayOfWeek: number): Date => {
@@ -294,6 +318,13 @@ export default function CoachTrackerPage() {
     return hour === 12 ? 12 : hour + 12
   }
 
+  const parseEmails = (input: string): string[] => {
+    return input
+      .split(",")
+      .map((e) => e.trim())
+      .filter((e) => e.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+  }
+
   const handleSaveSchedule = async () => {
     if (!selectedCoach) return
 
@@ -306,27 +337,35 @@ export default function CoachTrackerPage() {
     })
 
     if (success) {
-      // Send calendar invite to the coach so they can save it to their calendar
-      const coachEmail = profile?.notification_email || user?.email
-      if (coachEmail) {
+      // Send calendar invite to all provided email addresses
+      const emails = parseEmails(scheduleEmails)
+      const fromEmail = profile?.notification_email || user?.email
+      if (emails.length > 0 && fromEmail) {
         const endDate = new Date(targetDate)
         endDate.setMinutes(endDate.getMinutes() + 30)
 
-        sendCalendarInviteEmail({
-          to: coachEmail,
-          toName: profile?.full_name || "Coach",
-          fromEmail: coachEmail,
-          fromName: profile?.full_name || "Coaching Amplifier",
-          eventTitle: `Coach 1:1: ${selectedCoach.label}`,
-          eventDescription: `Coaching call with ${selectedCoach.label}\nRank: ${getRankTitle(selectedCoach.rank)}\nStage: ${stageConfig[selectedCoach.stage].label}`,
-          startDate: targetDate.toISOString(),
-          endDate: endDate.toISOString(),
-          eventType: "check-in",
-        }).then((result) => {
-          if (result.success) {
+        Promise.all(
+          emails.map((toEmail) =>
+            sendCalendarInviteEmail({
+              to: toEmail,
+              toName: profile?.full_name || "Coach",
+              fromEmail,
+              fromName: profile?.full_name || "Coaching Amplifier",
+              eventTitle: `Coach 1:1: ${selectedCoach.label}`,
+              eventDescription: `Coaching call with ${selectedCoach.label}\nRank: ${getRankTitle(selectedCoach.rank)}\nStage: ${stageConfig[selectedCoach.stage].label}`,
+              startDate: targetDate.toISOString(),
+              endDate: endDate.toISOString(),
+              eventType: "check-in",
+            })
+          )
+        ).then((results) => {
+          const sentCount = results.filter((r) => r.success).length
+          if (sentCount > 0) {
             toast({
               title: "Calendar invite sent",
-              description: `Check ${coachEmail} for the calendar invite`,
+              description: emails.length === 1
+                ? `Check ${emails[0]} for the calendar invite`
+                : `Invite sent to ${sentCount} recipient(s)`,
             })
           }
         }).catch(() => {
@@ -607,6 +646,8 @@ export default function CoachTrackerPage() {
                   onStageChange={handleMove}
                   onText={handleText}
                   onSchedule={openScheduleModal}
+                  onCompleteSchedule={handleCompleteSchedule}
+                  onClearSchedule={handleClearSchedule}
                 />
               ))}
             </div>
@@ -949,6 +990,24 @@ export default function CoachTrackerPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Email Recipients */}
+            <div>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Mail className="h-4 w-4 text-purple-500" />
+                Send Calendar Invite
+              </Label>
+              <Input
+                type="text"
+                placeholder="email@example.com, another@example.com"
+                value={scheduleEmails}
+                onChange={(e) => setScheduleEmails(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Separate multiple email addresses with commas
+              </p>
             </div>
           </div>
           <DialogFooter>

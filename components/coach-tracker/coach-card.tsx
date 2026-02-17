@@ -19,6 +19,7 @@ import {
   Award,
   Trash2,
   Calendar,
+  X,
 } from "lucide-react"
 import {
   type Coach,
@@ -38,6 +39,8 @@ interface CoachCardProps {
   onStageChange: (coachId: string, newStage: CoachStage) => void
   onText: (coach: Coach) => void
   onSchedule: (coach: Coach) => void
+  onCompleteSchedule: (coach: Coach) => void
+  onClearSchedule: (coach: Coach) => void
 }
 
 const STAGE_OPTIONS: { value: CoachStage; label: string; icon: string }[] = [
@@ -56,6 +59,8 @@ export const CoachCard = memo(function CoachCard({
   onStageChange,
   onText,
   onSchedule,
+  onCompleteSchedule,
+  onClearSchedule,
 }: CoachCardProps) {
   const stage = stageConfig[coach.stage]
   const days = daysSinceLaunch(coach.launch_date)
@@ -135,18 +140,18 @@ export const CoachCard = memo(function CoachCard({
           </div>
         </div>
 
-        {/* Scheduled Next Check-in Info */}
+        {/* Scheduled Call/Zoom Info */}
         {coach.next_scheduled_at && (
-          <div className="mt-3 flex items-center gap-1 flex-wrap">
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
             <Badge
-              className={`flex items-center gap-1 ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium ${
                 new Date(coach.next_scheduled_at) < new Date()
-                  ? "bg-red-100 text-red-700"
-                  : "bg-green-100 text-green-700"
+                  ? "bg-red-100 text-red-700 border border-red-200"
+                  : "bg-green-100 text-green-700 border border-green-200"
               }`}
             >
-              <Calendar className="h-3 w-3" />
-              Next:{" "}
+              <Calendar className="h-3.5 w-3.5" />
+              <span>1:1:</span>
               {new Date(coach.next_scheduled_at).toLocaleDateString("en-US", {
                 weekday: "short",
                 month: "short",
@@ -157,6 +162,27 @@ export const CoachCard = memo(function CoachCard({
                 minute: "2-digit",
               })}
             </Badge>
+            {new Date(coach.next_scheduled_at).setHours(0, 0, 0, 0) <=
+              new Date().setHours(0, 0, 0, 0) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onCompleteSchedule(coach)}
+                className="h-7 w-7 p-0 bg-green-100 hover:bg-green-200 rounded-full"
+                title="Mark call as completed"
+              >
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onClearSchedule(coach)}
+              className="h-7 w-7 p-0 bg-red-100 hover:bg-red-200 rounded-full"
+              title="Cancel scheduled call"
+            >
+              <X className="h-4 w-4 text-red-600" />
+            </Button>
           </div>
         )}
 

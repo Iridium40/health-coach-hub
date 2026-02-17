@@ -121,12 +121,29 @@ ${organizerName || "Your Coach"}`
     }
   }
 
+  const parseEmails = (input: string): string[] => {
+    return input
+      .split(",")
+      .map((e) => e.trim())
+      .filter((e) => e.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+  }
+
   // Send via Email
   const handleEmailInvite = async () => {
     if (!email) {
       toast({
         title: "Email required",
-        description: "Please enter the client/prospect email address",
+        description: "Please enter at least one email address",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const emails = parseEmails(email)
+    if (emails.length === 0) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter valid email address(es), separated by commas",
         variant: "destructive",
       })
       return
@@ -144,32 +161,40 @@ ${organizerName || "Your Coach"}`
     setSending(true)
 
     try {
-      const result = await sendCalendarInviteEmail({
-        to: email,
-        toName: recipientName,
-        fromEmail: organizerEmail,
-        fromName: organizerName,
-        eventTitle: event.title,
-        eventDescription: event.description,
-        startDate: event.startDate.toISOString(),
-        endDate: event.endDate.toISOString(),
-        eventType: eventType,
-      })
+      const results = await Promise.all(
+        emails.map((toEmail) =>
+          sendCalendarInviteEmail({
+            to: toEmail,
+            toName: recipientName,
+            fromEmail: organizerEmail,
+            fromName: organizerName,
+            eventTitle: event.title,
+            eventDescription: event.description,
+            startDate: event.startDate.toISOString(),
+            endDate: event.endDate.toISOString(),
+            eventType: eventType,
+          })
+        )
+      )
 
-      if (result.success) {
+      const successCount = results.filter((r) => r.success).length
+      if (successCount > 0) {
         setSent(true)
         onScheduleComplete?.()
-        
+
         toast({
           title: "📧 Calendar invite sent!",
-          description: `${recipientName || "They"} will receive the invite at ${email}`,
+          description:
+            emails.length === 1
+              ? `${recipientName || "They"} will receive the invite at ${emails[0]}`
+              : `Invite sent to ${successCount} of ${emails.length} recipient(s)`,
         })
 
         setTimeout(() => setSent(false), 3000)
       } else {
         toast({
           title: "Failed to send invite",
-          description: result.error || "Please try again",
+          description: results[0]?.error || "Please try again",
           variant: "destructive",
         })
       }
@@ -184,7 +209,7 @@ ${organizerName || "Your Coach"}`
     }
   }
 
-  const isValidEmail = email && organizerEmail
+  const isValidEmail = parseEmails(email).length > 0 && organizerEmail
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -195,13 +220,13 @@ ${organizerName || "Your Coach"}`
           Send Calendar Invite by Email
         </Label>
         <Input
-          type="email"
-          placeholder="email@example.com"
+          type="text"
+          placeholder="email@example.com, another@example.com"
           value={email}
           onChange={(e) => handleEmailChange(e.target.value)}
         />
         <p className="text-xs text-gray-500">
-          They'll receive an email with a calendar invite attached
+          Separate multiple email addresses with commas
         </p>
         {!organizerEmail && (
           <p className="text-xs text-amber-600">
