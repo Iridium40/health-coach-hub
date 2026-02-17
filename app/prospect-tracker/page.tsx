@@ -74,6 +74,7 @@ import { Footer } from "@/components/footer"
 import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
 import { ShareHealthAssessment } from "@/components/share-health-assessment"
 import { PipelineProgressionGuide } from "@/components/pipeline-progression-guide"
+import { sendCalendarInviteEmail } from "@/lib/email"
 import { ReminderButton } from "@/components/reminders-panel"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { StatsCardsSkeleton, ProspectListSkeleton } from "@/components/ui/skeleton-loaders"
@@ -326,6 +327,34 @@ Talking Points:
         title: "📅 HA Scheduled!",
         description: `${haHour}:${haMinute} ${haAmPm} on ${targetDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`,
       })
+
+      // Send calendar invite to the coach so they can save it to their calendar
+      const coachEmail = profile?.notification_email || user?.email
+      if (coachEmail) {
+        const calEvent = generateHACalendarEvent()
+        if (calEvent) {
+          sendCalendarInviteEmail({
+            to: coachEmail,
+            toName: profile?.full_name || "Coach",
+            fromEmail: coachEmail,
+            fromName: profile?.full_name || "Coaching Amplifier",
+            eventTitle: calEvent.title,
+            eventDescription: calEvent.description,
+            startDate: calEvent.startDate.toISOString(),
+            endDate: calEvent.endDate.toISOString(),
+            eventType: "ha",
+          }).then((result) => {
+            if (result.success) {
+              toast({
+                title: "📧 Calendar invite sent to you",
+                description: `Check ${coachEmail} for the calendar invite`,
+              })
+            }
+          }).catch(() => {
+            // Silent fail - the HA was still saved successfully
+          })
+        }
+      }
       
       setShowHAScheduleModal(false)
       setSchedulingProspect(null)
@@ -1363,18 +1392,34 @@ Talking Points:
                 </div>
               )}
 
-              {/* Calendar Options with Email/SMS */}
+              {/* Primary Save & Schedule Button */}
+              {haDate && (
+                <Button
+                  onClick={handleSaveHASchedule}
+                  className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base"
+                  size="lg"
+                >
+                  <CalendarPlus className="h-5 w-5 mr-2" />
+                  Save & Schedule
+                </Button>
+              )}
+
+              {/* Optional: Notify Prospect */}
               {haDate && generateHACalendarEvent() && (
-                <ScheduleCalendarOptions
-                  event={generateHACalendarEvent()!}
-                  recipientName={schedulingProspect.label}
-                  recipientEmail={prospectEmail}
-                  recipientPhone={prospectPhone}
-                  onEmailChange={setProspectEmail}
-                  onPhoneChange={setProspectPhone}
-                  onScheduleComplete={handleSaveHASchedule}
-                  eventType="ha"
-                />
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-3">
+                    Optional — Notify Prospect
+                  </p>
+                  <ScheduleCalendarOptions
+                    event={generateHACalendarEvent()!}
+                    recipientName={schedulingProspect.label}
+                    recipientEmail={prospectEmail}
+                    recipientPhone={prospectPhone}
+                    onEmailChange={setProspectEmail}
+                    onPhoneChange={setProspectPhone}
+                    eventType="ha"
+                  />
+                </div>
               )}
             </div>
           )}
