@@ -417,10 +417,11 @@ Talking Points:
   const handleConvertToClient = async () => {
     if (!convertingProspect || !clientStartDate) return
 
-    // Create the client record
+    // Create the client record, carrying over prospect notes
     const newClient = await addClient({
       label: convertingProspect.label,
       start_date: clientStartDate,
+      notes: convertingProspect.notes || undefined,
     })
 
     if (newClient) {

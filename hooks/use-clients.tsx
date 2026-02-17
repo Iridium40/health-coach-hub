@@ -34,6 +34,7 @@ export interface NewClient {
   label: string
   phone?: string
   start_date: string
+  notes?: string
 }
 
 export interface UpdateClient {
@@ -245,7 +246,7 @@ export function useClients() {
       am_done: false,
       pm_done: false,
       last_touchpoint_date: today,
-      notes: null
+      notes: newClient.notes || null
     }
 
     const { data, error: insertError } = await supabase
