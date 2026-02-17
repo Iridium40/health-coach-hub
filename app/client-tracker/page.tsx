@@ -124,7 +124,6 @@ export default function ClientTrackerPage() {
     coach_launched: { label: "Coach Launched", icon: "🚀", color: "#ec4899", bg: "#fdf2f8" },
     paused: { label: "Paused", icon: "⏸️", color: "#6b7280", bg: "#f3f4f6" },
     completed: { label: "Completed", icon: "✅", color: "#10b981", bg: "#ecfdf5" },
-    churned: { label: "Churned", icon: "❌", color: "#ef4444", bg: "#fef2f2" },
   }
 
   // Handle client status change — auto-creates a coach tracker entry for coach stages

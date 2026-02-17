@@ -270,11 +270,17 @@ export const ProspectCard = memo(function ProspectCard({
           </Button>
         </div>
 
-        {prospect.notes && (
-          <div className="mt-3 pt-3 border-t text-sm text-gray-600">
-            📝 {prospect.notes}
-          </div>
-        )}
+        {/* Notes - clickable to edit */}
+        <button
+          onClick={() => onEdit(prospect)}
+          className="mt-3 pt-3 border-t w-full text-left text-sm hover:bg-gray-50 rounded-b-lg transition-colors cursor-pointer"
+        >
+          {prospect.notes ? (
+            <span className="text-gray-600">📝 {prospect.notes}</span>
+          ) : (
+            <span className="text-gray-400 italic">📝 Add notes...</span>
+          )}
+        </button>
 
         {/* Contextual Resources Section */}
         <Collapsible open={showResources} onOpenChange={setShowResources}>
