@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +27,8 @@ import {
   isQualifyingLeg,
   type RankType,
 } from "@/hooks/use-rank-calculator"
+import { useClients } from "@/hooks/use-clients"
+import { useCoaches, mapRankNumberToRankType } from "@/hooks/use-coaches"
 import {
   Users,
   Star,
@@ -38,11 +40,16 @@ import {
   Sparkles,
   ExternalLink,
   Zap,
+  Database,
+  SlidersHorizontal,
+  ArrowRight,
+  Info,
 } from "lucide-react"
 
 interface SimulatedCoach {
   id: string
   rank: RankType
+  label?: string
 }
 
 // Coach rank options for the dropdown
@@ -64,57 +71,73 @@ const COACH_RANK_OPTIONS: { value: RankType; label: string; color: string }[] = 
   { value: "IPD", label: "IPD", color: "bg-red-500" },
 ]
 
+type CalculatorMode = "live" | "simulator"
+
 export function RankCalculator() {
   const { user } = useUserData()
-  
+
   const {
     rankData,
-    loading,
+    loading: rankLoading,
     updateRankData,
   } = useRankCalculator(user)
 
+  const { stats: clientStats, loading: clientsLoading } = useClients()
+  const { coaches: downlineCoaches, loading: coachesLoading } = useCoaches()
+
+  const [mode, setMode] = useState<CalculatorMode>("live")
   const [showRankSelector, setShowRankSelector] = useState(false)
   const [addCoachOpen, setAddCoachOpen] = useState(false)
-  
+
   // Current data
   const currentRank = (rankData?.current_rank || "Coach") as RankType
-  
-  // Simulation state
-  const [simClients, setSimClients] = useState(0) // Number of clients
+
+  // Simulation state (only used in simulator mode)
+  const [simClients, setSimClients] = useState(0)
   const [simCoaches, setSimCoaches] = useState<SimulatedCoach[]>([])
 
-  // Calculate team counts from simulated coaches
-  const simSCCount = simCoaches.filter(c => isQualifyingLeg(c.rank)).length
-  const simEDCount = simCoaches.filter(c => isEDOrHigher(c.rank)).length
-  const simFIBCCount = simCoaches.filter(c => isFIBCOrHigher(c.rank)).length
+  // Live data: map downline coaches to SimulatedCoach format using rank mapping
+  const liveCoaches: SimulatedCoach[] = useMemo(() => {
+    return downlineCoaches.map(c => ({
+      id: c.id,
+      rank: mapRankNumberToRankType(c.rank) as RankType,
+      label: c.label,
+    }))
+  }, [downlineCoaches])
+
+  const liveClients = clientStats.active
+
+  // Pick active values based on mode
+  const activeClients = mode === "live" ? liveClients : simClients
+  const activeCoaches = mode === "live" ? liveCoaches : simCoaches
+
+  // Calculate team counts from active coaches
+  const scCount = activeCoaches.filter(c => isQualifyingLeg(c.rank)).length
+  const edCount = activeCoaches.filter(c => isEDOrHigher(c.rank)).length
+  const fibcCount = activeCoaches.filter(c => isFIBCOrHigher(c.rank)).length
 
   // Calculate points
-  // Points from clients: 5 clients = 1 point
-  const clientPoints = Math.floor(simClients / 5)
-  // Points from SC+ coaches: each SC+ coach = 1 point
-  const coachPoints = simSCCount
-  // Total qualifying points
+  const clientPoints = Math.floor(activeClients / 5)
+  const coachPoints = scCount
   const totalPoints = clientPoints + coachPoints
-  
-  // Minimum 5 clients required to qualify for any rank above Coach
-  const hasMinimumClients = simClients >= 5
 
-  // Determine rank based on simulated stats
+  // Minimum 5 clients required to qualify for any rank above Coach
+  const hasMinimumClients = activeClients >= 5
+
+  // Determine rank based on stats
   const calculateRank = (): RankType => {
-    // Must have minimum 5 clients to qualify for anything above Coach
     if (!hasMinimumClients) return 'Coach'
-    
+
     for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
       const rank = RANK_ORDER[i]
       const reqs = RANK_REQUIREMENTS[rank]
-      
-      // Check all requirements including minClients for this specific rank
+
       if (
-        simClients >= reqs.minClients &&
+        activeClients >= reqs.minClients &&
         totalPoints >= reqs.points &&
-        simSCCount >= reqs.scTeams &&
-        simEDCount >= reqs.edTeams &&
-        simFIBCCount >= reqs.fibcTeams
+        scCount >= reqs.scTeams &&
+        edCount >= reqs.edTeams &&
+        fibcCount >= reqs.fibcTeams
       ) {
         return rank
       }
@@ -136,27 +159,31 @@ export function RankCalculator() {
   // Calculate gaps to next rank
   const gaps = nextRankReqs ? {
     points: Math.max(0, nextRankReqs.points - totalPoints),
-    minClients: Math.max(0, nextRankReqs.minClients - simClients),
-    scTeams: Math.max(0, nextRankReqs.scTeams - simSCCount),
-    edTeams: Math.max(0, nextRankReqs.edTeams - simEDCount),
-    fibcTeams: Math.max(0, nextRankReqs.fibcTeams - simFIBCCount),
+    minClients: Math.max(0, nextRankReqs.minClients - activeClients),
+    scTeams: Math.max(0, nextRankReqs.scTeams - scCount),
+    edTeams: Math.max(0, nextRankReqs.edTeams - edCount),
+    fibcTeams: Math.max(0, nextRankReqs.fibcTeams - fibcCount),
   } : null
 
-  // Add a coach
+  // Simulator actions
   const addCoach = (rank: RankType) => {
     setSimCoaches([...simCoaches, { id: Date.now().toString(), rank }])
     setAddCoachOpen(false)
   }
 
-  // Remove a specific coach by id
   const removeCoach = (coachId: string) => {
     setSimCoaches(simCoaches.filter(c => c.id !== coachId))
   }
 
-  // Reset to empty
   const resetSimulation = () => {
     setSimClients(0)
     setSimCoaches([])
+  }
+
+  // Load live data into the simulator
+  const loadLiveIntoSimulator = () => {
+    setSimClients(liveClients)
+    setSimCoaches(liveCoaches.map(c => ({ ...c, id: `live-${c.id}` })))
   }
 
   const handleRankChange = async (newRank: RankType) => {
@@ -167,8 +194,9 @@ export function RankCalculator() {
     setShowRankSelector(false)
   }
 
+  const loading = rankLoading || (mode === "live" && (clientsLoading || coachesLoading))
 
-  if (loading) {
+  if (rankLoading) {
     return (
       <Card>
         <CardContent className="p-8 flex items-center justify-center">
@@ -202,18 +230,74 @@ export function RankCalculator() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-gray-900">Rank Calculator</h2>
-          <p className="text-sm text-gray-500">Simulate different scenarios</p>
+          <p className="text-sm text-gray-500">
+            {mode === "live" ? "Using your tracker data" : "Simulate different scenarios"}
+          </p>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={resetSimulation}
-          className="flex items-center gap-1.5"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          Reset
-        </Button>
+        {mode === "simulator" && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={resetSimulation}
+            className="flex items-center gap-1.5"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset
+          </Button>
+        )}
       </div>
+
+      {/* Mode Toggle */}
+      <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg">
+        <button
+          onClick={() => setMode("live")}
+          className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-semibold transition-all ${
+            mode === "live"
+              ? "bg-white shadow-sm text-green-700"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <Database className="h-4 w-4" />
+          Live Data
+        </button>
+        <button
+          onClick={() => setMode("simulator")}
+          className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-semibold transition-all ${
+            mode === "simulator"
+              ? "bg-white shadow-sm text-purple-700"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          Simulator
+        </button>
+      </div>
+
+      {/* Live data info banner */}
+      {mode === "live" && (
+        <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Reading from your trackers</p>
+            <p className="text-xs text-green-600 mt-0.5">
+              Active clients from Client Tracker &bull; Coach ranks from Coach Tracker. Switch to Simulator to explore what-if scenarios.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Simulator load-from-live button */}
+      {mode === "simulator" && liveClients > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full border-purple-200 text-purple-700 hover:bg-purple-50"
+          onClick={loadLiveIntoSimulator}
+        >
+          <Database className="h-3.5 w-3.5 mr-1.5" />
+          Load from Live Data ({liveClients} clients, {downlineCoaches.length} coaches)
+        </Button>
+      )}
 
       {/* Current Rank Display */}
       <Card className={`${projectedRankColors.bg} border-2 ${projectedRankColors.accent.replace('bg-', 'border-')}`}>
@@ -234,20 +318,24 @@ export function RankCalculator() {
                 {projectedRank}
               </h3>
               <p className="text-xs text-gray-600 mt-0.5">
-                {totalPoints} pts ({clientPoints} from clients + {coachPoints} from SC+) • {simEDCount} ED • {simFIBCCount} FIBC
+                {totalPoints} pts ({clientPoints} from clients + {coachPoints} from SC+) • {edCount} ED • {fibcCount} FIBC
               </p>
             </div>
-            {projectedRank !== currentRank && (
-              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                Simulated
-              </Badge>
-            )}
+            <Badge variant="secondary" className={
+              mode === "live"
+                ? "bg-green-100 text-green-700"
+                : projectedRank !== currentRank
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-gray-100 text-gray-600"
+            }>
+              {mode === "live" ? "Live" : projectedRank !== currentRank ? "Simulated" : "Current"}
+            </Badge>
           </div>
         </CardContent>
       </Card>
 
       {/* Minimum Clients Warning */}
-      {!hasMinimumClients && simClients > 0 && (
+      {!hasMinimumClients && activeClients > 0 && (
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
           <p className="text-sm text-amber-700">
             <strong>Note:</strong> You need at least 5 clients to qualify for any rank above Coach.
@@ -261,49 +349,65 @@ export function RankCalculator() {
         <Card>
           <CardContent className="p-4">
             <div className="space-y-4">
-              {/* Header with +/- controls */}
+              {/* Header with +/- controls (or read-only for live) */}
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2 text-base font-semibold text-green-700">
                   <Users className="h-5 w-5 text-green-500" />
                   Active Clients
                 </Label>
-                <div className="flex items-center">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSimClients(Math.max(0, simClients - 1))}
-                    className="h-10 w-10 rounded-r-none border-r-0"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <div className="h-10 px-4 flex items-center justify-center border-2 border-green-500 bg-white min-w-[60px]">
-                    <span className="text-xl font-bold text-green-600">
-                      {simClients}
-                    </span>
+                {mode === "live" ? (
+                  <div className="flex items-center gap-2">
+                    {clientsLoading ? (
+                      <div className="h-10 w-16 bg-gray-100 animate-pulse rounded" />
+                    ) : (
+                      <div className="h-10 px-4 flex items-center justify-center border-2 border-green-500 bg-green-50 rounded-lg min-w-[60px]">
+                        <span className="text-xl font-bold text-green-600">
+                          {activeClients}
+                        </span>
+                      </div>
+                    )}
+                    <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-600">
+                      from Client Tracker
+                    </Badge>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSimClients(simClients + 1)}
-                    className="h-10 w-10 rounded-l-none border-l-0"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
+                ) : (
+                  <div className="flex items-center">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSimClients(Math.max(0, simClients - 1))}
+                      className="h-10 w-10 rounded-r-none border-r-0"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <div className="h-10 px-4 flex items-center justify-center border-2 border-green-500 bg-white min-w-[60px]">
+                      <span className="text-xl font-bold text-green-600">
+                        {simClients}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSimClients(simClients + 1)}
+                      className="h-10 w-10 rounded-l-none border-l-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Points explanation */}
               <div className="p-3 border border-green-200 rounded-lg bg-white">
                 <p className="text-sm text-gray-600 mb-3">
-                  5 clients = 1 point  |  <span className="text-amber-600 font-semibold">{clientPoints} point{clientPoints !== 1 ? 's' : ''} from {simClients} clients</span> {hasMinimumClients && <span className="text-green-500">✓</span>}
+                  5 clients = 1 point  |  <span className="text-amber-600 font-semibold">{clientPoints} point{clientPoints !== 1 ? 's' : ''} from {activeClients} clients</span> {hasMinimumClients && <span className="text-green-500">✓</span>}
                 </p>
-                
+
                 {/* Visual rows of 5 clients = 1 PT */}
                 {clientPoints > 0 && (
                   <div className="space-y-2">
                     {Array.from({ length: Math.min(clientPoints, 5) }).map((_, rowIdx) => (
                       <div key={rowIdx} className="flex items-center gap-2">
-                        {/* 5 client icons per row */}
                         {Array.from({ length: 5 }).map((_, i) => (
                           <div
                             key={i}
@@ -312,7 +416,6 @@ export function RankCalculator() {
                             <Users className="h-4 w-4 text-green-600" />
                           </div>
                         ))}
-                        {/* = 1 PT badge */}
                         <Badge className="bg-amber-500 text-white text-xs px-2 py-1">
                           = 1 PT ★
                         </Badge>
@@ -323,11 +426,11 @@ export function RankCalculator() {
                     )}
                   </div>
                 )}
-                
+
                 {/* Remaining clients (not yet a full point) */}
-                {simClients % 5 > 0 && (
+                {activeClients % 5 > 0 && (
                   <div className="flex items-center gap-2 mt-2 opacity-60">
-                    {Array.from({ length: simClients % 5 }).map((_, i) => (
+                    {Array.from({ length: activeClients % 5 }).map((_, i) => (
                       <div
                         key={i}
                         className="w-7 h-7 rounded-full bg-green-50 border border-green-300 flex items-center justify-center"
@@ -335,36 +438,40 @@ export function RankCalculator() {
                         <Users className="h-4 w-4 text-green-400" />
                       </div>
                     ))}
-                    <span className="text-xs text-gray-400">({5 - (simClients % 5)} more for next point)</span>
+                    <span className="text-xs text-gray-400">({5 - (activeClients % 5)} more for next point)</span>
                   </div>
                 )}
-                
-                {simClients === 0 && (
-                  <p className="text-sm text-gray-400 italic">Add clients to see points</p>
+
+                {activeClients === 0 && (
+                  <p className="text-sm text-gray-400 italic">
+                    {mode === "live" ? "No active clients in your Client Tracker" : "Add clients to see points"}
+                  </p>
                 )}
               </div>
 
-              {/* Quick add buttons */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-gray-500">Quick add:</span>
-                {[
-                  { clients: 5, pts: 1 },
-                  { clients: 10, pts: 2 },
-                  { clients: 15, pts: 3 },
-                  { clients: 20, pts: 4 },
-                  { clients: 25, pts: 5 },
-                ].map(({ clients, pts }) => (
-                  <Button
-                    key={clients}
-                    size="sm"
-                    variant={simClients === clients ? "default" : "outline"}
-                    onClick={() => setSimClients(clients)}
-                    className={`text-xs h-7 px-2 ${simClients === clients ? 'bg-green-600 hover:bg-green-700' : ''}`}
-                  >
-                    {clients} ({pts} pt{pts > 1 ? 's' : ''})
-                  </Button>
-                ))}
-              </div>
+              {/* Quick add buttons (simulator only) */}
+              {mode === "simulator" && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-gray-500">Quick add:</span>
+                  {[
+                    { clients: 5, pts: 1 },
+                    { clients: 10, pts: 2 },
+                    { clients: 15, pts: 3 },
+                    { clients: 20, pts: 4 },
+                    { clients: 25, pts: 5 },
+                  ].map(({ clients, pts }) => (
+                    <Button
+                      key={clients}
+                      size="sm"
+                      variant={simClients === clients ? "default" : "outline"}
+                      onClick={() => setSimClients(clients)}
+                      className={`text-xs h-7 px-2 ${simClients === clients ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                    >
+                      {clients} ({pts} pt{pts > 1 ? 's' : ''})
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -378,56 +485,65 @@ export function RankCalculator() {
                   <Star className="h-4 w-4 text-purple-500" />
                   Frontline Coaches
                 </Label>
-                <Badge variant="secondary" className="text-sm bg-purple-100 text-purple-700">
-                  {simCoaches.length} total
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-sm bg-purple-100 text-purple-700">
+                    {activeCoaches.length} total
+                  </Badge>
+                  {mode === "live" && (
+                    <Badge variant="secondary" className="text-[10px] bg-purple-50 text-purple-500">
+                      from Coach Tracker
+                    </Badge>
+                  )}
+                </div>
               </div>
 
-              {/* Add Coach Button */}
-              <Popover open={addCoachOpen} onOpenChange={setAddCoachOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2 border-dashed"
-                  >
-                    <Plus className="h-4 w-4 text-green-500" />
-                    <span className="text-gray-600">Add a coach...</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 p-2" align="start">
-                  <div className="space-y-1 max-h-64 overflow-y-auto">
-                    <p className="text-xs font-medium text-gray-500 px-2 pb-1">Select coach rank:</p>
-                    {COACH_RANK_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => addCoach(option.value)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-left"
-                      >
-                        <div className={`w-3 h-3 rounded-full ${option.color}`} />
-                        <span className="text-sm">{option.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
+              {/* Add Coach Button (simulator only) */}
+              {mode === "simulator" && (
+                <Popover open={addCoachOpen} onOpenChange={setAddCoachOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2 border-dashed"
+                    >
+                      <Plus className="h-4 w-4 text-green-500" />
+                      <span className="text-gray-600">Add a coach...</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-2" align="start">
+                    <div className="space-y-1 max-h-64 overflow-y-auto">
+                      <p className="text-xs font-medium text-gray-500 px-2 pb-1">Select coach rank:</p>
+                      {COACH_RANK_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => addCoach(option.value)}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-left"
+                        >
+                          <div className={`w-3 h-3 rounded-full ${option.color}`} />
+                          <span className="text-sm">{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
 
               {/* Coach List */}
-              {simCoaches.length > 0 && (
+              {activeCoaches.length > 0 && (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {simCoaches.map((coach, idx) => {
+                  {activeCoaches.map((coach, idx) => {
                     const isSC = isQualifyingLeg(coach.rank)
                     const isED = isEDOrHigher(coach.rank)
                     const isFIBC = isFIBCOrHigher(coach.rank)
                     const rankOption = COACH_RANK_OPTIONS.find(o => o.value === coach.rank)
-                    
+
                     return (
                       <div
                         key={coach.id}
                         className={`flex items-center justify-between p-2 rounded-lg text-sm ${
-                          isFIBC 
-                            ? 'bg-fuchsia-50 border border-fuchsia-300' 
-                            : isED 
-                              ? 'bg-purple-50 border border-purple-200' 
+                          isFIBC
+                            ? 'bg-fuchsia-50 border border-fuchsia-300'
+                            : isED
+                              ? 'bg-purple-50 border border-purple-200'
                               : isSC
                                 ? 'bg-blue-50 border border-blue-200'
                                 : 'bg-gray-50 border border-gray-200'
@@ -435,7 +551,9 @@ export function RankCalculator() {
                       >
                         <div className="flex items-center gap-2">
                           <div className={`w-3 h-3 rounded-full ${rankOption?.color || 'bg-gray-400'}`} />
-                          <span className="text-gray-700">Coach {idx + 1}</span>
+                          <span className="text-gray-700">
+                            {coach.label || `Coach ${idx + 1}`}
+                          </span>
                           <div className="flex gap-1">
                             {isSC && <span className="text-[9px] text-blue-500 bg-blue-100 px-1 rounded">SC</span>}
                             {isED && <span className="text-[9px] text-purple-500 bg-purple-100 px-1 rounded">ED</span>}
@@ -446,12 +564,14 @@ export function RankCalculator() {
                           <Badge variant="secondary" className="text-xs">
                             {getShortRank(coach.rank)}
                           </Badge>
-                          <button
-                            onClick={() => removeCoach(coach.id)}
-                            className="p-1 rounded-full hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
+                          {mode === "simulator" && (
+                            <button
+                              onClick={() => removeCoach(coach.id)}
+                              className="p-1 rounded-full hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     )
@@ -459,12 +579,14 @@ export function RankCalculator() {
                 </div>
               )}
 
-              {simCoaches.length === 0 && (
-                <p className="text-xs text-gray-400 italic text-center py-2">No coaches added yet</p>
+              {activeCoaches.length === 0 && (
+                <p className="text-xs text-gray-400 italic text-center py-2">
+                  {mode === "live" ? "No coaches in your Coach Tracker" : "No coaches added yet"}
+                </p>
               )}
 
               {/* Points from SC+ coaches */}
-              {simSCCount > 0 && (
+              {scCount > 0 && (
                 <div className="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-200">
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-amber-500" />
@@ -477,20 +599,20 @@ export function RankCalculator() {
               {/* Team Summary */}
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="p-2 bg-blue-50 rounded text-center border border-blue-200">
-                  <span className="font-bold text-blue-600">{simSCCount}</span>
+                  <span className="font-bold text-blue-600">{scCount}</span>
                   <span className="text-blue-500 block text-[10px]">SC+ teams</span>
-                  <span className="text-amber-500 text-[9px]">= {simSCCount} pts</span>
+                  <span className="text-amber-500 text-[9px]">= {scCount} pts</span>
                 </div>
                 <div className="p-2 bg-purple-50 rounded text-center border border-purple-200">
-                  <span className="font-bold text-purple-600">{simEDCount}</span>
+                  <span className="font-bold text-purple-600">{edCount}</span>
                   <span className="text-purple-500 block text-[10px]">ED+ teams</span>
                 </div>
                 <div className="p-2 bg-fuchsia-50 rounded text-center border border-fuchsia-200">
-                  <span className="font-bold text-fuchsia-600">{simFIBCCount}</span>
+                  <span className="font-bold text-fuchsia-600">{fibcCount}</span>
                   <span className="text-fuchsia-500 block text-[10px]">FIBC+ teams</span>
                 </div>
               </div>
-              
+
               <p className="text-xs text-gray-500">
                 Each SC+ frontline coach = 1 point
               </p>
@@ -539,7 +661,6 @@ export function RankCalculator() {
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
-              {/* Clients */}
               <div className="text-center p-2 bg-white rounded">
                 <div className={`text-lg font-bold ${gaps.minClients > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                   {gaps.minClients > 0 ? `+${gaps.minClients}` : '✓'}
@@ -584,6 +705,18 @@ export function RankCalculator() {
             <p className="text-xs text-gray-600 mt-2">
               {nextRankReqs.note}
             </p>
+
+            {/* Prompt to switch to simulator */}
+            {mode === "live" && (gaps.points > 0 || gaps.scTeams > 0 || gaps.edTeams > 0 || gaps.fibcTeams > 0 || gaps.minClients > 0) && (
+              <button
+                onClick={() => { loadLiveIntoSimulator(); setMode("simulator") }}
+                className="flex items-center gap-1.5 mt-3 text-xs text-purple-600 hover:text-purple-800 font-medium transition-colors"
+              >
+                <SlidersHorizontal className="h-3 w-3" />
+                Try the Simulator to explore what it takes
+                <ArrowRight className="h-3 w-3" />
+              </button>
+            )}
           </CardContent>
         </Card>
       )}

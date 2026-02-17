@@ -76,6 +76,32 @@ export function getRankTitle(rank: number): string {
   return OPTAVIA_RANKS.find(r => r.rank === rank)?.title || "New Coach"
 }
 
+/**
+ * Maps the Coach Tracker's 1-15 OPTAVIA rank numbers to the
+ * compensation-plan RankType used by the Rank Calculator.
+ * Best-fit mapping based on the official rank ladder.
+ */
+export function mapRankNumberToRankType(rank: number): string {
+  const mapping: Record<number, string> = {
+    1: "Coach",
+    2: "Coach",
+    3: "Senior Coach",
+    4: "Senior Coach",
+    5: "Senior Coach",
+    6: "Manager",
+    7: "Manager",
+    8: "Executive Director",
+    9: "Director",
+    10: "Executive Director",
+    11: "Regional Director",
+    12: "Regional Director",
+    13: "National Director",
+    14: "Presidential Director",
+    15: "IPD",
+  }
+  return mapping[rank] || "Coach"
+}
+
 export function daysSinceLaunch(launchDate: string): number {
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
