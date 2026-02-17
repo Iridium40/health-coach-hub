@@ -181,13 +181,14 @@ export default function ClientTrackerPage() {
   // Edit client state
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
-  const [editForm, setEditForm] = useState({ label: "", startDate: "" })
+  const [editForm, setEditForm] = useState({ label: "", startDate: "", notes: "" })
 
   const openEditModal = (client: Client) => {
     setEditingClient(client)
     setEditForm({
       label: client.label,
       startDate: client.start_date,
+      notes: client.notes || "",
     })
     setShowEditModal(true)
   }
@@ -197,6 +198,7 @@ export default function ClientTrackerPage() {
     const success = await updateClient(editingClient.id, {
       label: editForm.label.trim(),
       start_date: editForm.startDate,
+      notes: editForm.notes.trim() || null,
     })
     if (success) {
       toast({
@@ -968,11 +970,17 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                     />
                   </div>
 
-                  {client.notes && (
-                    <div className="mt-3 pt-3 border-t text-sm text-gray-600">
-                      📝 {client.notes}
-                    </div>
-                  )}
+                  {/* Notes - clickable to edit */}
+                  <button
+                    onClick={() => openEditModal(client)}
+                    className="mt-3 pt-3 border-t w-full text-left text-sm hover:bg-gray-50 rounded-b-lg transition-colors cursor-pointer"
+                  >
+                    {client.notes ? (
+                      <span className="text-gray-600">📝 {client.notes}</span>
+                    ) : (
+                      <span className="text-gray-400 italic">📝 Add notes...</span>
+                    )}
+                  </button>
                 </CardContent>
               </Card>
             )
@@ -1083,6 +1091,15 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 type="date"
                 value={editForm.startDate}
                 onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                placeholder="Add notes about this client..."
+                rows={3}
               />
             </div>
           </div>
