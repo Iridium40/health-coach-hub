@@ -187,8 +187,17 @@ export function PipelineView() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm text-gray-900 truncate">
-                          {item.name}
+                        <div className="flex items-center gap-1.5">
+                          <div className="font-medium text-sm text-gray-900 truncate">
+                            {item.name}
+                          </div>
+                          <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                            item.type === "prospect" 
+                              ? "bg-blue-100 text-blue-700" 
+                              : "bg-green-100 text-green-700"
+                          }`}>
+                            {item.type === "prospect" ? "Prospect" : "Client"}
+                          </span>
                         </div>
                         <div className={`text-xs ${
                           item.urgency === "high" ? "text-red-600 font-medium" : "text-amber-700"
