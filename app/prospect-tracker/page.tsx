@@ -607,119 +607,44 @@ Talking Points:
 
       <div className="container mx-auto px-4 py-6">
         <ErrorBoundary>
-        {/* Stats */}
-        <TooltipProvider>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4 text-center relative">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
-                    <p className="font-semibold text-green-700 mb-1">Active Prospects</p>
-                    <p className="text-sm text-gray-600">Prospects with a status of New or Interested — your active pipeline.</p>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="text-3xl font-bold text-[hsl(var(--optavia-green))]">{stats.new + stats.interested}</div>
-                <div className="text-sm text-gray-500">Active Prospects</div>
-              </CardContent>
-            </Card>
-            <Card className={stats.overdue > 0 ? "border-orange-300 bg-orange-50" : ""}>
-              <CardContent className="p-4 text-center relative">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
-                    <p className="font-semibold text-orange-700 mb-2">⏰ Overdue Follow-ups</p>
-                    <p className="text-sm text-gray-600">Prospects with a follow-up date that has passed. Time to reach out!</p>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="text-3xl font-bold text-orange-500">{stats.overdue}</div>
-                <div className="text-sm text-gray-500">Overdue</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center relative">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
-                    <p className="font-semibold text-purple-700 mb-1">📅 HA Scheduled</p>
-                    <p className="text-sm text-gray-600">Prospects who have a Health Assessment scheduled. These are your hot leads!</p>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="text-3xl font-bold text-purple-500">
-                  {prospects.filter(p => p.ha_scheduled_at && !["converted", "coach"].includes(p.status)).length}
-                </div>
-                <div className="text-sm text-gray-500">HA Scheduled</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-green-50 border-green-200">
-              <CardContent className="p-4 text-center relative">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-3 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200">
-                    <p className="font-semibold text-green-700 mb-1">🎉 Converted to Client</p>
-                    <p className="text-sm text-gray-600">Prospects who were converted and added as a client. These are your wins!</p>
-                  </TooltipContent>
-                </Tooltip>
-                <div className="text-3xl font-bold text-green-600">{stats.converted}</div>
-                <div className="text-sm text-gray-500">Converted</div>
-              </CardContent>
-            </Card>
-          </div>
-        </TooltipProvider>
-
-        {/* Compact Pipeline Stages */}
-        <div className="mb-6 overflow-x-auto">
-          <div className="flex items-center gap-1 sm:gap-0 min-w-max">
+        {/* Pipeline Stages */}
+        <div className="mb-6">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
             {[
-              { id: "new", label: "New", icon: "🆕", color: "#2196f3", count: stats.new },
-              { id: "interested", label: "Interested", icon: "🔥", color: "#ff9800", count: stats.interested },
-              { id: "ha_scheduled", label: "HA Scheduled", icon: "📅", color: "#9c27b0", count: stats.haScheduled },
-              { id: "client", label: "Client", icon: "⭐", color: "#4caf50", count: clientStats.active },
-              { id: "coach", label: "Future Coach", icon: "🚀", color: "#e91e63", count: clientStats.coachProspects },
+              { id: "new", label: "New", icon: "🆕", color: "#2196f3", borderColor: "#bbdefb", bgColor: "#e3f2fd", count: stats.new },
+              { id: "interested", label: "Interested", icon: "🔥", color: "#ff9800", borderColor: "#ffe0b2", bgColor: "#fff3e0", count: stats.interested },
+              { id: "ha_scheduled", label: "HA Scheduled", icon: "📅", color: "#9c27b0", borderColor: "#e1bee7", bgColor: "#f3e5f5", count: stats.haScheduled },
+              { id: "client", label: "Client", icon: "⭐", color: "#4caf50", borderColor: "#c8e6c9", bgColor: "#e8f5e9", count: clientStats.active },
+              { id: "coach", label: "Future Coach", icon: "🚀", color: "#e91e63", borderColor: "#f8bbd0", bgColor: "#fce4ec", count: clientStats.coachProspects },
             ].map((stage, index, arr) => (
-              <div key={stage.id} className="flex items-center">
-                <button
-                  onClick={() => {
-                    if (stage.id === "client" || stage.id === "coach") {
-                      window.location.href = "/client-tracker"
-                    } else {
-                      setFilterStatus(stage.id as any)
-                    }
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:shadow-md transition-all hover:scale-[1.02] cursor-pointer group"
-                  style={{ borderColor: `${stage.color}40` }}
+              <button
+                key={stage.id}
+                onClick={() => {
+                  if (stage.id === "client" || stage.id === "coach") {
+                    window.location.href = "/client-tracker"
+                  } else {
+                    setFilterStatus(stage.id as any)
+                  }
+                }}
+                className="relative flex flex-col items-center p-3 sm:p-4 rounded-xl border-2 bg-white hover:shadow-lg transition-all hover:scale-[1.03] cursor-pointer group"
+                style={{ borderColor: stage.borderColor }}
+              >
+                <span className="text-xl sm:text-2xl mb-1">{stage.icon}</span>
+                <span
+                  className="text-2xl sm:text-3xl font-bold"
+                  style={{ color: stage.color }}
                 >
-                  <span className="text-base leading-none">{stage.icon}</span>
-                  <span
-                    className="text-xl font-bold leading-none"
-                    style={{ color: stage.color }}
-                  >
-                    {stage.count}
-                  </span>
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide leading-none">
-                    {stage.label}
-                  </span>
-                </button>
+                  {stage.count}
+                </span>
+                <span className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wide mt-0.5">
+                  {stage.label}
+                </span>
                 {index < arr.length - 1 && (
-                  <ChevronRight className="h-4 w-4 text-gray-300 mx-0.5 flex-shrink-0" />
+                  <ChevronRight
+                    className="hidden sm:block absolute -right-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-300 z-10"
+                  />
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>
