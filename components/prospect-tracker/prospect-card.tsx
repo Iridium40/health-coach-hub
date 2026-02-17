@@ -220,14 +220,14 @@ export const ProspectCard = memo(function ProspectCard({
         )}
 
         {/* Secondary Actions: Status Dropdown + Edit + Remind + Delete */}
-        <div className="mt-3 pt-3 border-t flex items-center gap-2">
+        <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-2">
           <Select
             value={prospect.status}
             onValueChange={(value) =>
               onUpdateStatus(prospect.id, value as ProspectStatus)
             }
           >
-            <SelectTrigger className="flex-1 min-w-0 h-9 text-xs sm:text-sm">
+            <SelectTrigger className="w-full sm:w-auto sm:flex-1 sm:min-w-0 h-9 text-xs sm:text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -243,31 +243,33 @@ export const ProspectCard = memo(function ProspectCard({
                 ))}
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(prospect)}
-            title="Edit"
-          >
-            <Edit2 className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Edit</span>
-          </Button>
-          <ReminderButton
-            entityType="prospect"
-            entityId={prospect.id}
-            entityName={prospect.label}
-            variant="outline"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(prospect.id)}
-            title="Delete"
-            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Delete</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(prospect)}
+              title="Edit"
+            >
+              <Edit2 className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Edit</span>
+            </Button>
+            <ReminderButton
+              entityType="prospect"
+              entityId={prospect.id}
+              entityName={prospect.label}
+              variant="outline"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(prospect.id)}
+              title="Delete"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Delete</span>
+            </Button>
+          </div>
         </div>
 
         {/* Notes - clickable to edit */}

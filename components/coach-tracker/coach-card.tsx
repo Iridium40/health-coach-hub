@@ -196,12 +196,12 @@ export const CoachCard = memo(function CoachCard({
         </div>
 
         {/* Secondary Actions: Stage Dropdown + Edit + Rank + Remove */}
-        <div className="mt-3 pt-3 border-t flex items-center gap-2">
+        <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-2">
           <Select
             value={coach.stage}
             onValueChange={(value) => onStageChange(coach.id, value as CoachStage)}
           >
-            <SelectTrigger className="flex-1 min-w-0 h-9 text-xs sm:text-sm">
+            <SelectTrigger className="w-full sm:w-auto sm:flex-1 sm:min-w-0 h-9 text-xs sm:text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -212,42 +212,49 @@ export const CoachCard = memo(function CoachCard({
               ))}
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(coach)}
-            title="Edit coach"
-          >
-            <Edit2 className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Edit</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onRank(coach)}
-            title="Update rank"
-          >
-            <Award className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Rank</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(coach)}
-            title="Remove coach"
-            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Remove</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(coach)}
+              title="Edit coach"
+            >
+              <Edit2 className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Edit</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onRank(coach)}
+              title="Update rank"
+            >
+              <Award className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Rank</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(coach)}
+              title="Remove coach"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Remove</span>
+            </Button>
+          </div>
         </div>
 
-        {/* Notes */}
-        {coach.notes && (
-          <div className="mt-3 pt-3 border-t text-sm text-gray-600">
-            📝 {coach.notes}
-          </div>
-        )}
+        {/* Notes - clickable to edit */}
+        <button
+          onClick={() => onEdit(coach)}
+          className="mt-3 pt-3 border-t w-full text-left text-sm hover:bg-gray-50 rounded-b-lg transition-colors cursor-pointer"
+        >
+          {coach.notes ? (
+            <span className="text-gray-600">📝 {coach.notes}</span>
+          ) : (
+            <span className="text-gray-400 italic">📝 Add notes...</span>
+          )}
+        </button>
       </CardContent>
     </Card>
   )

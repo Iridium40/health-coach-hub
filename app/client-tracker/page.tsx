@@ -757,7 +757,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               >
                 <CardContent className="p-4">
                   {/* Header Row: Day Badge + Client Info */}
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3">
                     {/* Day Badge */}
                     <div
                       className="w-14 h-14 rounded-xl flex flex-col items-center justify-center flex-shrink-0"
@@ -935,13 +935,13 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                   )}
 
                   {/* Secondary Actions: Status, Edit, Remind */}
-                  <div className="mt-3 pt-3 border-t flex items-center gap-2">
+                  <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-2">
                     {/* Status Dropdown */}
                     <Select
                       value={client.status}
                       onValueChange={(value) => handleClientStatusChange(client.id, value as ClientStatus)}
                     >
-                      <SelectTrigger className="flex-1 min-w-0 h-9 text-xs sm:text-sm">
+                      <SelectTrigger className="w-full sm:w-auto sm:flex-1 sm:min-w-0 h-9 text-xs sm:text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -952,21 +952,23 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditModal(client)}
-                      title="Edit client"
-                    >
-                      <Pencil className="h-4 w-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Edit</span>
-                    </Button>
-                    <ReminderButton
-                      entityType="client"
-                      entityId={client.id}
-                      entityName={client.label}
-                      variant="outline"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditModal(client)}
+                        title="Edit client"
+                      >
+                        <Pencil className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Edit</span>
+                      </Button>
+                      <ReminderButton
+                        entityType="client"
+                        entityId={client.id}
+                        entityName={client.label}
+                        variant="outline"
+                      />
+                    </div>
                   </div>
 
                   {/* Notes - clickable to edit */}
