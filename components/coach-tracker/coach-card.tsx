@@ -1,25 +1,24 @@
 "use client"
 
-import { useState, memo } from "react"
+import { memo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   CheckCircle,
   MessageSquare,
   CalendarPlus,
   Edit2,
   Award,
-  ArrowUpRight,
-  ArrowDownRight,
-  ChevronDown,
-  ChevronUp,
   Trash2,
+  Calendar,
 } from "lucide-react"
 import {
   type Coach,
@@ -36,12 +35,17 @@ interface CoachCardProps {
   onDelete: (coach: Coach) => void
   onRank: (coach: Coach) => void
   onCheckIn: (coach: Coach) => void
-  onMove: (coachId: string, newStage: CoachStage) => void
+  onStageChange: (coachId: string, newStage: CoachStage) => void
   onText: (coach: Coach) => void
   onSchedule: (coach: Coach) => void
 }
 
-const STAGES_ORDER: CoachStage[] = ['new_coach', 'building', 'certified', 'leader']
+const STAGE_OPTIONS: { value: CoachStage; label: string; icon: string }[] = [
+  { value: "new_coach", label: "New Coach", icon: "🌟" },
+  { value: "building", label: "Building", icon: "🔨" },
+  { value: "certified", label: "Certified", icon: "✅" },
+  { value: "leader", label: "Leader", icon: "👑" },
+]
 
 export const CoachCard = memo(function CoachCard({
   coach,
@@ -49,22 +53,16 @@ export const CoachCard = memo(function CoachCard({
   onDelete,
   onRank,
   onCheckIn,
-  onMove,
+  onStageChange,
   onText,
   onSchedule,
 }: CoachCardProps) {
-  const [expanded, setExpanded] = useState(false)
   const stage = stageConfig[coach.stage]
   const days = daysSinceLaunch(coach.launch_date)
   const weeks = weekNumber(coach.launch_date)
   const rankTitle = getRankTitle(coach.rank)
-  const stageIdx = STAGES_ORDER.indexOf(coach.stage)
 
   const launchDateFormatted = new Date(coach.launch_date + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric" })
-
-  const lastCheckInText = coach.last_check_in
-    ? new Date(coach.last_check_in + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric" })
-    : "Never"
 
   const needsCheckIn = !coach.last_check_in || (() => {
     const last = new Date(coach.last_check_in + 'T00:00:00')
@@ -76,217 +74,181 @@ export const CoachCard = memo(function CoachCard({
   return (
     <Card
       className={`transition-shadow hover:shadow-md ${
-        needsCheckIn ? "border-amber-300 bg-amber-50/30" : "border-gray-200"
+        needsCheckIn ? "border-amber-300 bg-amber-50/30" : ""
       }`}
     >
-      <Collapsible open={expanded} onOpenChange={setExpanded}>
-        <CardContent className="p-4">
-          {/* Top Row */}
-          <div className="flex items-start gap-3">
-            {/* Day Badge */}
-            <div className="flex-shrink-0 text-center">
-              <div
-                className="w-12 h-12 rounded-full flex flex-col items-center justify-center"
+      <CardContent className="p-4">
+        {/* Header Row: Day Badge + Coach Info + Stats */}
+        <div className="flex items-start gap-3">
+          {/* Day Badge */}
+          <div
+            className="w-14 h-14 rounded-xl flex flex-col items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: `${stage.color}12` }}
+          >
+            <div className="text-xs font-semibold" style={{ color: stage.color }}>
+              DAY
+            </div>
+            <div className="text-xl font-bold" style={{ color: stage.color }}>
+              {days}
+            </div>
+          </div>
+
+          {/* Coach Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-gray-900">{coach.label}</span>
+              <Badge
+                variant="outline"
+                className="text-[10px] px-1.5 py-0"
                 style={{
-                  border: `2.5px solid ${stage.color}`,
-                  background: `${stage.color}08`,
+                  borderColor: stage.borderColor,
+                  color: stage.color,
+                  background: stage.bg,
                 }}
               >
-                <span
-                  className="text-[8px] font-bold leading-none tracking-wider"
-                  style={{ color: stage.color }}
-                >
-                  DAY
-                </span>
-                <span
-                  className="text-lg font-extrabold leading-tight"
-                  style={{ color: stage.color }}
-                >
-                  {days}
-                </span>
-              </div>
+                {stageConfig[coach.stage].icon} {stage.label}
+              </Badge>
             </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-base text-gray-900 truncate">
-                  {coach.label}
-                </span>
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-1.5 py-0"
-                  style={{
-                    borderColor: stage.borderColor,
-                    color: stage.color,
-                    background: stage.bg,
-                  }}
-                >
-                  {stage.icon} {stage.label}
-                </Badge>
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Week {weeks} · Launched {launchDateFormatted}
-              </p>
-              {/* Rank Badge - clickable */}
-              <button
-                onClick={() => onRank(coach)}
-                className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer"
-              >
-                <span className="text-[10px]">🏅</span>
-                <span className="text-[11px] font-bold text-purple-600">
-                  {rankTitle}
-                </span>
-                <ChevronDown className="h-2.5 w-2.5 text-gray-400" />
-              </button>
+            <div className="text-sm text-gray-500 mt-1">
+              Week {weeks} • Launched {launchDateFormatted}
             </div>
-
-            {/* Stats */}
-            <div className="flex gap-3 flex-shrink-0">
-              <div className="text-center">
-                <div className="text-lg font-extrabold text-green-600">{coach.clients_count}</div>
-                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Clients</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-extrabold text-blue-600">{coach.prospects_count}</div>
-                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Prospects</div>
-              </div>
-            </div>
+            {/* Rank Badge - clickable */}
+            <button
+              onClick={() => onRank(coach)}
+              className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer"
+            >
+              <span className="text-[10px]">🏅</span>
+              <span className="text-[11px] font-bold text-purple-600">{rankTitle}</span>
+            </button>
           </div>
 
-          {/* Notes Preview */}
-          {coach.notes && !expanded && (
-            <p className="text-xs text-gray-500 mt-2 pl-[60px] line-clamp-1">
-              {coach.notes}
-            </p>
-          )}
-
-          {/* Primary Actions */}
-          <div className="flex gap-2 mt-3 pl-[60px]">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs border-green-200 text-green-700 hover:bg-green-50"
-              onClick={() => onCheckIn(coach)}
-            >
-              <CheckCircle className="h-3.5 w-3.5 mr-1" />
-              Check In
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={() => onText(coach)}
-            >
-              <MessageSquare className="h-3.5 w-3.5 mr-1" />
-              Text
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={() => onSchedule(coach)}
-            >
-              <CalendarPlus className="h-3.5 w-3.5 mr-1" />
-              Schedule
-            </Button>
-          </div>
-
-          {/* Expand/Collapse Toggle */}
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full mt-2 text-xs text-gray-400 hover:text-gray-600"
-            >
-              {expanded ? (
-                <>
-                  <ChevronUp className="h-3 w-3 mr-1" /> Less
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-3 w-3 mr-1" /> More
-                </>
-              )}
-            </Button>
-          </CollapsibleTrigger>
-
-          {/* Expanded Content */}
-          <CollapsibleContent>
-            <div className="mt-2 pt-2 border-t border-gray-100 pl-[60px] space-y-3">
-              {/* Notes full */}
-              {coach.notes && (
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Notes</p>
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap">{coach.notes}</p>
-                </div>
-              )}
-
-              {/* Last Check-in */}
-              <div className="flex items-center gap-4 text-xs text-gray-500">
-                <span>
-                  Last check-in: <strong className={needsCheckIn ? "text-amber-600" : "text-green-600"}>
-                    {lastCheckInText}
-                  </strong>
-                </span>
-                {coach.next_scheduled_at && (
-                  <span>
-                    Next: <strong className="text-blue-600">
-                      {new Date(coach.next_scheduled_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </strong>
-                  </span>
-                )}
-              </div>
-
-              {/* Secondary Actions */}
-              <div className="flex gap-1.5 flex-wrap">
-                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => onEdit(coach)}>
-                  <Edit2 className="h-3 w-3 mr-1" /> Edit
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => onRank(coach)}>
-                  <Award className="h-3 w-3 mr-1" /> Rank
-                </Button>
-                {/* Reminder support for coaches can be added once EntityType is extended */}
-                {/* Stage movement buttons */}
-                {stageIdx < STAGES_ORDER.length - 1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-7"
-                    style={{
-                      borderColor: stageConfig[STAGES_ORDER[stageIdx + 1]].borderColor,
-                      color: stageConfig[STAGES_ORDER[stageIdx + 1]].color,
-                    }}
-                    onClick={() => onMove(coach.id, STAGES_ORDER[stageIdx + 1])}
-                  >
-                    <ArrowUpRight className="h-3 w-3 mr-1" />
-                    {stageConfig[STAGES_ORDER[stageIdx + 1]].label}
-                  </Button>
-                )}
-                {stageIdx > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-7"
-                    onClick={() => onMove(coach.id, STAGES_ORDER[stageIdx - 1])}
-                  >
-                    <ArrowDownRight className="h-3 w-3 mr-1" />
-                    {stageConfig[STAGES_ORDER[stageIdx - 1]].label}
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7 text-red-500 border-red-200 hover:bg-red-50"
-                  onClick={() => onDelete(coach)}
-                >
-                  <Trash2 className="h-3 w-3 mr-1" /> Remove
-                </Button>
-              </div>
+          {/* Stats */}
+          <div className="flex gap-3 flex-shrink-0">
+            <div className="text-center">
+              <div className="text-lg font-extrabold text-green-600">{coach.clients_count}</div>
+              <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Clients</div>
             </div>
-          </CollapsibleContent>
-        </CardContent>
-      </Collapsible>
+            <div className="text-center">
+              <div className="text-lg font-extrabold text-blue-600">{coach.prospects_count}</div>
+              <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Prospects</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scheduled Next Check-in Info */}
+        {coach.next_scheduled_at && (
+          <div className="mt-3 flex items-center gap-1 flex-wrap">
+            <Badge
+              className={`flex items-center gap-1 ${
+                new Date(coach.next_scheduled_at) < new Date()
+                  ? "bg-red-100 text-red-700"
+                  : "bg-green-100 text-green-700"
+              }`}
+            >
+              <Calendar className="h-3 w-3" />
+              Next:{" "}
+              {new Date(coach.next_scheduled_at).toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })}{" "}
+              {new Date(coach.next_scheduled_at).toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </Badge>
+          </div>
+        )}
+
+        {/* Primary Action Buttons */}
+        <div className="mt-4 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className={`flex-1 ${
+              needsCheckIn
+                ? "text-amber-600 border-amber-300 hover:bg-amber-50"
+                : "text-green-600 border-green-200 hover:bg-green-50"
+            }`}
+            onClick={() => onCheckIn(coach)}
+          >
+            <CheckCircle className="h-4 w-4 mr-1" />
+            <span className="text-xs sm:text-sm">Check In</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+            onClick={() => onText(coach)}
+          >
+            <MessageSquare className="h-4 w-4 mr-1" />
+            <span className="text-xs sm:text-sm">Text</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50"
+            onClick={() => onSchedule(coach)}
+          >
+            <CalendarPlus className="h-4 w-4 mr-1" />
+            <span className="text-xs sm:text-sm">Schedule</span>
+          </Button>
+        </div>
+
+        {/* Secondary Actions: Stage Dropdown + Edit + Rank + Remove */}
+        <div className="mt-3 pt-3 border-t flex items-center gap-2">
+          <Select
+            value={coach.stage}
+            onValueChange={(value) => onStageChange(coach.id, value as CoachStage)}
+          >
+            <SelectTrigger className="flex-1 min-w-0 h-9 text-xs sm:text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STAGE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.icon} {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(coach)}
+            title="Edit coach"
+          >
+            <Edit2 className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Edit</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onRank(coach)}
+            title="Update rank"
+          >
+            <Award className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Rank</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(coach)}
+            title="Remove coach"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Remove</span>
+          </Button>
+        </div>
+
+        {/* Notes */}
+        {coach.notes && (
+          <div className="mt-3 pt-3 border-t text-sm text-gray-600">
+            📝 {coach.notes}
+          </div>
+        )}
+      </CardContent>
     </Card>
   )
 })

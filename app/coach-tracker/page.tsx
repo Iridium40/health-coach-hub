@@ -604,7 +604,7 @@ export default function CoachTrackerPage() {
                   onDelete={(c) => { setSelectedCoach(c); setShowDeleteConfirm(true) }}
                   onRank={(c) => { setSelectedCoach(c); setShowRankModal(true) }}
                   onCheckIn={handleCheckIn}
-                  onMove={handleMove}
+                  onStageChange={handleMove}
                   onText={handleText}
                   onSchedule={openScheduleModal}
                 />
