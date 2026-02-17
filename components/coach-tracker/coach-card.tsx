@@ -34,7 +34,6 @@ interface CoachCardProps {
   onEdit: (coach: Coach) => void
   onDelete: (coach: Coach) => void
   onRank: (coach: Coach) => void
-  onCheckIn: (coach: Coach) => void
   onStageChange: (coachId: string, newStage: CoachStage) => void
   onSchedule: (coach: Coach) => void
   onCompleteSchedule: (coach: Coach) => void
@@ -53,7 +52,6 @@ export const CoachCard = memo(function CoachCard({
   onEdit,
   onDelete,
   onRank,
-  onCheckIn,
   onStageChange,
   onSchedule,
   onCompleteSchedule,
@@ -66,19 +64,8 @@ export const CoachCard = memo(function CoachCard({
 
   const launchDateFormatted = new Date(coach.launch_date + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric" })
 
-  const needsCheckIn = !coach.last_check_in || (() => {
-    const last = new Date(coach.last_check_in + 'T00:00:00')
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    return (today.getTime() - last.getTime()) / (1000 * 60 * 60 * 24) >= 7
-  })()
-
   return (
-    <Card
-      className={`transition-shadow hover:shadow-md ${
-        needsCheckIn ? "border-amber-300 bg-amber-50/30" : ""
-      }`}
-    >
+    <Card className="transition-shadow hover:shadow-md">
       <CardContent className="p-4">
         {/* Header Row: Day Badge + Coach Info + Stats */}
         <div className="flex items-start gap-3">
@@ -185,19 +172,6 @@ export const CoachCard = memo(function CoachCard({
 
         {/* Primary Action Buttons */}
         <div className="mt-4 flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className={`flex-1 ${
-              needsCheckIn
-                ? "text-amber-600 border-amber-300 hover:bg-amber-50"
-                : "text-green-600 border-green-200 hover:bg-green-50"
-            }`}
-            onClick={() => onCheckIn(coach)}
-          >
-            <CheckCircle className="h-4 w-4 mr-1" />
-            <span className="text-xs sm:text-sm">Check In</span>
-          </Button>
           <Button
             variant="outline"
             size="sm"

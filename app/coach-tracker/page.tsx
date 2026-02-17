@@ -242,15 +242,6 @@ export default function CoachTrackerPage() {
     }
   }
 
-  const handleCheckIn = async (coach: Coach) => {
-    const success = await checkInCoach(coach.id)
-    if (success) {
-      toast({
-        title: "Checked In",
-        description: `Check-in recorded for ${coach.label}.`,
-      })
-    }
-  }
 
   const handleMove = async (coachId: string, newStage: CoachStage) => {
     const success = await updateCoach(coachId, { stage: newStage })
@@ -633,7 +624,6 @@ export default function CoachTrackerPage() {
                   onEdit={openEditModal}
                   onDelete={(c) => { setSelectedCoach(c); setShowDeleteConfirm(true) }}
                   onRank={(c) => { setSelectedCoach(c); setShowRankModal(true) }}
-                  onCheckIn={handleCheckIn}
                   onStageChange={handleMove}
                   onSchedule={openScheduleModal}
                   onCompleteSchedule={handleCompleteSchedule}
