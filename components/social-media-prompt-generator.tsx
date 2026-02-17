@@ -251,18 +251,18 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 xl:gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
       {/* LEFT: Form Inputs */}
-      <div className="space-y-3 xl:space-y-4">
+      <div className="space-y-3 lg:space-y-4">
         {/* Mood Selection */}
         <Card>
-          <CardHeader className="pb-2 xl:pb-3">
+          <CardHeader className="pb-2 lg:pb-3">
             <CardTitle className="text-sm font-semibold">
-              1. What's the mood/tone? <span className="text-red-500">*</span>
+              1. What&apos;s the mood/tone? <span className="text-red-500">*</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
               {MOOD_OPTIONS.map(option => (
                 <button
                   key={option.value}
@@ -274,7 +274,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
                   }`}
                 >
                   <span className="font-medium text-sm block truncate">{option.label}</span>
-                  <p className="text-xs text-gray-500 mt-0.5 hidden md:block truncate">{option.description}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 hidden sm:block truncate">{option.description}</p>
                 </button>
               ))}
             </div>
@@ -283,7 +283,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
 
         {/* Topic Selection */}
         <Card>
-          <CardHeader className="pb-2 xl:pb-3">
+          <CardHeader className="pb-2 lg:pb-3">
             <CardTitle className="text-sm font-semibold">
               2. What's the topic? <span className="text-red-500">*</span>
             </CardTitle>
@@ -445,7 +445,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
       </div>
 
       {/* RIGHT: Generated Prompt Output */}
-      <div className="xl:sticky xl:top-4 h-fit space-y-3">
+      <div className="lg:sticky lg:top-4 h-fit space-y-3">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between gap-2">
@@ -479,8 +479,8 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
           <CardContent className="pt-0">
             {generatedPrompt ? (
               <>
-                <div className="bg-gray-50 rounded-lg p-3 max-h-[250px] xl:max-h-[400px] overflow-y-auto">
-                  <pre className="whitespace-pre-wrap text-xs xl:text-sm text-gray-700 font-mono">
+                <div className="bg-gray-50 rounded-lg p-3 max-h-[250px] lg:max-h-[400px] overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-xs lg:text-sm text-gray-700 font-mono">
                     {generatedPrompt}
                   </pre>
                 </div>

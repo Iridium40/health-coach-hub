@@ -457,7 +457,7 @@ export function DashboardOverview() {
 
         return (
           <Dialog key={tool.id} open={openToolId === tool.id} onOpenChange={(open) => !open && setOpenToolId(null)}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto max-w-[95vw] md:max-w-5xl lg:max-w-6xl">
+            <DialogContent className="max-h-[90vh] overflow-y-auto max-w-[95vw] sm:max-w-[95vw] md:max-w-5xl lg:max-w-6xl">
               <DialogHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-[hsl(var(--optavia-green-light))]">
