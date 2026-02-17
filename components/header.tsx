@@ -85,13 +85,13 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   const businessItems = [
     { label: "100's List Tracker", href: "/prospect-tracker", description: "Track your pipeline" },
     { label: "Client Tracker", href: "/client-tracker", description: "Touchpoints & milestones" },
-    // { label: "Downline Overview", href: "/coach/downline", description: "Track your team's progress" }, // Hidden for now
+    { label: "Coach Tracker", href: "/coach-tracker", description: "Track your team's progress" },
     { label: "Rank Calculator", href: "/my-business", description: "Track rank progress" },
   ]
 
   const isBusinessPage = pathname?.startsWith("/prospect-tracker") || 
                          pathname?.startsWith("/client-tracker") || 
-                         // pathname?.startsWith("/coach/downline") || // Hidden for now
+                         pathname?.startsWith("/coach-tracker") ||
                          pathname?.startsWith("/my-business")
 
   return (
