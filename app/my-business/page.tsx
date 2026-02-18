@@ -1,12 +1,40 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { RankCalculator } from "@/components/rank-calculator"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp } from "lucide-react"
+import { useUserData } from "@/contexts/user-data-context"
 
 export default function MyBusinessPage() {
+  const router = useRouter()
+  const { user, profile, authLoading } = useUserData()
+  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+
+  useEffect(() => {
+    if (!authLoading && (!user || !isAdmin)) {
+      router.replace("/dashboard")
+    }
+  }, [authLoading, user, isAdmin, router])
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--optavia-green))] mx-auto mb-4"></div>
+          <p className="text-optavia-gray">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user || !isAdmin) {
+    return null
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
