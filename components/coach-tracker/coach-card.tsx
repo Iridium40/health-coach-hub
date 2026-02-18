@@ -1,9 +1,14 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import {
   Select,
   SelectContent,
@@ -19,6 +24,9 @@ import {
   Trash2,
   Calendar,
   X,
+  Lightbulb,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react"
 import {
   type Coach,
@@ -28,6 +36,7 @@ import {
   daysSinceLaunch,
   weekNumber,
 } from "@/hooks/use-coaches"
+import { CoachRankGuide } from "./coach-rank-guide"
 
 interface CoachCardProps {
   coach: Coach
@@ -57,6 +66,7 @@ export const CoachCard = memo(function CoachCard({
   onCompleteSchedule,
   onClearSchedule,
 }: CoachCardProps) {
+  const [showGuide, setShowGuide] = useState(false)
   const stage = stageConfig[coach.stage]
   const days = daysSinceLaunch(coach.launch_date)
   const weeks = weekNumber(coach.launch_date)
@@ -235,7 +245,7 @@ export const CoachCard = memo(function CoachCard({
         {/* Notes - clickable to edit */}
         <button
           onClick={() => onEdit(coach)}
-          className="mt-3 pt-3 border-t w-full text-left text-sm hover:bg-gray-50 rounded-b-lg transition-colors cursor-pointer"
+          className="mt-3 pt-3 border-t w-full text-left text-sm hover:bg-gray-50 transition-colors cursor-pointer"
         >
           {coach.notes ? (
             <span className="text-gray-600">📝 {coach.notes}</span>
@@ -243,6 +253,28 @@ export const CoachCard = memo(function CoachCard({
             <span className="text-gray-400 italic">📝 Add notes...</span>
           )}
         </button>
+
+        {/* Rank Guide & Focus */}
+        <Collapsible open={showGuide} onOpenChange={setShowGuide}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full mt-3 pt-3 border-t flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            >
+              <Lightbulb className="h-4 w-4 text-amber-500" />
+              <span className="text-xs">Rank Guide & Focus</span>
+              {showGuide ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <CoachRankGuide rank={coach.rank} compact />
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   )
