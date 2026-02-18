@@ -30,8 +30,9 @@ CREATE TABLE IF NOT EXISTS user_bookmarks (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   resource_id TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'training',
   bookmarked_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, resource_id)
+  UNIQUE(user_id, resource_id, source)
 );
 
 -- Create favorite_recipes table
@@ -115,6 +116,7 @@ CREATE INDEX IF NOT EXISTS idx_user_progress_user_id ON user_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_progress_resource_id ON user_progress(resource_id);
 CREATE INDEX IF NOT EXISTS idx_user_bookmarks_user_id ON user_bookmarks(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_bookmarks_resource_id ON user_bookmarks(resource_id);
+CREATE INDEX IF NOT EXISTS idx_user_bookmarks_source ON user_bookmarks(source);
 CREATE INDEX IF NOT EXISTS idx_favorite_recipes_user_id ON favorite_recipes(user_id);
 CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active);
 CREATE INDEX IF NOT EXISTS idx_announcement_reads_user_id ON announcement_reads(user_id);

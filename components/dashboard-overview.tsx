@@ -106,7 +106,11 @@ export function DashboardOverview() {
   const { progress: trainingProgress, resources: trainingResources } = useTrainingResources(user, profile?.coach_rank || null)
   
   // Bookmarks for training resources
-  const { getBookmarkedIds } = useBookmarks(user)
+  const { getBookmarkedIds } = useBookmarks(user, "training")
+
+  // Bookmarks for pinned resources and coach tools (persisted in Supabase)
+  const { getBookmarkedIds: getPinnedResourceIds } = useBookmarks(user, "resource")
+  const { getBookmarkedIds: getPinnedToolIds } = useBookmarks(user, "coach_tool")
 
   // Rank calculator
   const { rankData, calculateGaps, getNextRank } = useRankCalculator(user)
@@ -118,58 +122,12 @@ export function DashboardOverview() {
   const [upcomingMeetings, setUpcomingMeetings] = useState<ExpandedZoomCall[]>([])
   const [loadingMeetings, setLoadingMeetings] = useState(true)
   const [onboardingProgress, setOnboardingProgress] = useState<{ completed: number; total: number; percentage: number }>({ completed: 0, total: 3, percentage: 0 })
-  const [pinnedToolIds, setPinnedToolIds] = useState<string[]>([])
-  const [pinnedResourceIds, setPinnedResourceIds] = useState<string[]>([])
   const [openToolId, setOpenToolId] = useState<string | null>(null)
   const [milestoneClient, setMilestoneClient] = useState<any | null>(null)
   const [showMilestoneModal, setShowMilestoneModal] = useState(false)
   const [showRankPromotionModal, setShowRankPromotionModal] = useState(false)
   const [promotedRank, setPromotedRank] = useState<string | null>(null)
   const [dismissedMilestoneKeys, setDismissedMilestoneKeys] = useState<Set<string>>(new Set())
-
-  // Load pinned items from localStorage (with Safari-safe error handling)
-  useEffect(() => {
-    // Safety check for localStorage availability (Safari private mode, etc.)
-    const isLocalStorageAvailable = () => {
-      try {
-        const testKey = "__test__"
-        window.localStorage.setItem(testKey, testKey)
-        window.localStorage.removeItem(testKey)
-        return true
-      } catch (e) {
-        return false
-      }
-    }
-
-    if (!isLocalStorageAvailable()) {
-      console.warn("localStorage not available (possibly Safari private mode)")
-      return
-    }
-
-    try {
-      const savedTools = localStorage.getItem("pinnedTools")
-      if (savedTools) {
-        const parsed = JSON.parse(savedTools)
-        if (Array.isArray(parsed)) {
-          setPinnedToolIds(parsed)
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse pinned tools:", e)
-    }
-
-    try {
-      const savedResources = localStorage.getItem("pinnedResources")
-      if (savedResources) {
-        const parsed = JSON.parse(savedResources)
-        if (Array.isArray(parsed)) {
-          setPinnedResourceIds(parsed)
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse pinned resources:", e)
-    }
-  }, [])
 
   // Milestone dismissals (per day) so "Celebrate!" cards can be cleared
   useEffect(() => {
@@ -204,14 +162,17 @@ export function DashboardOverview() {
     return dismissedMilestoneKeys.has(`${clientId}:${programDay}`)
   }, [dismissedMilestoneKeys])
 
-  // Get pinned tools and resources
+  // Get pinned tools and resources from Supabase bookmarks
+  const pinnedToolIdsList = getPinnedToolIds()
+  const pinnedResourceIdsList = getPinnedResourceIds()
+
   const pinnedTools = useMemo(() => {
-    return COACH_TOOLS.filter(t => pinnedToolIds.includes(t.id))
-  }, [pinnedToolIds])
+    return COACH_TOOLS.filter(t => pinnedToolIdsList.includes(t.id))
+  }, [pinnedToolIdsList])
 
   const pinnedResources = useMemo(() => {
-    return EXTERNAL_RESOURCES.filter(r => pinnedResourceIds.includes(r.id))
-  }, [pinnedResourceIds])
+    return EXTERNAL_RESOURCES.filter(r => pinnedResourceIdsList.includes(r.id))
+  }, [pinnedResourceIdsList])
 
   // Get bookmarked training resources
   const bookmarkedTrainingResources = useMemo(() => {

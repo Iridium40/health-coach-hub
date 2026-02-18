@@ -61,18 +61,21 @@ export interface Database {
           id: string
           user_id: string
           resource_id: string
+          source: string
           bookmarked_at: string
         }
         Insert: {
           id?: string
           user_id: string
           resource_id: string
+          source?: string
           bookmarked_at?: string
         }
         Update: {
           id?: string
           user_id?: string
           resource_id?: string
+          source?: string
           bookmarked_at?: string
         }
       }

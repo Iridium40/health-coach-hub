@@ -104,7 +104,7 @@ export function useSupabaseData(user: User | null) {
       ] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
         supabase.from("user_progress").select("resource_id").eq("user_id", user.id),
-        supabase.from("user_bookmarks").select("resource_id").eq("user_id", user.id),
+        supabase.from("user_bookmarks").select("resource_id").eq("user_id", user.id).eq("source", "training"),
         supabase.from("favorite_recipes").select("recipe_id").eq("user_id", user.id),
         supabase.from("notification_settings").select("*").eq("user_id", user.id).single(),
         supabase.from("user_badges").select("*").eq("user_id", user.id).order("earned_at", { ascending: false }),
@@ -293,6 +293,7 @@ export function useSupabaseData(user: User | null) {
           .delete()
           .eq("user_id", user.id)
           .eq("resource_id", resourceId)
+          .eq("source", "training")
 
         if (!error) {
           setBookmarks((prev) => prev.filter((id) => id !== resourceId))
@@ -301,6 +302,7 @@ export function useSupabaseData(user: User | null) {
         const { error } = await supabase.from("user_bookmarks").insert({
           user_id: user.id,
           resource_id: resourceId,
+          source: "training",
         })
 
         if (!error) {

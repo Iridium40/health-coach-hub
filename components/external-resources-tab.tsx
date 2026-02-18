@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import { ResourceCard } from "@/components/resource-card"
 import { useUserData } from "@/contexts/user-data-context"
+import { useBookmarks } from "@/hooks/use-bookmarks"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -85,15 +86,25 @@ const COACH_TOOLS = [
 ]
 
 export function ExternalResourcesTab() {
-  const { profile } = useUserData()
+  const { user, profile } = useUserData()
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get("category")
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam || "All")
-  const [pinnedIds, setPinnedIds] = useState<string[]>([])
-  const [pinnedToolIds, setPinnedToolIds] = useState<string[]>([])
   const [dbResources, setDbResources] = useState<DBExternalResource[]>([])
   const [loadingResources, setLoadingResources] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+
+  const {
+    isBookmarked: isResourcePinned,
+    toggleBookmark: togglePin,
+    getBookmarkedIds: getPinnedResourceIds,
+  } = useBookmarks(user, "resource")
+
+  const {
+    isBookmarked: isToolPinned,
+    toggleBookmark: toggleToolPin,
+    getBookmarkedIds: getPinnedToolIds,
+  } = useBookmarks(user, "coach_tool")
 
   // Fetch resources from database
   useEffect(() => {
@@ -121,76 +132,6 @@ export function ExternalResourcesTab() {
     }
   }, [categoryParam])
 
-  // Load pinned resources and tools from localStorage on mount (Safari-safe)
-  useEffect(() => {
-    // Safety check for localStorage availability (Safari private mode, etc.)
-    const isLocalStorageAvailable = () => {
-      try {
-        const testKey = "__test__"
-        window.localStorage.setItem(testKey, testKey)
-        window.localStorage.removeItem(testKey)
-        return true
-      } catch (e) {
-        return false
-      }
-    }
-
-    if (!isLocalStorageAvailable()) {
-      console.warn("localStorage not available (possibly Safari private mode)")
-      return
-    }
-
-    try {
-      const savedResources = localStorage.getItem("pinnedResources")
-      if (savedResources) {
-        const parsed = JSON.parse(savedResources)
-        if (Array.isArray(parsed)) {
-          setPinnedIds(parsed)
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse pinned resources:", e)
-    }
-    
-    try {
-      const savedTools = localStorage.getItem("pinnedTools")
-      if (savedTools) {
-        const parsed = JSON.parse(savedTools)
-        if (Array.isArray(parsed)) {
-          setPinnedToolIds(parsed)
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse pinned tools:", e)
-    }
-  }, [])
-
-  // Toggle pin status for resources (Safari-safe)
-  const togglePin = (resourceId: string) => {
-    const newPinned = pinnedIds.includes(resourceId)
-      ? pinnedIds.filter((id) => id !== resourceId)
-      : [...pinnedIds, resourceId]
-    setPinnedIds(newPinned)
-    try {
-      localStorage.setItem("pinnedResources", JSON.stringify(newPinned))
-    } catch (e) {
-      console.warn("Failed to save pinned resources to localStorage:", e)
-    }
-  }
-
-  // Toggle pin status for tools (Safari-safe)
-  const toggleToolPin = (toolId: string) => {
-    const newPinned = pinnedToolIds.includes(toolId)
-      ? pinnedToolIds.filter((id) => id !== toolId)
-      : [...pinnedToolIds, toolId]
-    setPinnedToolIds(newPinned)
-    try {
-      localStorage.setItem("pinnedTools", JSON.stringify(newPinned))
-    } catch (e) {
-      console.warn("Failed to save pinned tools to localStorage:", e)
-    }
-  }
-
   // Convert database resources to the Resource format (preserving sort_order)
   // All resources now come from the database and can be managed via admin panel
   const resources: (Resource & { sort_order: number })[] = useMemo(() => {
@@ -215,10 +156,13 @@ export function ExternalResourcesTab() {
     }).sort((a, b) => a.sort_order - b.sort_order)
   }, [dbResources, profile?.optavia_id])
 
+  const pinnedResourceIds = getPinnedResourceIds()
+  const pinnedToolIds = getPinnedToolIds()
+
   // Get pinned resources
   const pinnedResources = useMemo(() => {
-    return resources.filter((r) => pinnedIds.includes(r.id))
-  }, [resources, pinnedIds])
+    return resources.filter((r) => pinnedResourceIds.includes(r.id))
+  }, [resources, pinnedResourceIds])
 
   // Get pinned tools
   const pinnedTools = useMemo(() => {
@@ -427,7 +371,7 @@ export function ExternalResourcesTab() {
                 description={tool.description}
                 icon={tool.icon}
                 expandMode={tool.expandMode || "dialog"}
-                isPinned={pinnedToolIds.includes(tool.id)}
+                isPinned={isToolPinned(tool.id)}
                 onTogglePin={() => toggleToolPin(tool.id)}
               >
                 {tool.component && <tool.component />}
@@ -481,7 +425,7 @@ export function ExternalResourcesTab() {
                 url={resource.url}
                 buttonText={resource.buttonText}
                 features={resource.features}
-                isPinned={pinnedIds.includes(resource.id)}
+                isPinned={isResourcePinned(resource.id)}
                 onTogglePin={() => togglePin(resource.id)}
               />
             ))}
