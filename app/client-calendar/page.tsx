@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 
 // ========================================
 // TYPES
@@ -563,9 +565,11 @@ export default function ClientSupportCalendarPage() {
   const showColorScripts = selectedDayKey != null && (selectedDayKey.includes("5-mon") || selectedDayKey.startsWith("m2-"))
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F8F9FA", fontFamily: "var(--font-open-sans, 'Open Sans', sans-serif)" }}>
+    <div className="min-h-screen flex flex-col bg-white">
+      <Header />
+      <main className="flex-1 -mt-[73px] pt-[73px]" style={{ background: "#F8F9FA", fontFamily: "var(--font-open-sans, 'Open Sans', sans-serif)" }}>
 
-      {/* HEADER */}
+      {/* PAGE HEADER */}
       <div style={{ background: "#2D2D2D", padding: "0" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 20px 16px" }}>
           <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 900, color: "#fff", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", letterSpacing: "-0.5px" }}>
@@ -643,6 +647,8 @@ export default function ClientSupportCalendarPage() {
           showColorScripts={showColorScripts}
         />
       )}
+      </main>
+      <Footer />
     </div>
   )
 }
