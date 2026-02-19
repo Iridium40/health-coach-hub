@@ -308,27 +308,69 @@ function DetailDrawer({
     setTimeout(() => setCopiedIdx(null), 2000)
   }
 
+  const buildCopyAllText = (): string => {
+    const parts: string[] = []
+
+    for (const task of day.tasks) {
+      if (task.hasScript && task.script) {
+        parts.push(task.script)
+      }
+
+      const links: string[] = []
+      if (task.videoUrl) links.push(`${task.title}: ${task.videoUrl}`)
+      if (task.graphicPlaceholder) links.push(`${task.title}: ${task.graphicPlaceholder}`)
+      if (task.resourceUrl) links.push(`${task.title}: ${task.resourceUrl}`)
+      if (links.length > 0) parts.push(links.join("\n"))
+    }
+
+    return parts.join("\n\n")
+  }
+
+  const handleCopyAll = () => {
+    const text = buildCopyAllText()
+    if (text) {
+      navigator.clipboard?.writeText(text)
+      setCopiedIdx("copy-all")
+      setTimeout(() => setCopiedIdx(null), 2000)
+    }
+  }
+
   if (!day || day.tasks.length === 0) return null
+
+  const hasCopyableContent = day.tasks.some(t => (t.hasScript && t.script) || t.videoUrl || t.graphicPlaceholder || t.resourceUrl)
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", justifyContent: "flex-end" }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)" }} />
       <div style={{ position: "relative", width: "min(480px, 90vw)", background: "#fff", height: "100%", overflowY: "auto", boxShadow: "-4px 0 24px rgba(0,0,0,0.15)" }}>
         {/* Header */}
-        <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #003B2E, #00A651)", color: "#fff", position: "sticky", top: 0, zIndex: 1 }}>
+        <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #008C45, #00A651)", color: "#fff", position: "sticky", top: 0, zIndex: 1 }}>
           <button onClick={onClose} style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontSize: "16px" }}>✕</button>
           <div style={{ fontSize: "13px", opacity: 0.8, fontWeight: 500 }}>{day.phase}</div>
-          <div style={{ fontSize: "22px", fontWeight: 800, fontFamily: "'Montserrat', sans-serif", marginTop: "4px" }}>{day.label || "Tasks"}</div>
+          <div style={{ fontSize: "22px", fontWeight: 800, fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", marginTop: "4px" }}>{day.label || "Tasks"}</div>
           <div style={{ fontSize: "12px", opacity: 0.7, marginTop: "4px" }}>{day.tasks.length} task{day.tasks.length !== 1 ? "s" : ""}</div>
         </div>
 
         {/* Tasks */}
         <div style={{ padding: "16px" }}>
+          {hasCopyableContent && (
+            <button
+              onClick={handleCopyAll}
+              style={{
+                width: "100%", padding: "12px", marginBottom: "16px", borderRadius: "10px", border: "none",
+                background: copiedIdx === "copy-all" ? "#059669" : "#00A651", color: "#fff", fontSize: "14px",
+                fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)",
+                transition: "all 0.2s", letterSpacing: "0.3px",
+              }}
+            >
+              {copiedIdx === "copy-all" ? "✅ Copied to Clipboard!" : "📋 Copy All — Script + Links"}
+            </button>
+          )}
           {day.tasks.map((task, i) => {
             const taskKey = `${dayKey}-${i}`
             const done = !!completedTasks[taskKey]
             return (
-              <div key={i} style={{ marginBottom: "12px", padding: "16px", borderRadius: "10px", border: done ? "1px solid #bbf7d0" : "1px solid #e5e7eb", background: done ? "#f0fdf4" : "#fafafa" }}>
+              <div key={i} style={{ marginBottom: "12px", padding: "16px", borderRadius: "10px", border: done ? "1px solid #bbf7d0" : "1px solid #E0E0E0", background: done ? "#f0fdf4" : "#F8F9FA" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                   <button onClick={() => onToggle(taskKey)} style={{
                     width: "24px", height: "24px", borderRadius: "50%", border: done ? "2px solid #00A651" : "2px solid #d1d5db",
@@ -340,7 +382,7 @@ function DetailDrawer({
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                       <span style={{ fontSize: "15px" }}>{task.icon}</span>
-                      <span style={{ fontWeight: 600, fontSize: "14px", color: done ? "#6b7280" : "#111827" }}>{task.title}</span>
+                      <span style={{ fontWeight: 600, fontSize: "14px", color: done ? "#666666" : "#333333" }}>{task.title}</span>
                       <TaskBadge type={task.type} />
                     </div>
                     {task.note && <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#f59e0b", fontWeight: 600, fontStyle: "italic" }}>⚠️ {task.note}</p>}
@@ -387,8 +429,8 @@ function DetailDrawer({
                     {/* Script Preview */}
                     {task.hasScript && task.script && (
                       <details style={{ marginTop: "10px" }}>
-                        <summary style={{ fontSize: "12px", color: "#6b7280", cursor: "pointer", fontWeight: 500 }}>Preview script</summary>
-                        <pre style={{ marginTop: "8px", padding: "12px", background: "#f8fafc", borderRadius: "8px", fontSize: "12px", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word", color: "#374151", border: "1px solid #e2e8f0", maxHeight: "300px", overflowY: "auto" }}>
+                        <summary style={{ fontSize: "12px", color: "#666666", cursor: "pointer", fontWeight: 500 }}>Preview script</summary>
+                        <pre style={{ marginTop: "8px", padding: "12px", background: "#F8F9FA", borderRadius: "8px", fontSize: "12px", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word", color: "#333333", border: "1px solid #E0E0E0", maxHeight: "300px", overflowY: "auto" }}>
                           {task.script}
                         </pre>
                       </details>
@@ -401,12 +443,12 @@ function DetailDrawer({
 
           {/* Color Response Scripts */}
           {showColorScripts && (
-            <div style={{ marginTop: "16px", padding: "16px", borderRadius: "10px", border: "1px solid #e5e7eb", background: "#f8fafc" }}>
-              <h4 style={{ margin: "0 0 12px", fontSize: "14px", fontWeight: 700, color: "#111827", fontFamily: "'Montserrat', sans-serif" }}>Response Scripts by Color</h4>
+            <div style={{ marginTop: "16px", padding: "16px", borderRadius: "10px", border: "1px solid #E0E0E0", background: "#F8F9FA" }}>
+              <h4 style={{ margin: "0 0 12px", fontSize: "14px", fontWeight: 700, color: "#333333", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)" }}>Response Scripts by Color</h4>
               {Object.values(COLOR_SCRIPTS).map(cs => (
                 <div key={cs.label} style={{ marginBottom: "10px", padding: "12px", borderRadius: "8px", background: cs.bg, border: `1px solid ${cs.border}` }}>
                   <div style={{ fontWeight: 700, fontSize: "13px", color: cs.color, marginBottom: "6px" }}>{cs.emoji} {cs.label}</div>
-                  <pre style={{ margin: 0, fontSize: "12px", lineHeight: 1.5, whiteSpace: "pre-wrap", color: "#374151" }}>{cs.script}</pre>
+                  <pre style={{ margin: 0, fontSize: "12px", lineHeight: 1.5, whiteSpace: "pre-wrap", color: "#333333" }}>{cs.script}</pre>
                   <button onClick={() => { navigator.clipboard?.writeText(cs.script) }} style={{ marginTop: "8px", fontSize: "11px", padding: "4px 10px", borderRadius: "4px", border: `1px solid ${cs.border}`, background: "#fff", cursor: "pointer", color: cs.color, fontWeight: 600 }}>
                     📋 Copy
                   </button>
@@ -445,8 +487,8 @@ function CalendarCell({
       onClick={hasTasks ? onClick : undefined}
       style={{
         flex: "1 1 0", minWidth: 0, minHeight: "100px", padding: "8px",
-        background: hasTasks ? weekColor.bg : "#f9fafb",
-        border: allDone ? "2px solid #00A651" : `1px solid ${hasTasks ? weekColor.border : "#e5e7eb"}`,
+        background: hasTasks ? weekColor.bg : "#F8F9FA",
+        border: allDone ? "2px solid #00A651" : `1px solid ${hasTasks ? weekColor.border : "#E0E0E0"}`,
         borderRadius: "6px", cursor: hasTasks ? "pointer" : "default",
         transition: "all 0.15s", position: "relative",
         opacity: hasTasks ? 1 : 0.5,
@@ -456,15 +498,15 @@ function CalendarCell({
     >
       {allDone && <div style={{ position: "absolute", top: "4px", right: "4px", fontSize: "12px" }}>✅</div>}
       {day?.label && (
-        <div style={{ fontWeight: 700, fontSize: "11px", color: weekColor.header, marginBottom: "2px", fontFamily: "'Montserrat', sans-serif", textTransform: "uppercase", letterSpacing: "0.3px" }}>
+        <div style={{ fontWeight: 700, fontSize: "11px", color: weekColor.header, marginBottom: "2px", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", textTransform: "uppercase", letterSpacing: "0.3px" }}>
           {day.label}
         </div>
       )}
       {day?.phase && (
-        <div style={{ fontSize: "10px", color: "#6b7280", marginBottom: "4px", fontWeight: 500 }}>{day.phase}</div>
+        <div style={{ fontSize: "10px", color: "#666666", marginBottom: "4px", fontWeight: 500 }}>{day.phase}</div>
       )}
       {hasTasks && day.tasks.map((task, i) => (
-        <div key={i} style={{ fontSize: "10px", color: "#374151", lineHeight: 1.3, marginBottom: "3px", display: "flex", alignItems: "flex-start", gap: "3px" }}>
+        <div key={i} style={{ fontSize: "10px", color: "#333333", lineHeight: 1.3, marginBottom: "3px", display: "flex", alignItems: "flex-start", gap: "3px" }}>
           <span style={{ flexShrink: 0 }}>{task.icon}</span>
           <span style={{ fontWeight: 500, textDecoration: completedTasks[`${dayKey}-${i}`] ? "line-through" : "none", opacity: completedTasks[`${dayKey}-${i}`] ? 0.5 : 1 }}>
             {task.title}
@@ -521,17 +563,15 @@ export default function ClientSupportCalendarPage() {
   const showColorScripts = selectedDayKey != null && (selectedDayKey.includes("5-mon") || selectedDayKey.startsWith("m2-"))
 
   return (
-    <div style={{ minHeight: "100vh", background: "#e8ecf1", fontFamily: "'Open Sans', -apple-system, sans-serif" }}>
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <div style={{ minHeight: "100vh", background: "#F8F9FA", fontFamily: "var(--font-open-sans, 'Open Sans', sans-serif)" }}>
 
       {/* HEADER */}
-      <div style={{ background: "#1a2744", padding: "0" }}>
+      <div style={{ background: "#2D2D2D", padding: "0" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 20px 16px" }}>
-          <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 900, color: "#fff", fontFamily: "'Montserrat', sans-serif", letterSpacing: "-0.5px" }}>
-            CREATING EMPOWERED CLIENTS
+          <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 900, color: "#fff", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", letterSpacing: "-0.5px" }}>
+            CLIENT SUPPORT CALENDAR
           </h1>
-          <p style={{ margin: "4px 0 0", fontSize: "16px", color: "#94a3b8", fontStyle: "italic", fontFamily: "Georgia, serif" }}>
+          <p style={{ margin: "4px 0 0", fontSize: "16px", color: "#999999", fontStyle: "italic" }}>
             {activeMonth === "month1" ? "Month One Guide" : "Month Two Guide"}
           </p>
 
@@ -543,9 +583,9 @@ export default function ClientSupportCalendarPage() {
             ]).map(tab => (
               <button key={tab.id} onClick={() => setActiveMonth(tab.id)} style={{
                 padding: "10px 24px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "13px",
-                fontFamily: "'Montserrat', sans-serif", borderRadius: "8px 8px 0 0", transition: "all 0.2s",
-                background: activeMonth === tab.id ? "#e8ecf1" : "rgba(255,255,255,0.05)",
-                color: activeMonth === tab.id ? "#1a2744" : "#94a3b8",
+                fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", borderRadius: "8px 8px 0 0", transition: "all 0.2s",
+                background: activeMonth === tab.id ? "#F8F9FA" : "rgba(255,255,255,0.05)",
+                color: activeMonth === tab.id ? "#333333" : "#999999",
               }}>
                 {tab.label}
               </button>
@@ -559,7 +599,7 @@ export default function ClientSupportCalendarPage() {
         {/* Day Headers */}
         <div style={{ display: "flex", gap: "4px", padding: "12px 0 8px" }}>
           {DAYS_OF_WEEK.map(d => (
-            <div key={d} style={{ flex: "1 1 0", textAlign: "center", fontWeight: 800, fontSize: "11px", color: "#475569", fontFamily: "'Montserrat', sans-serif", letterSpacing: "0.5px" }}>
+            <div key={d} style={{ flex: "1 1 0", textAlign: "center", fontWeight: 800, fontSize: "11px", color: "#666666", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", letterSpacing: "0.5px" }}>
               {d}
             </div>
           ))}
@@ -582,8 +622,8 @@ export default function ClientSupportCalendarPage() {
         ))}
 
         {/* Footer Note */}
-        <div style={{ marginTop: "16px", padding: "12px 16px", background: "#fff", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
-          <p style={{ margin: 0, fontSize: "13px", color: "#6b7280" }}>
+        <div style={{ marginTop: "16px", padding: "12px 16px", background: "#fff", borderRadius: "8px", border: "1px solid #E0E0E0" }}>
+          <p style={{ margin: 0, fontSize: "13px", color: "#666666" }}>
             {activeMonth === "month1"
               ? "* Click any day to see full task details, copy scripts, and access video links. For the full description of daily actions, refer to the master coaching guide."
               : "* Client Support Beyond the First 30 Days! Weekly rhythm: Monday Renpho + Color Day → Tuesday/Wednesday Office Hours → Mid-Week Touchpoint"
