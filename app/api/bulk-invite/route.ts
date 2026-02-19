@@ -192,7 +192,8 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id)
       .single()
     
-    if (profileError || profile?.user_role?.toLowerCase() !== "admin") {
+    const bulkRole = profile?.user_role?.toLowerCase()
+    if (profileError || (bulkRole !== "admin" && bulkRole !== "system_admin")) {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 }

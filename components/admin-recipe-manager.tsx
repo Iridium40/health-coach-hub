@@ -104,7 +104,8 @@ export function AdminRecipeManager({ onClose }: AdminRecipeManagerProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<Recipe | null>(null)
   const [activeTab, setActiveTab] = useState<"list" | "create">("list")
 
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
 
   // Track unsaved changes for admin
   const { 

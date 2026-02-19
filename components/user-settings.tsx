@@ -152,8 +152,8 @@ export function UserSettings({ onClose, embedded = false }: UserSettingsProps) {
   const handleSaveProfile = async () => {
     if (!user) return
 
-    // Check if user is a coach (not admin)
-    const userIsCoach = profile?.user_role?.toLowerCase() !== "admin"
+    const userRole = profile?.user_role?.toLowerCase()
+    const userIsCoach = userRole !== "admin" && userRole !== "system_admin"
 
     // Coaches can update their name and phone; admins can update all fields
     if (userIsCoach) {
@@ -214,8 +214,8 @@ export function UserSettings({ onClose, embedded = false }: UserSettingsProps) {
     return "U"
   }
 
-  // Check if user is a coach (not admin) - coaches have read-only profile fields except Full Name
-  const isCoach = profile?.user_role?.toLowerCase() !== "admin"
+  const settingsRole = profile?.user_role?.toLowerCase()
+  const isCoach = settingsRole !== "admin" && settingsRole !== "system_admin"
 
   return (
     <div className={embedded ? "" : "container mx-auto px-4 py-8 max-w-4xl"}>

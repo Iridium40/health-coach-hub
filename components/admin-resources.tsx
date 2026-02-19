@@ -90,7 +90,8 @@ export function AdminResources({ onClose }: { onClose?: () => void }) {
   const [resourceToDelete, setResourceToDelete] = useState<ExternalResource | null>(null)
 
   // Check if user is admin (case-insensitive)
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
   
   // Ref for form section to scroll into view
   const formRef = useRef<HTMLDivElement>(null)

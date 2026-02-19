@@ -64,7 +64,8 @@ export function AdminAnnouncements({ onClose }: { onClose?: () => void }) {
   const [sendEmail, setSendEmail] = useState(false) // Send email notification
 
   // Check if user is admin (case-insensitive)
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
 
   // Track unsaved changes for admin
   const { 

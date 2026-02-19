@@ -16,7 +16,7 @@ interface AccessCode {
   code: string
   label: string | null
   is_active: boolean
-  usage_count: number
+  usage_count: number | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -33,7 +33,8 @@ export function AdminAccessCodes({ onClose }: { onClose?: () => void }) {
   const [newLabel, setNewLabel] = useState("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
 
   useEffect(() => {
     if (!user || !isAdmin) {
@@ -240,7 +241,7 @@ export function AdminAccessCodes({ onClose }: { onClose?: () => void }) {
                         <p className="text-sm text-optavia-gray mt-0.5">{code.label}</p>
                       )}
                       <p className="text-xs text-optavia-light-gray mt-1">
-                        Used {code.usage_count} time{code.usage_count !== 1 ? "s" : ""} &bull; Created {new Date(code.created_at).toLocaleDateString()}
+                        Used {code.usage_count ?? 0} time{(code.usage_count ?? 0) !== 1 ? "s" : ""} &bull; Created {new Date(code.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

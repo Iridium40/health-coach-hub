@@ -12,7 +12,8 @@ import { useUserData } from "@/contexts/user-data-context"
 export default function MyBusinessPage() {
   const router = useRouter()
   const { user, profile, authLoading } = useUserData()
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {

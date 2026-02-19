@@ -80,7 +80,7 @@ export function useAuth() {
     }
   }, [supabase])
 
-  const signUp = async (email: string, password: string, fullName?: string, coachName?: string) => {
+  const signUp = async (email: string, password: string, fullName?: string, coachName?: string, signupAccessCode?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -88,6 +88,7 @@ export function useAuth() {
         data: {
           full_name: fullName,
           coach_name: coachName,
+          signup_access_code: signupAccessCode,
         },
       },
     })

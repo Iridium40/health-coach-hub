@@ -61,7 +61,7 @@ export function SignupFormOpen({ onSuccess }: SignupFormOpenProps) {
         return
       }
 
-      const { data, error } = await signUp(email, password, fullName.trim(), coachName.trim())
+      const { data, error } = await signUp(email, password, fullName.trim(), coachName.trim(), codeData.code)
 
       if (error) {
         if (error.message?.includes("already registered")) {

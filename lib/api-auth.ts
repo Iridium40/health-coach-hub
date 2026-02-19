@@ -40,7 +40,8 @@ export async function verifyAdmin() {
     .eq('id', user!.id)
     .single()
   
-  if (profile?.user_role !== 'admin') {
+  const apiRole = profile?.user_role?.toLowerCase()
+  if (apiRole !== 'admin' && apiRole !== 'system_admin') {
     return {
       user: null,
       response: NextResponse.json(

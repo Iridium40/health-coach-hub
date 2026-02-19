@@ -11,6 +11,7 @@ export interface Database {
           optavia_id: string | null
           parent_optavia_id: string | null
           coach_name: string | null
+          signup_access_code: string | null
           created_at: string
           updated_at: string
         }
@@ -23,6 +24,7 @@ export interface Database {
           optavia_id?: string | null
           parent_optavia_id?: string | null
           coach_name?: string | null
+          signup_access_code?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -35,6 +37,7 @@ export interface Database {
           optavia_id?: string | null
           parent_optavia_id?: string | null
           coach_name?: string | null
+          signup_access_code?: string | null
           created_at?: string
           updated_at?: string
         }

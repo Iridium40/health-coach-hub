@@ -37,7 +37,8 @@ export function InviteManagement({ onClose }: InviteManagementProps) {
   const defaultCoachRank = "IPD"
   const [generatedInvites, setGeneratedInvites] = useState<GeneratedInvite[]>([])
 
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
 
   const handleGenerateInvite = async () => {
     if (!user) {

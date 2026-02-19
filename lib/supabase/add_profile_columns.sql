@@ -25,13 +25,13 @@ BEGIN
     
     -- Add new constraints
     ALTER TABLE public.profiles
-    ADD CONSTRAINT profiles_user_role_check CHECK (user_role IN ('admin', 'coach'));
+    ADD CONSTRAINT profiles_user_role_check CHECK (user_role IN ('system_admin', 'admin', 'coach'));
     
     ALTER TABLE public.profiles
     ADD CONSTRAINT profiles_coach_rank_check CHECK (coach_rank IN ('SC', 'ED', 'IN', 'IR', 'GB', 'IPD'));
 END $$;
 
 -- Add comments for documentation
-COMMENT ON COLUMN public.profiles.user_role IS 'User role: admin or coach';
+COMMENT ON COLUMN public.profiles.user_role IS 'User role: system_admin, admin, or coach';
 COMMENT ON COLUMN public.profiles.coach_rank IS 'Coach rank: SC, ED, IN, IR, GB, or IPD';
 

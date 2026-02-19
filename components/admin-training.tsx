@@ -116,7 +116,8 @@ export function AdminTraining({ onClose }: { onClose?: () => void }) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "module" | "resource"; id: string; title: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
 
   // Track unsaved changes for admin
   const { 

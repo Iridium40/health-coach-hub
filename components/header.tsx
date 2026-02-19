@@ -35,7 +35,8 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
   const orgId = profile?.org_id ?? 1 // Default to full access
   const isTrainingOnly = orgId === 2
 

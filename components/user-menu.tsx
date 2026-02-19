@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, LogOut, Bell, BarChart3, UtensilsCrossed, Star, CalendarDays, BookOpen, Link2, MessageSquare, Users, LayoutDashboard } from "lucide-react"
+import { User, LogOut, Bell, BarChart3, UtensilsCrossed, Star, CalendarDays, BookOpen, Link2, MessageSquare, Users, LayoutDashboard, KeyRound } from "lucide-react"
 import { useUserData } from "@/contexts/user-data-context"
 
 interface UserMenuProps {
@@ -26,7 +26,9 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
   const { user, profile, signOut } = useUserData()
   const [loading, setLoading] = useState(false)
 
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
+  const isSystemAdmin = role === "system_admin"
   const orgId = profile?.org_id ?? 1 // Default to full access
   const isTrainingOnly = orgId === 2
 
@@ -119,6 +121,15 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
               </DropdownMenuItem>
             ) : (
               <>
+                {isSystemAdmin && (
+                  <DropdownMenuItem 
+                    onSelect={() => router.push("/admin/access-codes")}
+                    className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
+                  >
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    <span>Access Codes</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem 
                   onSelect={handleAnnouncementsClick}
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"

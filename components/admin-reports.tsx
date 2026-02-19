@@ -35,7 +35,8 @@ export function AdminReports({ onClose }: { onClose?: () => void }) {
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [categoryCompletions, setCategoryCompletions] = useState<CategoryCompletion[]>([])
 
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
 
   useEffect(() => {
     if (!user || !isAdmin) {

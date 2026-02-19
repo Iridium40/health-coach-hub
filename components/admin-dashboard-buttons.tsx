@@ -44,7 +44,8 @@ export function AdminDashboardButtons({ onClose }: { onClose?: () => void }) {
   const [saving, setSaving] = useState(false)
   const [editedButtons, setEditedButtons] = useState<Record<string, Partial<DashboardButton>>>({})
 
-  const isAdmin = profile?.user_role?.toLowerCase() === "admin"
+  const role = profile?.user_role?.toLowerCase()
+  const isAdmin = role === "admin" || role === "system_admin"
 
   useEffect(() => {
     if (!user || !isAdmin) {

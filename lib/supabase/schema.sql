@@ -8,11 +8,12 @@ CREATE TABLE IF NOT EXISTS profiles (
   full_name TEXT,
   avatar_url TEXT,
   is_new_coach BOOLEAN DEFAULT true,
-  user_role TEXT CHECK (user_role IN ('admin', 'coach')),
+  user_role TEXT CHECK (user_role IN ('system_admin', 'admin', 'coach')),
   coach_rank TEXT CHECK (coach_rank IN ('Coach', 'SC', 'MG', 'AD', 'DR', 'ED', 'IED', 'FIBC', 'IGD', 'FIBL', 'IND', 'IPD')),
   optavia_id TEXT,
   parent_optavia_id TEXT,
   coach_name TEXT,
+  signup_access_code TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -408,12 +409,13 @@ CREATE POLICY "Admins can delete templates"
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name, coach_name)
+  INSERT INTO public.profiles (id, email, full_name, coach_name, signup_access_code)
   VALUES (
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'full_name',
-    NEW.raw_user_meta_data->>'coach_name'
+    NEW.raw_user_meta_data->>'coach_name',
+    NEW.raw_user_meta_data->>'signup_access_code'
   );
 
   INSERT INTO public.notification_settings (user_id)
