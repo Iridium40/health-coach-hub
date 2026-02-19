@@ -315,22 +315,34 @@ function DetailDrawer({
     const links: string[] = []
 
     for (const task of day.tasks) {
-      if (task.hasScript && task.script) {
-        scriptParts.push(task.script)
-      }
-
       if (task.videoUrl) links.push(`🎬 ${task.title}: ${task.videoUrl}`)
-      if (task.graphicPlaceholder) links.push(`🖼 ${task.title}: ${task.graphicPlaceholder}`)
+      if (task.graphicPlaceholder) links.push(`📋 ${task.title}: ${task.graphicPlaceholder}`)
       if (task.resourceUrl) links.push(`🔗 ${task.title}: ${task.resourceUrl}`)
+    }
+
+    for (const task of day.tasks) {
+      if (task.hasScript && task.script) {
+        let cleaned = task.script
+        const hasLinks = links.length > 0
+        let addedReference = false
+
+        cleaned = cleaned.replace(/__[A-Z][A-Z0-9_ ]*__|\[[A-Z][A-Z0-9_ ]*\]/g, () => {
+          if (hasLinks && !addedReference) {
+            addedReference = true
+            return "\n👇 See video & resource links below"
+          }
+          return ""
+        })
+
+        cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim()
+        scriptParts.push(cleaned)
+      }
     }
 
     const sections: string[] = []
     if (scriptParts.length > 0) sections.push(scriptParts.join("\n\n"))
     if (links.length > 0) {
-      const reference = scriptParts.length > 0
-        ? "👇 Reference images & videos linked below:\n"
-        : ""
-      sections.push(reference + links.join("\n"))
+      sections.push("📎 Resources & Media:\n" + links.join("\n"))
     }
 
     return sections.join("\n\n")
