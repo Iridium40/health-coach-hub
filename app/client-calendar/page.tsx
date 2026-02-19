@@ -535,22 +535,6 @@ export default function ClientSupportCalendarPage() {
             {activeMonth === "month1" ? "Month One Guide" : "Month Two Guide"}
           </p>
 
-          {/* Client Bar */}
-          <div style={{ display: "flex", gap: "12px", marginTop: "16px", flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 14px" }}>
-              <span style={{ fontSize: "12px", color: "#94a3b8", fontWeight: 600 }}>Client:</span>
-              <input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Enter name..." style={{ background: "transparent", border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, outline: "none", width: "140px" }} />
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 14px" }}>
-              <span style={{ fontSize: "12px", color: "#94a3b8", fontWeight: 600 }}>Start:</span>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ background: "transparent", border: "none", color: "#fff", fontSize: "14px", outline: "none", colorScheme: "dark" }} />
-            </div>
-            <div style={{ background: "rgba(0,166,81,0.2)", borderRadius: "8px", padding: "8px 14px", display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "12px", color: "#86efac", fontWeight: 600 }}>Progress:</span>
-              <span style={{ fontSize: "16px", fontWeight: 800, color: "#00A651", fontFamily: "'Montserrat', sans-serif" }}>{totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0}%</span>
-            </div>
-          </div>
-
           {/* Month Tabs */}
           <div style={{ display: "flex", gap: "4px", marginTop: "16px" }}>
             {([
