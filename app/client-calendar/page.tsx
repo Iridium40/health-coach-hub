@@ -342,11 +342,11 @@ function DetailDrawer({
   const hasCopyableContent = day.tasks.some(t => (t.hasScript && t.script) || t.videoUrl || t.graphicPlaceholder || t.resourceUrl)
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", justifyContent: "flex-end" }}>
-      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)" }} />
-      <div style={{ position: "relative", width: "min(480px, 90vw)", background: "#fff", height: "100%", overflowY: "auto", boxShadow: "-4px 0 24px rgba(0,0,0,0.15)" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)" }} />
+      <div style={{ position: "relative", width: "min(560px, 95vw)", maxHeight: "85vh", background: "#fff", borderRadius: "12px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
         {/* Header */}
-        <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #008C45, #00A651)", color: "#fff", position: "sticky", top: 0, zIndex: 1 }}>
+        <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #008C45, #00A651)", color: "#fff", flexShrink: 0 }}>
           <button onClick={onClose} style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontSize: "16px" }}>✕</button>
           <div style={{ fontSize: "13px", opacity: 0.8, fontWeight: 500 }}>{day.phase}</div>
           <div style={{ fontSize: "22px", fontWeight: 800, fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", marginTop: "4px" }}>{day.label || "Tasks"}</div>
@@ -354,7 +354,7 @@ function DetailDrawer({
         </div>
 
         {/* Tasks */}
-        <div style={{ padding: "16px" }}>
+        <div style={{ padding: "16px", overflowY: "auto", flex: 1 }}>
           {hasCopyableContent && (
             <button
               onClick={handleCopyAll}
