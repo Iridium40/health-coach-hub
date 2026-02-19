@@ -10,6 +10,7 @@ export interface Database {
           is_new_coach: boolean
           optavia_id: string | null
           parent_optavia_id: string | null
+          coach_name: string | null
           created_at: string
           updated_at: string
         }
@@ -21,6 +22,7 @@ export interface Database {
           is_new_coach?: boolean
           optavia_id?: string | null
           parent_optavia_id?: string | null
+          coach_name?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -32,6 +34,7 @@ export interface Database {
           is_new_coach?: boolean
           optavia_id?: string | null
           parent_optavia_id?: string | null
+          coach_name?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -164,6 +167,38 @@ export interface Database {
           priority?: "low" | "normal" | "high" | "urgent"
           is_active?: boolean
           send_push?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      signup_access_codes: {
+        Row: {
+          id: string
+          code: string
+          label: string | null
+          is_active: boolean
+          usage_count: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          label?: string | null
+          is_active?: boolean
+          usage_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          label?: string | null
+          is_active?: boolean
+          usage_count?: number
           created_by?: string | null
           created_at?: string
           updated_at?: string
