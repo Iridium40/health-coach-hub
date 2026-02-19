@@ -488,8 +488,6 @@ export default function ClientSupportCalendarPage() {
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null)
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({})
-  const [clientName, setClientName] = useState("")
-  const [startDate, setStartDate] = useState("")
 
   const toggleTask = (key: string) => setCompletedTasks(prev => ({ ...prev, [key]: !prev[key] }))
 
@@ -519,9 +517,6 @@ export default function ClientSupportCalendarPage() {
   }))
 
   const weeks = activeMonth === "month1" ? month1Weeks : month2Weeks
-
-  const totalTasks = Object.values(CALENDAR_DAYS).reduce((sum, d) => sum + (d?.tasks?.length || 0), 0)
-  const totalCompleted = Object.entries(completedTasks).filter(([k, v]) => v && !k.startsWith("m2-")).length
 
   const showColorScripts = selectedDayKey != null && (selectedDayKey.includes("5-mon") || selectedDayKey.startsWith("m2-"))
 
