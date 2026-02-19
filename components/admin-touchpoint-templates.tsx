@@ -82,6 +82,7 @@ const TOKENS = [
   { token: "{days}", description: "Days on program" },
   { token: "{coachName}", description: "Your name" },
   { token: "{nextMilestone}", description: "Next milestone day" },
+  { token: "{today}", description: "Current day name (e.g. Monday)" },
 ]
 
 export function AdminTouchpointTemplates() {

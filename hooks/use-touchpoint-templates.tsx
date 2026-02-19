@@ -213,6 +213,8 @@ export function useTouchpointTemplates() {
     if (data.days !== undefined) result = result.replace(/\{days\}/g, String(data.days))
     if (data.coachName) result = result.replace(/\{coachName\}/g, data.coachName)
     if (data.nextMilestone !== undefined) result = result.replace(/\{nextMilestone\}/g, String(data.nextMilestone))
+    const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" })
+    result = result.replace(/\{today\}/g, dayName)
     return result
   }, [])
 
