@@ -11,6 +11,10 @@ CREATE TABLE IF NOT EXISTS signup_access_codes (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Seed default access code
+INSERT INTO signup_access_codes (code, label) VALUES
+  ('OPTAVIA', 'Default Signup Code');
+
 CREATE INDEX IF NOT EXISTS idx_signup_access_codes_code ON signup_access_codes(code);
 
 -- Enable RLS

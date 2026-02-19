@@ -32,8 +32,11 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
     const { error } = await signIn(email, password)
 
     if (error) {
-      // Show a user-friendly message near the form
-      setLoginError("Invalid email or password. Please try again.")
+      if (error.message?.includes("Email not confirmed")) {
+        setLoginError("Your email has not been confirmed yet. Please check your inbox for a confirmation link.")
+      } else {
+        setLoginError("Invalid email or password. Please try again.")
+      }
     } else {
       onSuccess?.()
     }
