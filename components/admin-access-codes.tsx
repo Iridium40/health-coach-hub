@@ -16,10 +16,12 @@ interface AccessCode {
   code: string
   label: string | null
   is_active: boolean
+  max_uses: number | null
   usage_count: number | null
   created_by: string | null
   created_at: string
   updated_at: string
+  expires_at: string | null
 }
 
 export function AdminAccessCodes({ onClose }: { onClose?: () => void }) {
@@ -31,6 +33,8 @@ export function AdminAccessCodes({ onClose }: { onClose?: () => void }) {
   const [creating, setCreating] = useState(false)
   const [newCode, setNewCode] = useState("")
   const [newLabel, setNewLabel] = useState("")
+  const [newMaxUses, setNewMaxUses] = useState("")
+  const [newExpiresAt, setNewExpiresAt] = useState("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const role = profile?.user_role?.toLowerCase()
@@ -70,6 +74,8 @@ export function AdminAccessCodes({ onClose }: { onClose?: () => void }) {
       .insert({
         code: newCode.trim().toUpperCase(),
         label: newLabel.trim() || null,
+        max_uses: newMaxUses ? parseInt(newMaxUses, 10) : null,
+        expires_at: newExpiresAt ? new Date(newExpiresAt).toISOString() : null,
         created_by: user?.id,
       })
 
@@ -83,6 +89,8 @@ export function AdminAccessCodes({ onClose }: { onClose?: () => void }) {
       toast({ title: "Created", description: `Access code "${newCode.trim().toUpperCase()}" created` })
       setNewCode("")
       setNewLabel("")
+      setNewMaxUses("")
+      setNewExpiresAt("")
       loadCodes()
     }
     setCreating(false)
@@ -160,36 +168,62 @@ export function AdminAccessCodes({ onClose }: { onClose?: () => void }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="new-code" className="text-xs text-optavia-gray">Code</Label>
-              <Input
-                id="new-code"
-                placeholder="e.g. COACH2026"
-                value={newCode}
-                onChange={(e) => setNewCode(e.target.value.toUpperCase())}
-                className="bg-white border-gray-300 uppercase"
-              />
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="new-code" className="text-xs text-optavia-gray">Code</Label>
+                <Input
+                  id="new-code"
+                  placeholder="e.g. COACH2026"
+                  value={newCode}
+                  onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+                  className="bg-white border-gray-300 uppercase"
+                />
+              </div>
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="new-label" className="text-xs text-optavia-gray">Label (optional)</Label>
+                <Input
+                  id="new-label"
+                  placeholder="e.g. General Signup"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  className="bg-white border-gray-300"
+                />
+              </div>
             </div>
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="new-label" className="text-xs text-optavia-gray">Label (optional)</Label>
-              <Input
-                id="new-label"
-                placeholder="e.g. General Signup"
-                value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
-                className="bg-white border-gray-300"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                onClick={handleCreate}
-                disabled={creating || !newCode.trim()}
-                className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
-              >
-                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
-                Create
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="sm:w-40 space-y-1">
+                <Label htmlFor="new-max-uses" className="text-xs text-optavia-gray">Max Uses (optional)</Label>
+                <Input
+                  id="new-max-uses"
+                  type="number"
+                  min="1"
+                  placeholder="Unlimited"
+                  value={newMaxUses}
+                  onChange={(e) => setNewMaxUses(e.target.value)}
+                  className="bg-white border-gray-300"
+                />
+              </div>
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="new-expires-at" className="text-xs text-optavia-gray">Expires At (optional)</Label>
+                <Input
+                  id="new-expires-at"
+                  type="datetime-local"
+                  value={newExpiresAt}
+                  onChange={(e) => setNewExpiresAt(e.target.value)}
+                  className="bg-white border-gray-300"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  onClick={handleCreate}
+                  disabled={creating || !newCode.trim()}
+                  className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+                >
+                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+                  Create
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -241,7 +275,21 @@ export function AdminAccessCodes({ onClose }: { onClose?: () => void }) {
                         <p className="text-sm text-optavia-gray mt-0.5">{code.label}</p>
                       )}
                       <p className="text-xs text-optavia-light-gray mt-1">
-                        Used {code.usage_count ?? 0} time{(code.usage_count ?? 0) !== 1 ? "s" : ""} &bull; Created {new Date(code.created_at).toLocaleDateString()}
+                        Used {code.usage_count ?? 0}{code.max_uses ? `/${code.max_uses}` : ""} time{(code.usage_count ?? 0) !== 1 ? "s" : ""}
+                        {code.max_uses && (code.usage_count ?? 0) >= code.max_uses && (
+                          <span className="text-red-500 font-medium"> (limit reached)</span>
+                        )}
+                        {" "}&bull; Created {new Date(code.created_at).toLocaleDateString()}
+                        {code.expires_at && (
+                          <>
+                            {" "}&bull;{" "}
+                            {new Date(code.expires_at) < new Date() ? (
+                              <span className="text-red-500 font-medium">Expired {new Date(code.expires_at).toLocaleDateString()}</span>
+                            ) : (
+                              <span>Expires {new Date(code.expires_at).toLocaleDateString()}</span>
+                            )}
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>

@@ -196,30 +196,36 @@ export interface Database {
           code: string
           label: string | null
           is_active: boolean
+          max_uses: number | null
           usage_count: number
           created_by: string | null
           created_at: string
           updated_at: string
+          expires_at: string | null
         }
         Insert: {
           id?: string
           code: string
           label?: string | null
           is_active?: boolean
+          max_uses?: number | null
           usage_count?: number
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          expires_at?: string | null
         }
         Update: {
           id?: string
           code?: string
           label?: string | null
           is_active?: boolean
+          max_uses?: number | null
           usage_count?: number
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          expires_at?: string | null
         }
       }
       client_support_resources: {

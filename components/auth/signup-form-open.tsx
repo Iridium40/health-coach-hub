@@ -50,13 +50,25 @@ export function SignupFormOpen({ onSuccess }: SignupFormOpenProps) {
     try {
       const { data: codeData, error: codeError } = await supabase
         .from("signup_access_codes")
-        .select("id, code, is_active, usage_count")
+        .select("id, code, is_active, usage_count, max_uses, expires_at")
         .eq("code", accessCode.trim())
         .eq("is_active", true)
         .single()
 
       if (codeError || !codeData) {
         setFormError("Invalid access code. Please check with your administrator.")
+        setLoading(false)
+        return
+      }
+
+      if (codeData.expires_at && new Date(codeData.expires_at) < new Date()) {
+        setFormError("This access code has expired. Please contact your administrator.")
+        setLoading(false)
+        return
+      }
+
+      if (codeData.max_uses && (codeData.usage_count ?? 0) >= codeData.max_uses) {
+        setFormError("This access code has reached its usage limit. Please contact your administrator.")
         setLoading(false)
         return
       }
