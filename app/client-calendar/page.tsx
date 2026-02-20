@@ -630,7 +630,7 @@ export default function ClientSupportCalendarPage() {
         <main className="flex-1" style={{ background: "#F8F9FA", fontFamily: "var(--font-open-sans, 'Open Sans', sans-serif)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
           <div style={{ textAlign: "center", marginBottom: "40px" }}>
             <h1 style={{ margin: 0, fontSize: "32px", fontWeight: 900, color: "#2D2D2D", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", letterSpacing: "-0.5px" }}>
-              CLIENT SUPPORT CALENDAR
+              CLIENT SUPPORT RESOURCES
             </h1>
             <p style={{ margin: "8px 0 0", fontSize: "16px", color: "#666666" }}>
               Choose how you want to support your client&apos;s journey
