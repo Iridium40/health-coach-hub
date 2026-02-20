@@ -18,12 +18,13 @@ interface Announcement {
   send_push: boolean
   start_date: string | null
   end_date: string | null
+  first_login_only: boolean
   created_at: string
 }
 
 export function Announcements() {
   const { user } = useAuth()
-  const { notificationSettings } = useSupabaseData(user)
+  const { profile, notificationSettings } = useSupabaseData(user)
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [readAnnouncements, setReadAnnouncements] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
@@ -124,12 +125,14 @@ export function Announcements() {
     return null
   }
 
-  // Filter out read announcements if user has disabled announcements
-  const unreadAnnouncements = announcements.filter(
-    (announcement) =>
-      !readAnnouncements.has(announcement.id) &&
-      (notificationSettings?.announcements_enabled ?? true)
-  )
+  const isNewCoach = profile?.is_new_coach ?? false
+
+  const unreadAnnouncements = announcements.filter((announcement) => {
+    if (readAnnouncements.has(announcement.id)) return false
+    if (!(notificationSettings?.announcements_enabled ?? true)) return false
+    if (announcement.first_login_only && !isNewCoach) return false
+    return true
+  })
 
   if (unreadAnnouncements.length === 0) {
     return null
@@ -173,7 +176,14 @@ export function Announcements() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-optavia-gray whitespace-pre-wrap">{announcement.content}</p>
+            {announcement.content.includes("<") && announcement.content.includes(">") ? (
+              <div 
+                className="prose prose-sm max-w-none text-optavia-gray"
+                dangerouslySetInnerHTML={{ __html: announcement.content }}
+              />
+            ) : (
+              <p className="text-sm text-optavia-gray whitespace-pre-wrap">{announcement.content}</p>
+            )}
             <Button
               variant="outline"
               size="sm"

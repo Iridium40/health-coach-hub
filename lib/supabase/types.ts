@@ -148,6 +148,11 @@ export interface Database {
           priority: "low" | "normal" | "high" | "urgent"
           is_active: boolean
           send_push: boolean
+          send_email: boolean
+          push_scheduled_at: string | null
+          start_date: string | null
+          end_date: string | null
+          first_login_only: boolean
           created_by: string | null
           created_at: string
           updated_at: string
@@ -159,6 +164,11 @@ export interface Database {
           priority?: "low" | "normal" | "high" | "urgent"
           is_active?: boolean
           send_push?: boolean
+          send_email?: boolean
+          push_scheduled_at?: string | null
+          start_date?: string | null
+          end_date?: string | null
+          first_login_only?: boolean
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -170,6 +180,11 @@ export interface Database {
           priority?: "low" | "normal" | "high" | "urgent"
           is_active?: boolean
           send_push?: boolean
+          send_email?: boolean
+          push_scheduled_at?: string | null
+          start_date?: string | null
+          end_date?: string | null
+          first_login_only?: boolean
           created_by?: string | null
           created_at?: string
           updated_at?: string

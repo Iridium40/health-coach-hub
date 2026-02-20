@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS announcements (
   email_template_id UUID REFERENCES announcement_templates(id),
   start_date TIMESTAMPTZ,
   end_date TIMESTAMPTZ,
+  first_login_only BOOLEAN DEFAULT false,
   created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
