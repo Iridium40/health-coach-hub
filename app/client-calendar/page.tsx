@@ -382,8 +382,8 @@ function DetailDrawer({
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)" }} />
       <div style={{ position: "relative", width: "min(560px, 95vw)", maxHeight: "85vh", background: "#fff", borderRadius: "12px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
         {/* Header */}
-        <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #008C45, #00A651)", color: "#fff", flexShrink: 0 }}>
-          <button onClick={onClose} style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontSize: "16px" }}>✕</button>
+        <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #008C45, #00A651)", color: "#fff", flexShrink: 0, position: "relative", zIndex: 2 }}>
+          <button onClick={onClose} style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontSize: "16px", zIndex: 3 }}>✕</button>
           <div style={{ fontSize: "13px", opacity: 0.8, fontWeight: 500 }}>{day.phase}</div>
           <div style={{ fontSize: "22px", fontWeight: 800, fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", marginTop: "4px" }}>{day.label || "Tasks"}</div>
           <div style={{ fontSize: "12px", opacity: 0.7, marginTop: "4px" }}>{day.tasks.length} task{day.tasks.length !== 1 ? "s" : ""}</div>
@@ -701,15 +701,15 @@ export default function ClientSupportCalendarPage() {
         <Header />
         <main className="flex-1" style={{ background: "#F8F9FA", fontFamily: "var(--font-open-sans, 'Open Sans', sans-serif)" }}>
           {/* Header */}
-          <div style={{ background: "linear-gradient(135deg, #1e1b4b, #3730a3, #6366f1)", padding: "24px 32px", color: "#fff" }}>
+          <div style={{ background: "#fff", borderBottom: "1px solid #E0E0E0", padding: "24px 32px" }}>
             <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-              <button onClick={() => setSupportMode(null)} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: 600, marginBottom: "12px" }}>
+              <button onClick={() => setSupportMode(null)} style={{ background: "#F8F9FA", border: "1px solid #E0E0E0", color: "#666666", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: 600, marginBottom: "12px" }}>
                 ← Back to Options
               </button>
-              <h1 style={{ margin: 0, fontSize: "26px", fontWeight: 900, fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)" }}>
+              <h1 style={{ margin: 0, fontSize: "26px", fontWeight: 900, color: "#2D2D2D", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)" }}>
                 Client Support Master Resource List
               </h1>
-              <p style={{ margin: "6px 0 0", fontSize: "14px", opacity: 0.8 }}>
+              <p style={{ margin: "6px 0 0", fontSize: "14px", color: "#666666" }}>
                 Every document, video, and guide you need to support your clients — all in one place.
               </p>
             </div>
@@ -792,32 +792,34 @@ export default function ClientSupportCalendarPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
-      <main className="flex-1 -mt-[73px] pt-[73px]" style={{ background: "#F8F9FA", fontFamily: "var(--font-open-sans, 'Open Sans', sans-serif)" }}>
+      <main className="flex-1" style={{ background: "#F8F9FA", fontFamily: "var(--font-open-sans, 'Open Sans', sans-serif)" }}>
 
       {/* PAGE HEADER */}
-      <div style={{ background: "#2D2D2D", padding: "0" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 20px 16px" }}>
-          <button onClick={() => setSupportMode(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#999999", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: 600, marginBottom: "12px" }}>
+      <div style={{ background: "#fff", borderBottom: "1px solid #E0E0E0" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 20px 0" }}>
+          <button onClick={() => setSupportMode(null)} style={{ background: "#F8F9FA", border: "1px solid #E0E0E0", color: "#666666", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: 600, marginBottom: "12px" }}>
             ← Back to Options
           </button>
-          <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 900, color: "#fff", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", letterSpacing: "-0.5px" }}>
+          <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 900, color: "#2D2D2D", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", letterSpacing: "-0.5px" }}>
             CLIENT SUPPORT CALENDAR
           </h1>
-          <p style={{ margin: "4px 0 0", fontSize: "16px", color: "#999999", fontStyle: "italic" }}>
+          <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#666666" }}>
             {activeMonth === "month1" ? "Month One Guide" : "Month Two Guide"}
           </p>
 
           {/* Month Tabs */}
-          <div style={{ display: "flex", gap: "4px", marginTop: "16px" }}>
+          <div style={{ display: "flex", gap: "0", marginTop: "16px" }}>
             {([
               { id: "month1" as const, label: "Month One" },
               { id: "month2" as const, label: "Month Two" },
             ]).map(tab => (
               <button key={tab.id} onClick={() => setActiveMonth(tab.id)} style={{
                 padding: "10px 24px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "13px",
-                fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", borderRadius: "8px 8px 0 0", transition: "all 0.2s",
-                background: activeMonth === tab.id ? "#F8F9FA" : "rgba(255,255,255,0.05)",
-                color: activeMonth === tab.id ? "#333333" : "#999999",
+                fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", transition: "all 0.2s",
+                background: "transparent",
+                color: activeMonth === tab.id ? "#00A651" : "#999999",
+                borderBottom: activeMonth === tab.id ? "3px solid #00A651" : "3px solid transparent",
+                marginBottom: "-1px",
               }}>
                 {tab.label}
               </button>
