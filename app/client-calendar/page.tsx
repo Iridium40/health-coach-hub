@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { createClient } from "@/lib/supabase/client"
 
 // ========================================
 // TYPES
@@ -257,6 +258,21 @@ const MONTH2_WEEKLY: Record<string, DayData> = {
 
 const DAYS_OF_WEEK = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+
+// ========================================
+// MASTER RESOURCE LIST — fetched from DB
+// ========================================
+interface MasterResource {
+  id: string
+  title: string
+  description: string | null
+  icon: string
+  url: string
+  category: string
+  color: string
+  is_video: boolean
+  sort_order: number
+}
 
 const COLOR_SCRIPTS: Record<string, ColorScript> = {
   green: { emoji: "🟢", label: "GREEN", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", script: `Love seeing GREEN 💚\nThat tells me things are flowing!!! Great job staying consistent. Keep doing what you're doing and let's keep the momentum going this week. I'll be cheering you on!` },
@@ -552,6 +568,26 @@ export default function ClientSupportCalendarPage() {
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null)
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({})
+  const [supportMode, setSupportMode] = useState<null | "calendar" | "resources">(null)
+  const [masterResources, setMasterResources] = useState<MasterResource[]>([])
+  const [resourcesLoading, setResourcesLoading] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    const fetchResources = async () => {
+      setResourcesLoading(true)
+      const { data } = await supabase
+        .from("client_support_resources")
+        .select("id, title, description, icon, url, category, color, is_video, sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+      setMasterResources(data || [])
+      setResourcesLoading(false)
+    }
+    fetchResources()
+  }, [])
+
+  const resourceCategories = [...new Set(masterResources.map(r => r.category))]
 
   const toggleTask = (key: string) => setCompletedTasks(prev => ({ ...prev, [key]: !prev[key] }))
 
@@ -584,6 +620,175 @@ export default function ClientSupportCalendarPage() {
 
   const showColorScripts = selectedDayKey != null && (selectedDayKey.includes("5-mon") || selectedDayKey.startsWith("m2-"))
 
+  // ========================================
+  // MODE CHOOSER
+  // ========================================
+  if (supportMode === null) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <Header />
+        <main className="flex-1" style={{ background: "#F8F9FA", fontFamily: "var(--font-open-sans, 'Open Sans', sans-serif)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+          <div style={{ textAlign: "center", marginBottom: "40px" }}>
+            <h1 style={{ margin: 0, fontSize: "32px", fontWeight: 900, color: "#2D2D2D", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", letterSpacing: "-0.5px" }}>
+              CLIENT SUPPORT CALENDAR
+            </h1>
+            <p style={{ margin: "8px 0 0", fontSize: "16px", color: "#666666" }}>
+              Choose how you want to support your client&apos;s journey
+            </p>
+          </div>
+
+          <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", justifyContent: "center", maxWidth: "800px" }}>
+            <button onClick={() => setSupportMode("calendar")} style={{
+              flex: "1 1 340px", maxWidth: "380px", padding: "32px 28px", background: "#fff", border: "2px solid #E0E0E0",
+              borderRadius: "16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#00A651"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,166,81,0.15)"; e.currentTarget.style.transform = "translateY(-2px)" }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = "translateY(0)" }}
+            >
+              <div style={{ width: "56px", height: "56px", borderRadius: "14px", background: "linear-gradient(135deg, #008C45, #00A651)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "16px" }}>
+                📅
+              </div>
+              <h2 style={{ margin: "0 0 8px", fontSize: "20px", fontWeight: 800, color: "#2D2D2D", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)" }}>
+                Client Journey Calendar
+              </h2>
+              <p style={{ margin: "0 0 16px", fontSize: "14px", color: "#666666", lineHeight: 1.5 }}>
+                Interactive 30-day calendar with daily tasks, copyable scripts, video links, and graphics. Track progress day by day.
+              </p>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {["Day-by-day tasks", "Copy scripts", "Videos & graphics", "Month 1 & 2"].map(tag => (
+                  <span key={tag} style={{ fontSize: "11px", padding: "3px 10px", borderRadius: "20px", background: "#f0fdf4", color: "#065f46", fontWeight: 600 }}>{tag}</span>
+                ))}
+              </div>
+            </button>
+
+            <button onClick={() => setSupportMode("resources")} style={{
+              flex: "1 1 340px", maxWidth: "380px", padding: "32px 28px", background: "#fff", border: "2px solid #E0E0E0",
+              borderRadius: "16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(99,102,241,0.15)"; e.currentTarget.style.transform = "translateY(-2px)" }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = "translateY(0)" }}
+            >
+              <div style={{ width: "56px", height: "56px", borderRadius: "14px", background: "linear-gradient(135deg, #3730a3, #6366f1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "16px" }}>
+                📚
+              </div>
+              <h2 style={{ margin: "0 0 8px", fontSize: "20px", fontWeight: 800, color: "#2D2D2D", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)" }}>
+                Master Resource List
+              </h2>
+              <p style={{ margin: "0 0 16px", fontSize: "14px", color: "#666666", lineHeight: 1.5 }}>
+                All client support documents, videos, and guides in one place. Quick access to everything you need.
+              </p>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {[`${masterResources.length} resources`, "Docs & videos", "Quick links", "All phases"].map(tag => (
+                  <span key={tag} style={{ fontSize: "11px", padding: "3px 10px", borderRadius: "20px", background: "#eef2ff", color: "#3730a3", fontWeight: 600 }}>{tag}</span>
+                ))}
+              </div>
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  // ========================================
+  // MASTER RESOURCE LIST VIEW
+  // ========================================
+  if (supportMode === "resources") {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <Header />
+        <main className="flex-1" style={{ background: "#F8F9FA", fontFamily: "var(--font-open-sans, 'Open Sans', sans-serif)" }}>
+          {/* Header */}
+          <div style={{ background: "linear-gradient(135deg, #1e1b4b, #3730a3, #6366f1)", padding: "24px 32px", color: "#fff" }}>
+            <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+              <button onClick={() => setSupportMode(null)} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: 600, marginBottom: "12px" }}>
+                ← Back to Options
+              </button>
+              <h1 style={{ margin: 0, fontSize: "26px", fontWeight: 900, fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)" }}>
+                Client Support Master Resource List
+              </h1>
+              <p style={{ margin: "6px 0 0", fontSize: "14px", opacity: 0.8 }}>
+                Every document, video, and guide you need to support your clients — all in one place.
+              </p>
+            </div>
+          </div>
+
+          {/* Resource Grid */}
+          <div style={{ maxWidth: "800px", margin: "0 auto", padding: "24px 20px 40px" }}>
+            {resourcesLoading ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <div style={{ fontSize: "14px", color: "#666666" }}>Loading resources...</div>
+              </div>
+            ) : masterResources.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <div style={{ fontSize: "14px", color: "#666666" }}>No resources available yet.</div>
+              </div>
+            ) : null}
+            {resourceCategories.map(cat => (
+              <div key={cat} style={{ marginBottom: "32px" }}>
+                <h2 style={{ margin: "0 0 12px", fontSize: "14px", fontWeight: 800, color: "#666666", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", textTransform: "uppercase", letterSpacing: "1px" }}>
+                  {cat}
+                </h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {masterResources.filter(r => r.category === cat).map((resource) => (
+                    <a
+                      key={resource.id}
+                      href={resource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "flex", alignItems: "flex-start", gap: "16px", padding: "20px",
+                        background: "#fff", borderRadius: "12px", border: "1px solid #E0E0E0",
+                        textDecoration: "none", transition: "all 0.15s", cursor: "pointer",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = resource.color; e.currentTarget.style.boxShadow = `0 2px 12px ${resource.color}20`; e.currentTarget.style.transform = "translateX(4px)" }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateX(0)" }}
+                    >
+                      <div style={{
+                        width: "44px", height: "44px", borderRadius: "10px", background: `${resource.color}15`,
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0,
+                        border: `1px solid ${resource.color}30`,
+                      }}>
+                        {resource.icon}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontWeight: 700, fontSize: "15px", color: "#2D2D2D" }}>{resource.title}</span>
+                          {resource.is_video && (
+                            <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "4px", background: "#fef3c7", color: "#92400e", fontWeight: 700 }}>VIDEO</span>
+                          )}
+                        </div>
+                        <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#666666", lineHeight: 1.4 }}>{resource.description}</p>
+                      </div>
+                      <div style={{ flexShrink: 0, color: "#999999", fontSize: "18px", marginTop: "2px" }}>→</div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Switch to Calendar CTA */}
+            <div style={{ marginTop: "12px", padding: "16px 20px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #bbf7d0", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+              <div>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: "14px", color: "#065f46" }}>Need the day-by-day view?</p>
+                <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#666666" }}>Interactive calendar with tasks, scripts, and progress tracking.</p>
+              </div>
+              <button onClick={() => setSupportMode("calendar")} style={{ padding: "10px 20px", background: "#00A651", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "13px", cursor: "pointer", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", whiteSpace: "nowrap" }}>
+                📅 Client Journey Calendar
+              </button>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  // ========================================
+  // CALENDAR VIEW
+  // ========================================
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
@@ -592,6 +797,9 @@ export default function ClientSupportCalendarPage() {
       {/* PAGE HEADER */}
       <div style={{ background: "#2D2D2D", padding: "0" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 20px 16px" }}>
+          <button onClick={() => setSupportMode(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#999999", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: 600, marginBottom: "12px" }}>
+            ← Back to Options
+          </button>
           <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 900, color: "#fff", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", letterSpacing: "-0.5px" }}>
             CLIENT SUPPORT CALENDAR
           </h1>
@@ -653,6 +861,17 @@ export default function ClientSupportCalendarPage() {
               : "* Client Support Beyond the First 30 Days! Weekly rhythm: Monday Renpho + Color Day → Tuesday/Wednesday Office Hours → Mid-Week Touchpoint"
             }
           </p>
+        </div>
+
+        {/* Switch to Resources CTA */}
+        <div style={{ marginTop: "12px", padding: "16px 20px", background: "#eef2ff", borderRadius: "10px", border: "1px solid #c7d2fe", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+          <div>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: "14px", color: "#3730a3" }}>Prefer a simple resource list?</p>
+            <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#666666" }}>All client support docs and videos in one place.</p>
+          </div>
+          <button onClick={() => setSupportMode("resources")} style={{ padding: "10px 20px", background: "#6366f1", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "13px", cursor: "pointer", fontFamily: "var(--font-montserrat, 'Montserrat', sans-serif)", whiteSpace: "nowrap" }}>
+            📚 Master Resource List
+          </button>
         </div>
       </div>
 
