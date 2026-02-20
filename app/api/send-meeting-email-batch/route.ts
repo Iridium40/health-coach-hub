@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
       )
 
       return {
-        from: "Coaching Amplifier <onboarding@coachingamplifier.com>",
+        from: "Coaching Amplifier <noreply@coachingamplifier.com>",
         to: [recipient.to],
         subject,
         html,

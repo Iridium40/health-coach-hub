@@ -118,7 +118,7 @@ The Coaching Amplifier Team
 
     // Send email using Resend (disable click tracking so invite links go directly to our app)
     const { data, error } = await resend.emails.send({
-      from: "Coaching Amplifier <onboarding@coachingamplifier.com>",
+      from: "Coaching Amplifier <noreply@coachingamplifier.com>",
       to: [to],
       subject: subject,
       html: htmlContent,

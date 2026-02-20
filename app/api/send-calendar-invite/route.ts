@@ -207,7 +207,7 @@ ${fromName || "Your Coach"}
 
     // Send email with ICS attachment using Resend
     const { data, error } = await resend.emails.send({
-      from: `Coaching Amplifier <onboarding@coachingamplifier.com>`,
+      from: `Coaching Amplifier <noreply@coachingamplifier.com>`,
       replyTo: fromEmail,
       to: [to],
       subject: subject,

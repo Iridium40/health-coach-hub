@@ -128,7 +128,7 @@ The Coaching Amplifier Team
 
     // Send email using Resend
     const { data, error } = await resend.emails.send({
-      from: "Coaching Amplifier <onboarding@coachingamplifier.com>", // Update this with your verified domain
+      from: "Coaching Amplifier <noreply@coachingamplifier.com>", // Update this with your verified domain
       to: [to],
       subject: subject,
       html: htmlContent,
