@@ -92,12 +92,14 @@ export function SignupFormOpen({ onSuccess }: SignupFormOpenProps) {
 
       // Ensure access code is saved on the profile (fallback if DB trigger is outdated)
       if (data?.user?.id) {
-        await supabase
-          .from("profiles")
-          .update({ signup_access_code: codeData.code })
-          .eq("id", data.user.id)
-          .then(() => {})
-          .catch(() => {})
+        try {
+          await supabase
+            .from("profiles")
+            .update({ signup_access_code: codeData.code })
+            .eq("id", data.user.id)
+        } catch {
+          // Silent fallback — DB trigger or first sign-in sync will handle it
+        }
       }
 
       setSuccess(true)
