@@ -168,12 +168,12 @@ export function TodaysFocus({
     [clients, isMilestoneDismissed]
   )
 
-  // Overdue follow-ups (prospects with next_action in the past)
+  // Overdue follow-ups (prospects with next_action due today or earlier)
   const overdueProspects = useMemo(() =>
     prospects
       .filter(p => {
         if (!p.next_action || ["converted", "coach", "not_interested", "not_closed"].includes(p.status)) return false
-        return new Date(p.next_action) < new Date(today)
+        return new Date(p.next_action) <= new Date(today)
       })
       .slice(0, 2),
     [prospects, today]
@@ -533,7 +533,9 @@ export function TodaysFocus({
                   </div>
                   <div>
                     <div className="font-medium text-sm text-gray-900">{prospect.label}</div>
-                    <div className="text-xs text-red-600">Overdue follow-up</div>
+                    <div className="text-xs text-red-600">
+                      {prospect.next_action === today ? "Follow-up due today" : "Overdue follow-up"}
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
