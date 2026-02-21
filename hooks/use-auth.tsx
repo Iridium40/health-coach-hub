@@ -61,13 +61,25 @@ export function useAuth() {
         setUser(session?.user ?? null)
         // Update last_sign_in_at in profiles when user signs in
         if (session?.user && event === "SIGNED_IN") {
+          const profileUpdate: Record<string, any> = {
+            last_sign_in_at: new Date().toISOString(),
+          }
+
+          const meta = session.user.user_metadata
+          if (meta?.signup_access_code) {
+            profileUpdate.signup_access_code = meta.signup_access_code
+          }
+          if (meta?.coach_name && !meta?.coach_name_synced) {
+            profileUpdate.coach_name = meta.coach_name
+          }
+
           supabase
             .from("profiles")
-            .update({ last_sign_in_at: new Date().toISOString() })
+            .update(profileUpdate)
             .eq("id", session.user.id)
             .then(({ error }) => {
               if (error) {
-                console.error("Failed to update last_sign_in_at:", error)
+                console.error("Failed to update profile on sign-in:", error)
               }
             })
         }

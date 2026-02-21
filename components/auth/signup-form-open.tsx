@@ -90,6 +90,16 @@ export function SignupFormOpen({ onSuccess }: SignupFormOpenProps) {
         .update({ usage_count: (codeData.usage_count || 0) + 1 })
         .eq("id", codeData.id)
 
+      // Ensure access code is saved on the profile (fallback if DB trigger is outdated)
+      if (data?.user?.id) {
+        await supabase
+          .from("profiles")
+          .update({ signup_access_code: codeData.code })
+          .eq("id", data.user.id)
+          .then(() => {})
+          .catch(() => {})
+      }
+
       setSuccess(true)
     } catch (err: any) {
       setFormError(err.message || "An unexpected error occurred.")

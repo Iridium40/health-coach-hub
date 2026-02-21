@@ -1,484 +1,405 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 
-interface ClientJourneyGuideProps {
-  className?: string
+interface JourneyStage {
+  id: string
+  days: string
+  label: string
+  emoji: string
+  color: string
+  action: string
+  actionType: "text" | "call"
+  description: string
+  tips: string[]
+  isMilestone?: boolean
 }
 
-export function ClientJourneyGuide({ className }: ClientJourneyGuideProps) {
+const JOURNEY_STAGES: JourneyStage[] = [
+  {
+    id: "critical", days: "1-3", label: "Critical Phase", emoji: "🔴", color: "#ef4444",
+    actionType: "text", action: "Daily encouragement texts",
+    description: "The hardest days! Your client needs extra support as their body adjusts. Check in daily.",
+    tips: ["Text every single day during this phase", "Remind them this is temporary — it gets easier", "Ask about energy, hunger, and how they're feeling", "Celebrate every small win"],
+  },
+  {
+    id: "week1", days: "4-6", label: "Week 1", emoji: "🟠", color: "#f97316",
+    actionType: "text", action: "Check-in texts",
+    description: "They're building momentum! Keep the encouragement going as they establish their routine.",
+    tips: ["Ask about their favorite Fuelings", "Check if they have Lean & Green questions", "Remind them Day 7 milestone is coming!"],
+  },
+  {
+    id: "week1_complete", days: "7", label: "Week 1 Complete!", emoji: "🎉", color: "#22c55e",
+    actionType: "call", action: "Schedule celebration call", isMilestone: true,
+    description: "FIRST MILESTONE! They made it through the hardest week. This deserves recognition!",
+    tips: ["Schedule a call to celebrate this win", "Ask what was harder/easier than expected", "Discuss any NSVs (non-scale victories)", "Set them up for a strong Week 2"],
+  },
+  {
+    id: "week2", days: "8-13", label: "Week 2", emoji: "🔵", color: "#3b82f6",
+    actionType: "text", action: "Routine-building texts",
+    description: "They're in a groove now. Focus on reinforcing their new habits and routines.",
+    tips: ["Ask about changes they're noticing", "Encourage them to try new recipes", "Build excitement for the 2-week mark"],
+  },
+  {
+    id: "two_weeks", days: "14", label: "2 Weeks!", emoji: "⭐", color: "#22c55e",
+    actionType: "call", action: "Schedule celebration call", isMilestone: true,
+    description: "TWO WEEKS of consistency! They're proving to themselves they can do this.",
+    tips: ["Celebrate their commitment", "Review their progress and wins", "Discuss any adjustments needed", "Preview the big Day 21 milestone!"],
+  },
+  {
+    id: "week3", days: "15-20", label: "Week 3", emoji: "🟣", color: "#8b5cf6",
+    actionType: "text", action: '"Almost there" texts',
+    description: "The home stretch to habit formation! Build anticipation for the 21-day milestone.",
+    tips: ['Remind them: "21 days = habit formed!"', "Ask about NSVs and mindset shifts", "Get them excited for Day 21"],
+  },
+  {
+    id: "twenty_one", days: "21", label: "21 Days — Habit Formed!", emoji: "💎", color: "#10b981",
+    actionType: "call", action: "Schedule celebration call", isMilestone: true,
+    description: "MAJOR MILESTONE! Science says 21 days forms a habit. Their brain is literally rewired!",
+    tips: ["BIG celebration energy for this call!", "Explain the science of habit formation", "Compare how they feel now vs Day 1", "Document all their wins and NSVs", "Consider a 3-way call with your upline"],
+  },
+  {
+    id: "week4", days: "22-29", label: "Week 4", emoji: "🩵", color: "#06b6d4",
+    actionType: "text", action: "Momentum texts",
+    description: "The habit is formed — now they're strengthening it. One month is right around the corner!",
+    tips: ["Build excitement for ONE MONTH", "Ask them to reflect on their journey", '"What would Day 1 you think about this?"'],
+  },
+  {
+    id: "one_month", days: "30", label: "ONE MONTH!", emoji: "👑", color: "#f59e0b",
+    actionType: "call", action: "Schedule celebration call", isMilestone: true,
+    description: "THE BIG ONE! 30 days of commitment. This is a lifestyle now, not a diet.",
+    tips: ["Make this celebration SPECIAL", "Full transformation review", "Compare Day 1 to Day 30 in every way", "Discuss their \"why\" and future goals", "Consider: Are they interested in coaching?", "3-way call with upline for recognition"],
+  },
+  {
+    id: "ongoing", days: "31+", label: "Ongoing Journey", emoji: "🟢", color: "#22c55e",
+    actionType: "text", action: "Regular check-ins",
+    description: "They've built the foundation. Continue supporting their journey with consistent touchpoints.",
+    tips: ["Check in at least every 10 days", "Celebrate 60, 90, 120 day milestones", "Watch for coaching interest", "Support their transition phases"],
+  },
+]
+
+const SPECIAL_STATUSES = {
+  coachProspect: {
+    label: "Coach Prospect", emoji: "⭐",
+    description: "This client shows interest in becoming a coach! Nurture their curiosity about the business opportunity.",
+    tips: ["Share your coaching journey", "Invite them to team calls", "Connect them with your upline", "Help them see the possibilities"],
+  },
+  paused: {
+    label: "Paused", emoji: "⏸️",
+    description: "Life happens. When a client needs to pause, keep the relationship warm for when they're ready to return.",
+    tips: ["No judgment — circumstances change", "Check in occasionally to show you care", "Leave the door open for their return", "They may come back stronger than ever"],
+  },
+}
+
+function ClientJourneyTimeline() {
   const [activeStage, setActiveStage] = useState<string | null>(null)
-
-  const stages = [
-    {
-      id: 'critical',
-      days: '1-3',
-      label: 'Critical Phase',
-      emoji: '🔴',
-      color: 'red',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-300',
-      textColor: 'text-red-600',
-      activeColor: 'bg-red-500',
-      actionType: 'text',
-      action: 'Daily encouragement texts',
-      description: 'The hardest days! Your client needs extra support as their body adjusts. Check in daily.',
-      tips: [
-        'Text every single day during this phase',
-        'Remind them this is temporary — it gets easier',
-        'Ask about energy, hunger, and how they\'re feeling',
-        'Celebrate every small win',
-      ],
-    },
-    {
-      id: 'week1',
-      days: '4-6',
-      label: 'Week 1',
-      emoji: '🟠',
-      color: 'orange',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-300',
-      textColor: 'text-orange-600',
-      activeColor: 'bg-orange-500',
-      actionType: 'text',
-      action: 'Check-in texts',
-      description: 'They\'re building momentum! Keep the encouragement going as they establish their routine.',
-      tips: [
-        'Ask about their favorite Fuelings',
-        'Check if they have Lean & Green questions',
-        'Remind them Day 7 milestone is coming!',
-      ],
-    },
-    {
-      id: 'week1_complete',
-      days: '7',
-      label: 'Week 1 Complete!',
-      emoji: '🎉',
-      color: 'green',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-300',
-      textColor: 'text-green-700',
-      activeColor: 'bg-green-500',
-      actionType: 'call',
-      isMilestone: true,
-      action: 'Schedule celebration call',
-      description: 'FIRST MILESTONE! They made it through the hardest week. This deserves recognition!',
-      tips: [
-        'Schedule a call to celebrate this win',
-        'Ask what was harder/easier than expected',
-        'Discuss any NSVs (non-scale victories)',
-        'Set them up for a strong Week 2',
-      ],
-    },
-    {
-      id: 'week2',
-      days: '8-13',
-      label: 'Week 2',
-      emoji: '🔵',
-      color: 'blue',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-300',
-      textColor: 'text-blue-600',
-      activeColor: 'bg-blue-500',
-      actionType: 'text',
-      action: 'Routine-building texts',
-      description: 'They\'re in a groove now. Focus on reinforcing their new habits and routines.',
-      tips: [
-        'Ask about changes they\'re noticing',
-        'Encourage them to try new recipes',
-        'Build excitement for the 2-week mark',
-      ],
-    },
-    {
-      id: 'two_weeks',
-      days: '14',
-      label: '2 Weeks!',
-      emoji: '⭐',
-      color: 'green',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-300',
-      textColor: 'text-green-700',
-      activeColor: 'bg-green-500',
-      actionType: 'call',
-      isMilestone: true,
-      action: 'Schedule celebration call',
-      description: 'TWO WEEKS of consistency! They\'re proving to themselves they can do this.',
-      tips: [
-        'Celebrate their commitment',
-        'Review their progress and wins',
-        'Discuss any adjustments needed',
-        'Preview the big Day 21 milestone!',
-      ],
-    },
-    {
-      id: 'week3',
-      days: '15-20',
-      label: 'Week 3',
-      emoji: '🟣',
-      color: 'purple',
-      bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-300',
-      textColor: 'text-purple-600',
-      activeColor: 'bg-purple-500',
-      actionType: 'text',
-      action: '"Almost there" texts',
-      description: 'The home stretch to habit formation! Build anticipation for the 21-day milestone.',
-      tips: [
-        'Remind them: "21 days = habit formed!"',
-        'Ask about NSVs and mindset shifts',
-        'Get them excited for Day 21',
-      ],
-    },
-    {
-      id: 'twenty_one',
-      days: '21',
-      label: '21 Days — Habit Formed!',
-      emoji: '💎',
-      color: 'green',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-400',
-      textColor: 'text-emerald-700',
-      activeColor: 'bg-emerald-500',
-      actionType: 'call',
-      isMilestone: true,
-      action: 'Schedule celebration call',
-      description: 'MAJOR MILESTONE! Science says 21 days forms a habit. Their brain is literally rewired!',
-      tips: [
-        'BIG celebration energy for this call!',
-        'Explain the science of habit formation',
-        'Compare how they feel now vs Day 1',
-        'Document all their wins and NSVs',
-        'Consider a 3-way call with your upline',
-      ],
-    },
-    {
-      id: 'week4',
-      days: '22-29',
-      label: 'Week 4',
-      emoji: '🩵',
-      color: 'cyan',
-      bgColor: 'bg-cyan-50',
-      borderColor: 'border-cyan-300',
-      textColor: 'text-cyan-600',
-      activeColor: 'bg-cyan-500',
-      actionType: 'text',
-      action: 'Momentum texts',
-      description: 'The habit is formed — now they\'re strengthening it. One month is right around the corner!',
-      tips: [
-        'Build excitement for ONE MONTH',
-        'Ask them to reflect on their journey',
-        '"What would Day 1 you think about this?"',
-      ],
-    },
-    {
-      id: 'one_month',
-      days: '30',
-      label: 'ONE MONTH!',
-      emoji: '👑',
-      color: 'gold',
-      bgColor: 'bg-amber-50',
-      borderColor: 'border-amber-400',
-      textColor: 'text-amber-700',
-      activeColor: 'bg-amber-500',
-      actionType: 'call',
-      isMilestone: true,
-      action: 'Schedule celebration call',
-      description: 'THE BIG ONE! 30 days of commitment. This is a lifestyle now, not a diet.',
-      tips: [
-        'Make this celebration SPECIAL',
-        'Full transformation review',
-        'Compare Day 1 to Day 30 in every way',
-        'Discuss their "why" and future goals',
-        'Consider: Are they interested in coaching?',
-        '3-way call with upline for recognition',
-      ],
-    },
-    {
-      id: 'ongoing',
-      days: '31+',
-      label: 'Ongoing Journey',
-      emoji: '🟢',
-      color: 'green',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-300',
-      textColor: 'text-green-600',
-      activeColor: 'bg-green-500',
-      actionType: 'text',
-      action: 'Regular check-ins',
-      description: 'They\'ve built the foundation. Continue supporting their journey with consistent touchpoints.',
-      tips: [
-        'Check in at least every 10 days',
-        'Celebrate 60, 90, 120 day milestones',
-        'Watch for coaching interest',
-        'Support their transition phases',
-      ],
-    },
-  ]
-
-  const offRamp = {
-    id: 'paused',
-    label: 'Paused',
-    emoji: '⏸️',
-    description: 'Life happens. When a client needs to pause, keep the relationship warm for when they\'re ready to return.',
-    tips: [
-      'No judgment — circumstances change',
-      'Check in occasionally to show you care',
-      'Leave the door open for their return',
-      'They may come back stronger than ever',
-    ],
-  }
-
-  const coachProspect = {
-    id: 'coach_prospect',
-    label: 'Coach Prospect',
-    emoji: '⭐',
-    description: 'This client shows interest in becoming a coach! Nurture their curiosity about the business opportunity.',
-    tips: [
-      'Share your coaching journey',
-      'Invite them to team calls',
-      'Connect them with your upline',
-      'Help them see the possibilities',
-    ],
-  }
+  const toggle = useCallback((id: string) => setActiveStage((prev) => (prev === id ? null : id)), [])
 
   return (
-    <div className={`max-h-[70vh] overflow-y-auto ${className || ''}`}>
-      <div className="max-w-2xl mx-auto p-4">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <p className="text-gray-600">
-            From Day 1 to lasting transformation — here's the path
-          </p>
-        </div>
+    <div style={{ marginBottom: "20px" }}>
+      {/* Legend */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "14px", padding: "10px 14px", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0", marginBottom: "12px", fontSize: "12px" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: "5px", color: "#64748b" }}><span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3b82f6", display: "inline-block" }} /> 📱 Text Check-in</span>
+        <span style={{ display: "flex", alignItems: "center", gap: "5px", color: "#64748b" }}><span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e", display: "inline-block" }} /> 📅 Celebration Call</span>
+        <span style={{ fontSize: "10px", fontWeight: 700, color: "#92400e", background: "#fef3c7", padding: "2px 8px", borderRadius: "4px" }}>MILESTONE</span>
+      </div>
 
-        {/* Legend */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-blue-500" />
-              <span className="text-gray-600">📱 Text Check-in</span>
+      {JOURNEY_STAGES.map((stage, i) => (
+        <div key={stage.id}>
+          <button
+            onClick={() => toggle(stage.id)}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", background: activeStage === stage.id ? "#f8fafc" : "transparent", border: "none", borderBottom: "1px solid #f1f5f9", cursor: "pointer", textAlign: "left", borderRadius: activeStage === stage.id ? "10px" : 0, transition: "background 0.15s" }}
+          >
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: stage.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0, boxShadow: stage.isMilestone ? "0 0 0 2px #fff, 0 0 0 4px #86efac" : "0 1px 3px rgba(0,0,0,0.12)" }}>
+              {stage.emoji}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="text-gray-600">📅 Celebration Call</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "10px", fontFamily: "monospace", background: "#f1f5f9", color: "#64748b", padding: "1px 6px", borderRadius: "4px" }}>Day {stage.days}</span>
+                <span style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700, fontSize: "13px", color: "#1e293b" }}>{stage.label}</span>
+                {stage.isMilestone && <span style={{ fontSize: "9px", fontWeight: 700, color: "#92400e", background: "#fef3c7", padding: "1px 6px", borderRadius: "3px" }}>MILESTONE</span>}
+              </div>
+              <div style={{ fontSize: "11px", color: stage.actionType === "call" ? "#7c3aed" : "#3b82f6", fontWeight: 600 }}>
+                {stage.actionType === "call" ? "📅" : "📱"} {stage.action}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">MILESTONE</span>
-            </div>
-          </div>
-        </div>
+            <span style={{ color: "#94a3b8", fontSize: "14px", transition: "transform 0.2s", transform: activeStage === stage.id ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+          </button>
 
-        {/* Timeline */}
-        <div className="relative">
-          {stages.map((stage, index) => (
-            <div key={stage.id} className="relative">
-              {/* Connector Line */}
-              {index < stages.length - 1 && (
-                <div className={`absolute left-6 top-14 w-0.5 h-20 z-0 ${
-                  stage.isMilestone ? 'bg-gradient-to-b from-green-300 to-gray-300' : 'bg-gray-300'
-                }`} />
+          {activeStage === stage.id && (
+            <div style={{ padding: "8px 12px 14px 54px", fontSize: "13px", color: "#475569", lineHeight: 1.5 }}>
+              <p style={{ margin: "0 0 8px" }}>{stage.description}</p>
+              {stage.tips.map((tip, ti) => (
+                <div key={ti} style={{ display: "flex", alignItems: "flex-start", gap: "6px", marginBottom: "3px" }}>
+                  <span style={{ color: "#22c55e", marginTop: "2px", fontSize: "12px" }}>✓</span>
+                  <span style={{ fontSize: "12px", color: "#374151" }}>{tip}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Special statuses after One Month */}
+          {stage.id === "one_month" && (
+            <div style={{ marginLeft: "42px", marginBottom: "4px", marginTop: "4px" }}>
+              <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px", paddingLeft: "4px" }}>Special Statuses</div>
+
+              <button
+                onClick={() => toggle("coach_prospect")}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", background: activeStage === "coach_prospect" ? "#fffbeb" : "transparent", border: "1px solid #fde68a", borderRadius: "8px", cursor: "pointer", textAlign: "left", marginBottom: "6px" }}
+              >
+                <span style={{ fontSize: "14px" }}>{SPECIAL_STATUSES.coachProspect.emoji}</span>
+                <span style={{ fontSize: "12px", fontWeight: 600, color: "#92400e", flex: 1 }}>{SPECIAL_STATUSES.coachProspect.label}</span>
+              </button>
+              {activeStage === "coach_prospect" && (
+                <div style={{ padding: "6px 10px 12px 32px", fontSize: "12px", color: "#475569", lineHeight: 1.5, marginBottom: "6px" }}>
+                  <p style={{ margin: "0 0 6px" }}>{SPECIAL_STATUSES.coachProspect.description}</p>
+                  {SPECIAL_STATUSES.coachProspect.tips.map((tip, ti) => (
+                    <div key={ti} style={{ display: "flex", alignItems: "flex-start", gap: "6px", marginBottom: "2px" }}>
+                      <span style={{ color: "#f59e0b", marginTop: "2px" }}>★</span>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>{tip}</span>
+                    </div>
+                  ))}
+                </div>
               )}
 
-              {/* Stage Card */}
-              <div
-                className={`relative z-10 flex gap-4 mb-4 cursor-pointer transition-all duration-200 ${
-                  activeStage === stage.id ? 'scale-[1.02]' : ''
-                }`}
-                onClick={() => setActiveStage(activeStage === stage.id ? null : stage.id)}
+              <button
+                onClick={() => toggle("paused")}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", background: activeStage === "paused" ? "#f8fafc" : "transparent", border: "1px dashed #d1d5db", borderRadius: "8px", cursor: "pointer", textAlign: "left" }}
               >
-                {/* Circle Indicator */}
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center text-lg shrink-0 border-2 transition-all duration-200 ${
-                    activeStage === stage.id
-                      ? `${stage.activeColor} text-white border-transparent shadow-lg`
-                      : `${stage.bgColor} ${stage.borderColor}`
-                  } ${stage.isMilestone ? 'ring-2 ring-offset-2 ring-green-300' : ''}`}
-                >
-                  {stage.emoji}
+                <span style={{ fontSize: "14px" }}>{SPECIAL_STATUSES.paused.emoji}</span>
+                <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748b", flex: 1 }}>{SPECIAL_STATUSES.paused.label}</span>
+                <span style={{ fontSize: "10px", color: "#94a3b8" }}>(can return anytime)</span>
+              </button>
+              {activeStage === "paused" && (
+                <div style={{ padding: "6px 10px 12px 32px", fontSize: "12px", color: "#475569", lineHeight: 1.5 }}>
+                  <p style={{ margin: "0 0 6px" }}>{SPECIAL_STATUSES.paused.description}</p>
+                  {SPECIAL_STATUSES.paused.tips.map((tip, ti) => (
+                    <div key={ti} style={{ display: "flex", alignItems: "flex-start", gap: "6px", marginBottom: "2px" }}>
+                      <span style={{ color: "#94a3b8", marginTop: "2px" }}>•</span>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>{tip}</span>
+                    </div>
+                  ))}
                 </div>
+              )}
+            </div>
+          )}
 
-                {/* Content */}
-                <div
-                  className={`flex-1 rounded-xl p-4 border-2 transition-all duration-200 ${
-                    activeStage === stage.id
-                      ? `${stage.bgColor} ${stage.borderColor} shadow-md`
-                      : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
-                        Day {stage.days}
-                      </span>
-                      <h3 className={`font-bold ${activeStage === stage.id ? stage.textColor : 'text-gray-800'}`}>
-                        {stage.label}
-                      </h3>
-                      {stage.isMilestone && (
-                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">
-                          MILESTONE
-                        </span>
-                      )}
-                    </div>
-                    <svg
-                      className={`w-5 h-5 text-gray-400 transition-transform duration-200 shrink-0 ${
-                        activeStage === stage.id ? 'rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+          {/* Connector dot */}
+          {i < JOURNEY_STAGES.length - 1 && stage.id !== "one_month" && (
+            <div style={{ display: "flex", justifyContent: "flex-start", paddingLeft: "26px" }}>
+              <div style={{ width: "2px", height: "8px", background: stage.isMilestone ? "linear-gradient(#86efac, #e2e8f0)" : "#e2e8f0" }} />
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Needs Attention Triggers */}
+      <div style={{ padding: "14px 16px", marginTop: "14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px" }}>
+        <h4 style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: "12px", color: "#b91c1c", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>🚨 &quot;Needs Attention&quot; Triggers</h4>
+        {[
+          { num: "1", text: "Scheduled check-in is due — Meeting date is today or past" },
+          { num: "2", text: "10+ days since last check-in — Time to reach out!" },
+          { num: "3", text: "Never checked in — New client needs first touchpoint" },
+        ].map((t) => (
+          <div key={t.num} style={{ display: "flex", alignItems: "flex-start", gap: "6px", marginBottom: "4px" }}>
+            <span style={{ color: "#ef4444", fontSize: "12px", fontWeight: 700 }}>{t.num}.</span>
+            <span style={{ fontSize: "12px", color: "#374151" }}>{t.text}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Milestone Summary */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginTop: "14px" }}>
+        {[
+          { emoji: "🎉", day: "Day 7", sub: "Week 1" },
+          { emoji: "⭐", day: "Day 14", sub: "2 Weeks" },
+          { emoji: "💎", day: "Day 21", sub: "Habit!" },
+          { emoji: "👑", day: "Day 30", sub: "1 Month" },
+        ].map((m) => (
+          <div key={m.day} style={{ textAlign: "center", padding: "10px 6px", background: "#f0fdf4", borderRadius: "10px", border: "1px solid #d1fae5" }}>
+            <div style={{ fontSize: "20px", marginBottom: "2px" }}>{m.emoji}</div>
+            <div style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: "13px", color: "#065f46" }}>{m.day}</div>
+            <div style={{ fontSize: "10px", color: "#94a3b8" }}>{m.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <p style={{ textAlign: "center", fontSize: "11px", color: "#94a3b8", marginTop: "8px" }}>
+        👆 Tap any stage to see coaching tips
+      </p>
+    </div>
+  )
+}
+
+function CollapsibleSection({ title, emoji, defaultOpen = false, children }: { title: string; emoji?: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
+  return (
+    <div style={{ marginBottom: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "14px 16px", background: isOpen ? "#f8fafc" : "#fff", border: "none", cursor: "pointer", textAlign: "left", transition: "background 0.15s" }}
+      >
+        {emoji && <span style={{ fontSize: "18px", flexShrink: 0 }}>{emoji}</span>}
+        <span style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: "12px", color: "#374151", textTransform: "uppercase", letterSpacing: "1.5px", flex: 1 }}>{title}</span>
+        <span style={{ color: "#94a3b8", fontSize: "14px", transition: "transform 0.2s", transform: isOpen ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+      </button>
+      {isOpen && (
+        <div style={{ padding: "4px 16px 16px" }}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function ClientJourneyGuide({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden"
+    return () => { document.body.style.overflow = "" }
+  }, [])
+
+  return (
+    <>
+      <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(15,23,42,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", overflowY: "auto" }}>
+        <div style={{ maxWidth: "660px", width: "100%", background: "linear-gradient(170deg, #fff 0%, #f8fafb 100%)", borderRadius: "24px", overflow: "hidden", boxShadow: "0 8px 40px rgba(0,0,0,0.2)", animation: "clgSlideUp 0.3s ease", margin: "auto" }}>
+
+          {/* HEADER */}
+          <div style={{ background: "linear-gradient(135deg, #008C45 0%, #00A651 50%, #2dbf6e 100%)", padding: "36px 36px 32px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: "-80px", right: "-50px", width: "240px", height: "240px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)" }} />
+            <div style={{ position: "absolute", bottom: "-60px", left: "-30px", width: "180px", height: "180px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.08), transparent 70%)" }} />
+            <button onClick={onClose} style={{ position: "absolute", top: "14px", right: "14px", width: "32px", height: "32px", borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: "16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>✕</button>
+            <span style={{ fontSize: "44px", display: "inline-block", marginBottom: "10px", position: "relative", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))" }}>👥</span>
+            <h1 style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontWeight: 900, fontSize: "24px", color: "#fff", letterSpacing: "-0.5px", position: "relative", textShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
+              Client List
+            </h1>
+            <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "14px", marginTop: "8px", position: "relative", lineHeight: 1.5 }}>
+              Daily touchpoints, milestones, and the full coaching journey — everything you need to support your clients through their first 30 days and beyond.
+            </p>
+          </div>
+
+          {/* SCROLLABLE BODY */}
+          <div style={{ maxHeight: "calc(80vh - 200px)", overflowY: "auto", padding: "28px 32px 14px" }}>
+
+            <CollapsibleSection title="Getting Started" emoji="🎯">
+              <div style={{ padding: "16px 18px", background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)", border: "1px solid #d1fae5", borderRadius: "10px", marginBottom: "14px" }}>
+                <h4 style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: "12px", color: "#065f46", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>🎯 Step by Step</h4>
+                {[
+                  <>Go to <strong style={{ color: "#065f46" }}>My Business → Client List</strong></>,
+                  <>Click <strong style={{ color: "#065f46" }}>+ Add Client</strong> in the top-right corner</>,
+                  <>Enter a <strong style={{ color: "#065f46" }}>Label / Nickname</strong> you&apos;ll recognize (e.g., Jennifer, Mike)</>,
+                  <>Set their <strong style={{ color: "#065f46" }}>Start Date</strong> — we&apos;ll automatically calculate their program day and show milestone reminders</>,
+                  <>Click <strong style={{ color: "#065f46" }}>Add Client</strong> — their card appears with program day, phase, daily actions, and the full Client Journey!</>,
+                ].map((text, i) => (
+                  <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", alignItems: "flex-start", borderBottom: i < 4 ? "1px solid rgba(0,166,81,0.1)" : "none" }}>
+                    <div style={{ width: "24px", height: "24px", borderRadius: "6px", background: "#00A651", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: "11px", flexShrink: 0, boxShadow: "0 1px 4px rgba(0,166,81,0.2)" }}>{i + 1}</div>
+                    <div style={{ fontSize: "13px", color: "#374151", lineHeight: 1.45 }}>{text}</div>
                   </div>
-                  
-                  <p className={`text-sm font-medium flex items-center gap-1 ${
-                    stage.actionType === 'call' ? 'text-purple-600' : 'text-blue-600'
-                  }`}>
-                    {stage.actionType === 'call' ? '📅' : '📱'} {stage.action}
-                  </p>
+                ))}
+              </div>
 
-                  {/* Expanded Content */}
-                  {activeStage === stage.id && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-gray-600 text-sm mb-3">{stage.description}</p>
-                      <div className="space-y-1.5">
-                        {stage.tips.map((tip, tipIdx) => (
-                          <div key={tipIdx} className="flex items-start gap-2 text-sm">
-                            <span className="text-green-500 mt-0.5">✓</span>
-                            <span className="text-gray-700">{tip}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+              <div style={{ padding: "14px 16px", borderRadius: "10px", display: "flex", alignItems: "flex-start", gap: "10px", background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                <span style={{ fontSize: "18px", flexShrink: 0, marginTop: "1px" }}>🎯</span>
+                <p style={{ fontSize: "13px", color: "#475569", lineHeight: 1.5, margin: 0 }}>
+                  <strong style={{ color: "#1e293b" }}>Why it matters:</strong> The first 30 days are make-or-break for client success. The Client List gives you the exact script, video, or call to make on every single day — so you never wonder &quot;what should I send today?&quot; Your clients get consistent, professional support and you can manage multiple clients without anything slipping.
+                </p>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Privacy & Labels" emoji="🔒">
+              <div style={{ padding: "16px 18px", background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)", border: "1px solid #bbf7d0", borderRadius: "12px", position: "relative", fontSize: "14px", color: "#475569", lineHeight: 1.65 }}>
+                <span style={{ position: "absolute", top: "-10px", left: "14px", fontSize: "16px", background: "#fff", padding: "0 4px", borderRadius: "6px" }}>🔒</span>
+                Like the 100&apos;s List, your Client List is <strong style={{ color: "#00A651" }}>privacy-first</strong> — only nicknames and labels, no real contact info. All client data stays in OPTAVIA&apos;s official coach portal.
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Client Journey Stages" emoji="📊">
+              <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "14px 16px", background: "linear-gradient(135deg, #f8fafc, #f1f5f9)", borderRadius: "12px", border: "1px solid #e2e8f0", overflowX: "auto" }}>
+                {[
+                  { label: "⭐ Client", bg: "#4caf50" },
+                  { label: "🏆 Goal Achieved", bg: "#f59e0b" },
+                  { label: "💎 Future Coach", bg: "#8b5cf6" },
+                  { label: "🚀 Coach Launched", bg: "#ec4899" },
+                ].map((s, i, arr) => (
+                  <span key={s.label} style={{ display: "contents" }}>
+                    <div style={{ padding: "6px 10px", borderRadius: "7px", fontSize: "10px", fontWeight: 700, fontFamily: "'Montserrat', sans-serif", whiteSpace: "nowrap", color: "#fff", background: s.bg, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>{s.label}</div>
+                    {i < arr.length - 1 && <span style={{ color: "#cbd5e1", fontSize: "13px", fontWeight: 700, flexShrink: 0 }}>→</span>}
+                  </span>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="The First 30 Days — Day by Day" emoji="📅">
+              <ClientJourneyTimeline />
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Features" emoji="⚡">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                {[
+                  { icon: "📆", text: "Auto-calculated program day and phase from their start date" },
+                  { icon: "💬", text: "Text button — opens ready-to-copy scripts for their exact program day" },
+                  { icon: "📞", text: "Schedule check-ins, Zoom meetings, and phone calls with calendar invites" },
+                  { icon: "✅", text: "Check In to log contact and clear attention alerts" },
+                  { icon: "⚠️", text: "Needs Attention alerts when a client hasn't been contacted" },
+                  { icon: "⭐", text: "Coach Prospect flag — mark clients who show potential as future coaches" },
+                  { icon: "🎉", text: "Milestone celebrations at Days 7, 14, 21, and 30" },
+                  { icon: "⏰", text: "Set reminders so you never forget a follow-up" },
+                  { icon: "✏️", text: "Edit clients — update details as their journey progresses" },
+                  { icon: "📝", text: "Notes on each card — add context about their progress" },
+                ].map((f) => (
+                  <div key={f.text} style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "10px 12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #f1f5f9" }}>
+                    <span style={{ fontSize: "16px", flexShrink: 0, marginTop: "1px" }}>{f.icon}</span>
+                    <span style={{ fontSize: "12px", color: "#475569", fontWeight: 600, lineHeight: 1.4 }}>{f.text}</span>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Key Tools" emoji="🔧">
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "14px 16px", marginBottom: "14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px" }}>
+                <span style={{ fontSize: "22px", flexShrink: 0 }}>💬</span>
+                <div>
+                  <h4 style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: "13px", color: "#1e293b", marginBottom: "3px" }}>Text Templates & Resources</h4>
+                  <p style={{ fontSize: "12px", color: "#475569", lineHeight: 1.5, margin: 0 }}>Tap <strong style={{ color: "#00A651" }}>Text</strong> on any client card and you&apos;ll see two tabs. <strong style={{ color: "#00A651" }}>Text Templates</strong> gives you the exact message to send for that program day — just copy, paste into your messaging app, and personalize before sending. <strong style={{ color: "#00A651" }}>Resources</strong> shows coaching actions for the current phase, plus day-specific videos and links you can watch or share with your client.</p>
                 </div>
               </div>
 
-              {/* Off-ramps after One Month */}
-              {stage.id === 'one_month' && (
-                <div className="relative z-10 ml-16 mb-4 space-y-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-0.5 bg-gray-300" />
-                    <span className="text-xs text-gray-400">Special Statuses</span>
-                  </div>
-                  
-                  {/* Coach Prospect */}
-                  <div
-                    className={`rounded-xl p-3 border-2 cursor-pointer transition-all duration-200 ${
-                      activeStage === 'coach_prospect'
-                        ? 'bg-amber-50 border-amber-300'
-                        : 'bg-white border-amber-200 hover:bg-amber-50'
-                    }`}
-                    onClick={() => setActiveStage(activeStage === 'coach_prospect' ? null : 'coach_prospect')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>{coachProspect.emoji}</span>
-                      <span className="text-amber-700 font-medium text-sm">{coachProspect.label}</span>
-                    </div>
-
-                    {activeStage === 'coach_prospect' && (
-                      <div className="mt-3 pt-3 border-t border-amber-200">
-                        <p className="text-gray-600 text-sm mb-3">{coachProspect.description}</p>
-                        <div className="space-y-1.5">
-                          {coachProspect.tips.map((tip, tipIdx) => (
-                            <div key={tipIdx} className="flex items-start gap-2 text-sm">
-                              <span className="text-amber-500 mt-0.5">★</span>
-                              <span className="text-gray-600">{tip}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Paused */}
-                  <div
-                    className={`rounded-xl p-3 border-2 border-dashed cursor-pointer transition-all duration-200 ${
-                      activeStage === 'paused'
-                        ? 'bg-gray-100 border-gray-400'
-                        : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
-                    }`}
-                    onClick={() => setActiveStage(activeStage === 'paused' ? null : 'paused')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>{offRamp.emoji}</span>
-                      <span className="text-gray-600 font-medium text-sm">{offRamp.label}</span>
-                      <span className="text-gray-400 text-xs ml-auto">(can return anytime)</span>
-                    </div>
-
-                    {activeStage === 'paused' && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <p className="text-gray-600 text-sm mb-3">{offRamp.description}</p>
-                        <div className="space-y-1.5">
-                          {offRamp.tips.map((tip, tipIdx) => (
-                            <div key={tipIdx} className="flex items-start gap-2 text-sm">
-                              <span className="text-gray-400 mt-0.5">•</span>
-                              <span className="text-gray-600">{tip}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "14px 16px", marginBottom: "14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px" }}>
+                <span style={{ fontSize: "22px", flexShrink: 0 }}>📅</span>
+                <div>
+                  <h4 style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: "13px", color: "#1e293b", marginBottom: "3px" }}>Client Journey</h4>
+                  <p style={{ fontSize: "12px", color: "#475569", lineHeight: 1.5, margin: 0 }}>Tap the <strong style={{ color: "#00A651" }}>progress bar</strong> on any client card to open their full Client Journey. It shows every task for the current week — text scripts, videos, graphics, and links — with checkboxes to track completion and a <strong style={{ color: "#00A651" }}>Copy All</strong> button to grab everything at once. Navigate between weeks and see your overall progress across all tasks.</p>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+              </div>
 
-        {/* Needs Attention Box */}
-        <div className="mt-8 bg-red-50 border border-red-200 rounded-xl p-4">
-          <h4 className="font-bold text-red-700 mb-3 flex items-center gap-2">
-            <span>🚨</span> "Needs Attention" Triggers
-          </h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-start gap-2">
-              <span className="text-red-400">1.</span>
-              <span className="text-gray-700"><strong>Scheduled check-in is due</strong> — Meeting date is today or past</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-red-400">2.</span>
-              <span className="text-gray-700"><strong>10+ days since last check-in</strong> — Time to reach out!</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-red-400">3.</span>
-              <span className="text-gray-700"><strong>Never checked in</strong> — New client needs first touchpoint</span>
-            </div>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "14px 16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px" }}>
+                <span style={{ fontSize: "22px", flexShrink: 0 }}>💡</span>
+                <div>
+                  <h4 style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: "13px", color: "#1e293b", marginBottom: "3px" }}>Coaching Guide & Resources</h4>
+                  <p style={{ fontSize: "12px", color: "#475569", lineHeight: 1.5, margin: 0 }}>Every client card has an expandable <strong style={{ color: "#00A651" }}>Coaching Guide & Resources</strong> section. It shows coaching actions for their current stage — what to focus on, how to approach calls, and reminders like &quot;coach through discovery — do NOT provide answers.&quot; Your built-in playbook for every client interaction.</p>
+                </div>
+              </div>
+            </CollapsibleSection>
+
+          </div>
+
+          {/* FOOTER */}
+          <div style={{ padding: "20px 32px 28px", borderTop: "1px solid #f1f5f9" }}>
+            <button onClick={onClose} style={{ width: "100%", padding: "15px", border: "none", borderRadius: "14px", fontFamily: "'Montserrat', sans-serif", fontWeight: 700, fontSize: "15px", cursor: "pointer", textAlign: "center", color: "#fff", background: "linear-gradient(135deg, #008C45, #00A651)", boxShadow: "0 4px 16px rgba(0,166,81,0.3)", transition: "all 0.25s" }}>
+              Got It! →
+            </button>
+            <p style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "#94a3b8" }}>
+              Access your clients anytime from the My Business menu
+            </p>
           </div>
         </div>
-
-        {/* Milestone Summary */}
-        <div className="mt-6 bg-white rounded-xl border border-gray-200 p-4">
-          <h4 className="font-semibold text-gray-800 mb-3 text-center">📅 Milestone Calls to Schedule</h4>
-          <div className="grid grid-cols-4 gap-2 text-center">
-            <div className="bg-green-50 rounded-lg p-3">
-              <div className="text-2xl mb-1">🎉</div>
-              <div className="text-lg font-bold text-green-600">Day 7</div>
-              <div className="text-xs text-gray-500">Week 1</div>
-            </div>
-            <div className="bg-green-50 rounded-lg p-3">
-              <div className="text-2xl mb-1">⭐</div>
-              <div className="text-lg font-bold text-green-600">Day 14</div>
-              <div className="text-xs text-gray-500">2 Weeks</div>
-            </div>
-            <div className="bg-emerald-50 rounded-lg p-3">
-              <div className="text-2xl mb-1">💎</div>
-              <div className="text-lg font-bold text-emerald-600">Day 21</div>
-              <div className="text-xs text-gray-500">Habit!</div>
-            </div>
-            <div className="bg-amber-50 rounded-lg p-3">
-              <div className="text-2xl mb-1">👑</div>
-              <div className="text-lg font-bold text-amber-600">Day 30</div>
-              <div className="text-xs text-gray-500">1 Month</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tap hint */}
-        <p className="text-center text-gray-400 text-sm mt-6">
-          👆 Tap any stage to see coaching tips
-        </p>
       </div>
-    </div>
+
+      <style>{`
+        @keyframes clgSlideUp {
+          from { transform: translateY(20px) scale(0.97); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+      `}</style>
+    </>
   )
 }

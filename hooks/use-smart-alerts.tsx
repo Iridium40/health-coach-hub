@@ -165,7 +165,29 @@ export function useSmartAlerts() {
         }
       }
 
-      // 2. Stale prospect — no action in 7+ days
+      // 2. Overdue follow-up (next_action date is past)
+      if (prospect.next_action) {
+        const nextAction = new Date(prospect.next_action)
+        if (nextAction < now) {
+          const daysPast = Math.floor(
+            (now.getTime() - nextAction.getTime()) / (1000 * 60 * 60 * 24)
+          )
+          result.push({
+            id: `followup-overdue-${prospect.id}`,
+            title: `${prospect.label} — Overdue follow-up`,
+            description: daysPast <= 1
+              ? "Follow-up was due today. Reach out now."
+              : `Follow-up was due ${daysPast} days ago. Don't let this one slip.`,
+            severity: daysPast >= 3 ? "urgent" : "high",
+            category: "prospect",
+            entityType: "prospect",
+            entityName: prospect.label,
+            entityId: prospect.id,
+          })
+        }
+      }
+
+      // 3. Stale prospect — no action in 7+ days
       if (prospect.last_action) {
         const lastAction = new Date(prospect.last_action)
         const daysSince = Math.floor(

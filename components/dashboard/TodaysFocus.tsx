@@ -4,8 +4,6 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,23 +15,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
-  GraduationCap,
-  ChevronRight,
   CheckCircle,
-  BookOpen,
   Calendar,
   Clock,
   Users,
   Trophy,
-  AlertCircle,
   Video,
-  MessageSquare,
-  Circle,
   Target,
   Bell,
+  AlertTriangle,
+  UserPlus,
 } from "lucide-react"
 import { useReminders } from "@/hooks/use-reminders"
-import { useTrainingResources, meetsRankRequirement, type TrainingResource, type TrainingCategory } from "@/hooks/use-training-resources"
 import { getProgramDay, getDayPhase } from "@/hooks/use-clients"
 import type { User } from "@supabase/supabase-js"
 import type { Prospect } from "@/hooks/use-prospects"
@@ -52,6 +45,7 @@ interface TodaysFocusProps {
   toggleTouchpoint: (clientId: string, field: "am_done" | "pm_done") => Promise<boolean> | void
   completeClientCheckIn?: (client: any) => Promise<void> | void
   logProspectFollowUp?: (prospect: any, daysUntilNext?: number) => Promise<void> | void
+  completeHA?: (prospect: any) => Promise<void> | void
   dismissMilestone?: (clientId: string, programDay: number) => void
   isMilestoneDismissed?: (clientId: string, programDay: number) => boolean
   onCelebrateClick?: (client: any) => void
@@ -69,18 +63,11 @@ export function TodaysFocus({
   toggleTouchpoint,
   completeClientCheckIn,
   logProspectFollowUp,
+  completeHA,
   dismissMilestone,
   isMilestoneDismissed,
   onCelebrateClick,
 }: TodaysFocusProps) {
-  const {
-    resources,
-    categories,
-    isCompleted,
-    progress,
-    getCategoryProgress,
-  } = useTrainingResources(user, userRank)
-
   const { reminders = [], completeReminder, isOverdue, isDueToday } = useReminders()
 
   // Get today's reminders (due today or overdue, not completed)
@@ -98,46 +85,46 @@ export function TodaysFocus({
   // Buffer time: hide events that ended more than 30 minutes ago
   const pastCutoff = new Date(now.getTime() - 30 * 60 * 1000)
 
-  // Get training recommendation
-  const trainingRecommendation = useMemo(() => {
-    if (!categories.length || !resources.length) return null
 
-    const accessibleCategories = categories
-      .filter(cat => cat.is_active && meetsRankRequirement(userRank, cat.required_rank))
-      .sort((a, b) => a.sort_order - b.sort_order)
-
-    for (const category of accessibleCategories) {
-      const categoryResources = resources
-        .filter(r => r.category === category.name)
-        .sort((a, b) => a.sort_order - b.sort_order)
-
-      const nextResource = categoryResources.find(r => !isCompleted(r.id))
-
-      if (nextResource) {
-        return {
-          category,
-          nextResource,
-          categoryProgress: getCategoryProgress(category.name),
-          overallProgress: progress,
-        }
-      }
-    }
-    return null
-  }, [categories, resources, userRank, isCompleted, getCategoryProgress, progress])
-
-  const isTrainingComplete = !trainingRecommendation && progress.total > 0 && progress.completed >= progress.total
-
-  // Get clients needing touchpoints (limited) - memoized for performance
-  const clientsNeedingAction = useMemo(() => 
-    clients
-      .filter(c => c.status === "active" && needsAttention(c))
-      .slice(0, 3),
-    [clients, needsAttention]
+  // Critical phase clients (Days 1-3) — need daily contact
+  const criticalPhaseClients = useMemo(() =>
+    clients.filter(c => {
+      if (c.status !== "active") return false
+      const programDay = getProgramDay(c.start_date)
+      if (programDay < 1 || programDay > 3) return false
+      const alreadyCheckedIn = c.last_touchpoint_date === today && c.am_done
+      return !alreadyCheckedIn
+    }).slice(0, 3),
+    [clients, today]
   )
 
-  // Get HAs scheduled for today (exclude ones that ended more than 30 min ago) - memoized
-  // Assume HA duration is 45 minutes
-  const haScheduledToday = useMemo(() => 
+  // IDs of critical-phase clients so we can exclude them from the general check-in list
+  const criticalIds = useMemo(() => new Set(criticalPhaseClients.map(c => c.id)), [criticalPhaseClients])
+
+  // Clients needing touchpoints (exclude critical-phase ones shown separately)
+  const clientsNeedingAction = useMemo(() =>
+    clients
+      .filter(c => c.status === "active" && needsAttention(c) && !criticalIds.has(c.id))
+      .slice(0, 3),
+    [clients, needsAttention, criticalIds]
+  )
+
+  // Clients with 5-9 day check-in gap (not already caught by needsAttention's 10+ threshold)
+  const clientsGapWarning = useMemo(() =>
+    clients.filter(c => {
+      if (c.status !== "active") return false
+      if (criticalIds.has(c.id)) return false
+      if (c.last_touchpoint_date === today && c.am_done) return false
+      if (!c.last_touchpoint_date) return false
+      const lastCheckIn = new Date(c.last_touchpoint_date)
+      const daysSince = Math.floor((now.getTime() - lastCheckIn.getTime()) / (1000 * 60 * 60 * 24))
+      return daysSince >= 5 && daysSince < 10
+    }).slice(0, 3),
+    [clients, today, now, criticalIds]
+  )
+
+  // HAs scheduled for today
+  const haScheduledToday = useMemo(() =>
     prospects.filter(p => {
       if (!p.ha_scheduled_at) return false
       const haTime = new Date(p.ha_scheduled_at)
@@ -147,8 +134,19 @@ export function TodaysFocus({
     [prospects, todayStart, todayEnd, pastCutoff]
   )
 
-  // Get meetings today (exclude ones that ended more than 30 min ago) - memoized
-  const meetingsToday = useMemo(() => 
+  // Overdue HAs (scheduled in the past, before today)
+  const overdueHAs = useMemo(() =>
+    prospects.filter(p => {
+      if (!p.ha_scheduled_at) return false
+      if (["converted", "coach", "not_interested", "not_closed"].includes(p.status)) return false
+      const haTime = new Date(p.ha_scheduled_at)
+      return haTime < todayStart
+    }).slice(0, 2),
+    [prospects, todayStart]
+  )
+
+  // Meetings today
+  const meetingsToday = useMemo(() =>
     upcomingMeetings.filter(m => {
       const meetingDate = new Date(m.occurrence_date)
       const duration = m.duration_minutes || 60
@@ -158,8 +156,8 @@ export function TodaysFocus({
     [upcomingMeetings, todayStart, todayEnd, pastCutoff]
   )
 
-  // Get milestone clients (hide ones dismissed today) - memoized
-  const milestoneClients = useMemo(() => 
+  // Milestone clients
+  const milestoneClients = useMemo(() =>
     clients.filter(c => {
       if (c.status !== "active") return false
       const day = getProgramDay(c.start_date)
@@ -170,10 +168,8 @@ export function TodaysFocus({
     [clients, isMilestoneDismissed]
   )
 
-  const hasActionItems = clientsNeedingAction.length > 0 || haScheduledToday.length > 0 || meetingsToday.length > 0 || milestoneClients.length > 0 || todaysReminders.length > 0
-
-  // Overdue follow-ups (prospects) - memoized
-  const overdueProspects = useMemo(() => 
+  // Overdue follow-ups (prospects with next_action in the past)
+  const overdueProspects = useMemo(() =>
     prospects
       .filter(p => {
         if (!p.next_action || ["converted", "coach", "not_interested", "not_closed"].includes(p.status)) return false
@@ -183,9 +179,39 @@ export function TodaysFocus({
     [prospects, today]
   )
 
+  // Stale prospects (7+ days without any action)
+  const staleProspects = useMemo(() =>
+    prospects.filter(p => {
+      if (["converted", "coach", "not_interested", "not_closed"].includes(p.status)) return false
+      if (p.last_action) {
+        const lastAction = new Date(p.last_action)
+        const daysSince = Math.floor((now.getTime() - lastAction.getTime()) / (1000 * 60 * 60 * 24))
+        return daysSince >= 7
+      }
+      const created = new Date(p.created_at)
+      const daysSince = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
+      return daysSince >= 3
+    })
+    .filter(p => !overdueProspects.some(op => op.id === p.id))
+    .slice(0, 2),
+    [prospects, now, overdueProspects]
+  )
+
+  const hasActionItems =
+    criticalPhaseClients.length > 0 ||
+    clientsNeedingAction.length > 0 ||
+    clientsGapWarning.length > 0 ||
+    haScheduledToday.length > 0 ||
+    overdueHAs.length > 0 ||
+    meetingsToday.length > 0 ||
+    milestoneClients.length > 0 ||
+    overdueProspects.length > 0 ||
+    staleProspects.length > 0 ||
+    todaysReminders.length > 0
+
   // Confirmation dialogs (prevents accidental clears)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [confirmKind, setConfirmKind] = useState<"client_checkin" | "prospect_followup" | null>(null)
+  const [confirmKind, setConfirmKind] = useState<"client_checkin" | "prospect_followup" | "ha_complete" | null>(null)
   const [confirmClient, setConfirmClient] = useState<any | null>(null)
   const [confirmProspect, setConfirmProspect] = useState<any | null>(null)
 
@@ -203,6 +229,13 @@ export function TodaysFocus({
     setConfirmOpen(true)
   }
 
+  const openConfirmHA = (prospect: any) => {
+    setConfirmKind("ha_complete")
+    setConfirmProspect(prospect)
+    setConfirmClient(null)
+    setConfirmOpen(true)
+  }
+
   const runConfirmAction = async () => {
     if (confirmKind === "client_checkin" && confirmClient) {
       if (completeClientCheckIn) {
@@ -213,6 +246,9 @@ export function TodaysFocus({
     }
     if (confirmKind === "prospect_followup" && confirmProspect) {
       await logProspectFollowUp?.(confirmProspect, 3)
+    }
+    if (confirmKind === "ha_complete" && confirmProspect) {
+      await completeHA?.(confirmProspect)
     }
     setConfirmOpen(false)
     setConfirmKind(null)
@@ -261,70 +297,46 @@ export function TodaysFocus({
             <Target className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
             Today's Focus
           </CardTitle>
-          {!isTrainingComplete && progress.total > 0 && (
-            <Badge variant="secondary" className="bg-white">
-              Training: {progress.completed}/{progress.total}
-            </Badge>
-          )}
+          
         </div>
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
-        {/* Training Section */}
-        {isTrainingComplete ? (
-          <div className="flex items-center gap-3 p-3 bg-green-100 rounded-lg border border-green-200">
-            <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-semibold text-green-800 text-sm">All Training Complete! 🎉</p>
-              <p className="text-xs text-green-700">
-                {progress.total} modules completed
-              </p>
-            </div>
-            <Link href="/training">
-              <Button variant="outline" size="sm" className="text-xs">
-                Review
-              </Button>
-            </Link>
-          </div>
-        ) : trainingRecommendation ? (
-          <div className="bg-white rounded-lg p-3 border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
-                <span className="text-sm font-medium text-gray-700">Continue Training</span>
-              </div>
-              <span className="text-xs text-[hsl(var(--optavia-green))] font-bold">
-                {progress.percentage}%
-              </span>
-            </div>
-            <Progress value={progress.percentage} className="h-1.5 mb-2" />
-            <div className="flex items-center gap-2 p-2 bg-green-50 rounded border border-green-100">
-              <span className="text-lg">{trainingRecommendation.category.icon}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500">Up Next</p>
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {trainingRecommendation.nextResource.title}
-                </p>
-              </div>
-              <Link href="/training">
-                <Button size="sm" className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white text-xs">
-                  Start
-                  <ChevronRight className="h-3 w-3 ml-1" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Divider if we have both sections */}
-        {(isTrainingComplete || trainingRecommendation) && (hasActionItems || !hasActionItems) && (
-          <div className="border-t border-green-200" />
-        )}
-
         {/* Today's Tasks Section */}
         {hasActionItems ? (
           <div className="space-y-2">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Today's Tasks</p>
-            
+
+            {/* Critical Phase Clients (Days 1-3) — Most Urgent */}
+            {criticalPhaseClients.map(client => {
+              const programDay = getProgramDay(client.start_date)
+              return (
+                <div
+                  key={`critical-${client.id}`}
+                  className="flex items-center justify-between p-2.5 bg-white rounded-lg border-2 border-red-300"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm text-gray-900">{client.label}</div>
+                      <div className="text-xs text-red-600 font-medium">
+                        Day {programDay} — Daily support needed
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openConfirmClient(client)}
+                    className="h-7 text-xs px-3 text-green-600 border-green-200"
+                  >
+                    Mark Done
+                  </Button>
+                </div>
+              )
+            })}
+
             {/* HAs Scheduled Today */}
             {haScheduledToday.map(prospect => (
               <div
@@ -342,11 +354,56 @@ export function TodaysFocus({
                     </div>
                   </div>
                 </div>
-                <Link href="/prospect-tracker">
-                  <Button size="sm" className="bg-purple-500 hover:bg-purple-600 text-white text-xs h-7">
-                    View
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openConfirmHA(prospect)}
+                    className="h-7 text-xs px-3 text-green-600 border-green-200 hover:bg-green-50"
+                  >
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Done
                   </Button>
-                </Link>
+                  <Link href="/prospect-tracker">
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-3 text-purple-600 border-purple-200 hover:bg-purple-50">
+                      View
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+
+            {/* Overdue Health Assessments */}
+            {overdueHAs.map(prospect => (
+              <div
+                key={`ha-overdue-${prospect.id}`}
+                className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-red-200"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                    <Calendar className="h-4 w-4 text-red-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm text-gray-900">{prospect.label}</div>
+                    <div className="text-xs text-red-600">Overdue HA — Follow up on results</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openConfirmHA(prospect)}
+                    className="h-7 text-xs px-3 text-green-600 border-green-200 hover:bg-green-50"
+                  >
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Done
+                  </Button>
+                  <Link href="/prospect-tracker">
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-3 text-red-600 border-red-200 hover:bg-red-50">
+                      View
+                    </Button>
+                  </Link>
+                </div>
               </div>
             ))}
 
@@ -427,6 +484,43 @@ export function TodaysFocus({
               )
             })}
 
+            {/* Clients with 5-9 Day Gap */}
+            {clientsGapWarning.map(client => {
+              const programDay = getProgramDay(client.start_date)
+              const phase = getDayPhase(programDay)
+              const daysSince = client.last_touchpoint_date
+                ? Math.floor((now.getTime() - new Date(client.last_touchpoint_date).getTime()) / (1000 * 60 * 60 * 24))
+                : 0
+              return (
+                <div
+                  key={`gap-${client.id}`}
+                  className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-amber-200"
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-8 h-8 rounded-lg flex flex-col items-center justify-center text-xs font-bold"
+                      style={{ backgroundColor: phase.bg, color: phase.color }}
+                    >
+                      <span className="text-[7px]">D</span>
+                      <span className="text-xs -mt-0.5">{programDay}</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm text-gray-900">{client.label}</div>
+                      <div className="text-xs text-amber-600">{daysSince} days since last check-in</div>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openConfirmClient(client)}
+                    className="h-7 text-xs px-3 text-green-600 border-green-200"
+                  >
+                    Mark Done
+                  </Button>
+                </div>
+              )
+            })}
+
             {/* Overdue Prospect Follow-ups */}
             {overdueProspects.map(prospect => (
               <div
@@ -460,6 +554,48 @@ export function TodaysFocus({
                 </div>
               </div>
             ))}
+
+            {/* Stale Prospects */}
+            {staleProspects.map(prospect => {
+              const lastAction = prospect.last_action ? new Date(prospect.last_action) : null
+              const daysSince = lastAction
+                ? Math.floor((now.getTime() - lastAction.getTime()) / (1000 * 60 * 60 * 24))
+                : Math.floor((now.getTime() - new Date(prospect.created_at).getTime()) / (1000 * 60 * 60 * 24))
+              return (
+                <div
+                  key={`stale-${prospect.id}`}
+                  className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-amber-200"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                      <UserPlus className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm text-gray-900">{prospect.label}</div>
+                      <div className="text-xs text-amber-600">
+                        {lastAction ? `${daysSince} days without action` : "No outreach yet"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openConfirmProspect(prospect)}
+                      className="h-7 text-xs px-3 text-green-600 border-green-200 hover:bg-green-50"
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Done
+                    </Button>
+                    <Link href="/prospect-tracker">
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-3 text-amber-600 border-amber-200 hover:bg-amber-50">
+                        View
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )
+            })}
 
             {/* Milestone Celebrations */}
             {milestoneClients.map(client => {
@@ -556,14 +692,20 @@ export function TodaysFocus({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {confirmKind === "client_checkin" ? "Confirm touchpoint" : "Confirm follow-up"}
+                {confirmKind === "client_checkin"
+                  ? "Confirm touchpoint"
+                  : confirmKind === "ha_complete"
+                    ? "Confirm Health Assessment"
+                    : "Confirm follow-up"}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {confirmKind === "client_checkin" && confirmClient
                   ? `Mark today's check-in as done for "${confirmClient.label}"? This will clear it from your dashboard tasks.`
-                  : confirmKind === "prospect_followup" && confirmProspect
-                    ? `Confirm you've followed up with "${confirmProspect.label}"? We'll move their next follow-up out a few days.`
-                    : "Confirm this action?"}
+                  : confirmKind === "ha_complete" && confirmProspect
+                    ? `Mark the Health Assessment as completed for "${confirmProspect.label}"? This will clear the HA notification.`
+                    : confirmKind === "prospect_followup" && confirmProspect
+                      ? `Confirm you've followed up with "${confirmProspect.label}"? We'll move their next follow-up out a few days.`
+                      : "Confirm this action?"}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

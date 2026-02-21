@@ -55,12 +55,14 @@ import {
   Video,
   Users,
   AlertCircle,
+  GraduationCap,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { StatsCardsSkeleton } from "@/components/ui/skeleton-loaders"
 import { CoachCard } from "@/components/coach-tracker/coach-card"
+import { CoachLearningGuide } from "@/components/coach-learning-guide"
 import { sendCalendarInviteEmail } from "@/lib/email"
 
 // Time options for scheduling
@@ -97,6 +99,7 @@ export default function CoachTrackerPage() {
   const [showRankModal, setShowRankModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showGuideModal, setShowGuideModal] = useState(false)
 
   // Selected coach for actions
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null)
@@ -483,6 +486,13 @@ export default function CoachTrackerPage() {
                 <Plus className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Add Coach</span>
                 <span className="sm:hidden">Add</span>
+              </Button>
+              <Button
+                className="bg-[#f88221] border-[#f88221] text-white hover:bg-[#e07520] hidden sm:flex"
+                onClick={() => setShowGuideModal(true)}
+              >
+                <GraduationCap className="h-4 w-4 mr-2" />
+                Learn the Coach List
               </Button>
               <Link href="/client-tracker">
                 <Button variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
@@ -1159,6 +1169,11 @@ export default function CoachTrackerPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Coach Learning Guide Modal */}
+      {showGuideModal && (
+        <CoachLearningGuide onClose={() => setShowGuideModal(false)} />
+      )}
 
       <Footer />
     </div>

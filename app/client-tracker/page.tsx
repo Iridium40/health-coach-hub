@@ -595,7 +595,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 onClick={() => setShowGuideModal(true)}
               >
                 <GraduationCap className="h-4 w-4 mr-2" />
-                Learn the Client Journey
+                Learn the Client List
               </Button>
               <Link href="/prospect-tracker">
                 <Button variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
@@ -1367,16 +1367,9 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       </Dialog>
 
       {/* Client Journey Guide Modal */}
-      <Dialog open={showGuideModal} onOpenChange={setShowGuideModal}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-center">
-              Learn the Client Journey
-            </DialogTitle>
-          </DialogHeader>
-          <ClientJourneyGuide />
-        </DialogContent>
-      </Dialog>
+      {showGuideModal && (
+        <ClientJourneyGuide onClose={() => setShowGuideModal(false)} />
+      )}
 
       {/* Clear Schedule Confirmation */}
       <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>

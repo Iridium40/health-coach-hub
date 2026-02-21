@@ -40,7 +40,7 @@ import {
 import { Progress } from "@/components/ui/progress"
 
 // Dashboard Components
-import { CoachTip, PipelineSnapshot, TodaysPriorities, RankProgressCard, QuickActions, NextTrainingCard } from "@/components/dashboard/index"
+import { CoachTip, PipelineSnapshot, TodaysPriorities, TodaysFocus, RankProgressCard, QuickActions, NextTrainingCard } from "@/components/dashboard/index"
 import { getProgramDay } from "@/hooks/use-clients"
 
 // Lazy-load heavy modals/tools to reduce initial dashboard JS (big win at scale)
@@ -327,6 +327,14 @@ export function DashboardOverview() {
     })
   }, [updateProspect])
 
+  const completeDashboardHA = useCallback(async (prospect: any) => {
+    const todayStr = new Date().toISOString().split("T")[0]
+    await updateProspect(prospect.id, {
+      ha_scheduled_at: null,
+      last_action: todayStr,
+    })
+  }, [updateProspect])
+
   return (
     <div className="container mx-auto px-4 py-4 sm:py-8">
       {/* Welcome Section */}
@@ -345,6 +353,30 @@ export function DashboardOverview() {
       {/* Coach Tip of the Day */}
       <div className="mt-6">
         <CoachTip />
+      </div>
+
+      {/* Today's Focus */}
+      <div className="mt-6">
+        <TodaysFocus
+          user={user ?? null}
+          userRank={profile?.coach_rank || null}
+          isNewCoach={profile?.is_new_coach}
+          clients={clients}
+          prospects={prospects}
+          upcomingMeetings={upcomingMeetings}
+          loadingMeetings={loadingMeetings}
+          needsAttention={needsAttention}
+          toggleTouchpoint={toggleTouchpoint}
+          completeClientCheckIn={completeDashboardClientCheckIn}
+          logProspectFollowUp={logDashboardProspectFollowUp}
+          completeHA={completeDashboardHA}
+          dismissMilestone={dismissMilestoneForToday}
+          isMilestoneDismissed={isMilestoneDismissedToday}
+          onCelebrateClick={(client) => {
+            setMilestoneClient(client)
+            setShowMilestoneModal(true)
+          }}
+        />
       </div>
 
       {/* Dashboard Buttons */}

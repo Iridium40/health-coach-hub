@@ -175,9 +175,41 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
           </div>
         </div>
 
-        {/* Desktop Navigation Menu - Order: Calendar | Coaching Resource Library | Coaching Quicklinks | Meal Planning & Recipes | Outside Tools & Resources | Metabolic Reset Events | My Business */}
+        {/* Desktop Navigation Menu - Order: My Business | Calendar | Coaching Resource Library | Coaching Quicklinks | Meal Planning & Recipes | Outside Tools & Resources | Metabolic Reset Events */}
         {user && (
           <nav className="hidden md:flex items-center justify-center flex-wrap gap-x-2 lg:gap-x-4 xl:gap-x-6 gap-y-1 border-t border-optavia-border py-2">
+            {/* My Business Dropdown - Positioned first, hidden for training-only orgs */}
+            {!isTrainingOnly && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`pb-2 lg:pb-3 px-2 lg:px-4 xl:px-6 font-heading font-semibold text-xs lg:text-sm xl:text-base transition-colors relative whitespace-nowrap flex items-center gap-1 ${
+                      isBusinessPage
+                        ? "text-[hsl(var(--optavia-green))]"
+                        : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
+                    }`}
+                  >
+                    <Users className="h-4 w-4" />
+                    My Business
+                    <ChevronDown className="h-3 w-3" />
+                    {isBusinessPage && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[hsl(var(--optavia-green))]" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56 bg-white border shadow-lg">
+                  {businessItems.map((item) => (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link href={item.href} className="flex flex-col items-start py-2">
+                        <span className="font-medium">{item.label}</span>
+                        <span className="text-xs text-gray-500">{item.description}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             {/* Nav items in order from navItems array */}
             {navItems.map((item) => {
               const isActive = currentActiveTab === item.id
@@ -218,38 +250,6 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                 </Link>
               )
             })}
-            
-            {/* My Business Dropdown - Positioned last, hidden for training-only orgs */}
-            {!isTrainingOnly && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className={`pb-2 lg:pb-3 px-2 lg:px-4 xl:px-6 font-heading font-semibold text-xs lg:text-sm xl:text-base transition-colors relative whitespace-nowrap flex items-center gap-1 ${
-                      isBusinessPage
-                        ? "text-[hsl(var(--optavia-green))]"
-                        : "text-optavia-dark hover:text-[hsl(var(--optavia-green))]"
-                    }`}
-                  >
-                    <Users className="h-4 w-4" />
-                    My Business
-                    <ChevronDown className="h-3 w-3" />
-                    {isBusinessPage && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[hsl(var(--optavia-green))]" />
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56 bg-white border shadow-lg">
-                  {businessItems.map((item) => (
-                    <DropdownMenuItem key={item.href} asChild>
-                      <Link href={item.href} className="flex flex-col items-start py-2">
-                        <span className="font-medium">{item.label}</span>
-                        <span className="text-xs text-gray-500">{item.description}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </nav>
         )}
 
@@ -257,6 +257,33 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
         {user && mobileMenuOpen && (
           <nav className="md:hidden border-t border-optavia-border bg-white">
             <div className="flex flex-col">
+              {/* My Business Section first - Hidden for training-only orgs */}
+              {!isTrainingOnly && (
+                <>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
+                    My Business
+                  </div>
+                  {businessItems.map((item) => {
+                    const isActive = pathname === item.href
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`px-4 py-3 pl-6 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 flex items-center gap-2 ${
+                          isActive
+                            ? "text-[hsl(var(--optavia-green))] bg-green-50"
+                            : "text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
+                        }`}
+                      >
+                        <Users className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </>
+              )}
+
               {/* Nav items in order from navItems array */}
               {navItems.map((item) => {
                 const isActive = currentActiveTab === item.id
@@ -295,33 +322,6 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
                   </Link>
                 )
               })}
-              
-              {/* My Business Section last - Hidden for training-only orgs */}
-              {!isTrainingOnly && (
-                <>
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide bg-gray-50 border-b border-gray-100">
-                    My Business
-                  </div>
-                  {businessItems.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`px-4 py-3 pl-6 text-left font-heading font-semibold text-base transition-colors border-b border-gray-100 flex items-center gap-2 ${
-                          isActive
-                            ? "text-[hsl(var(--optavia-green))] bg-green-50"
-                            : "text-optavia-dark hover:text-[hsl(var(--optavia-green))] hover:bg-gray-50"
-                        }`}
-                      >
-                        <Users className="h-4 w-4" />
-                        {item.label}
-                      </Link>
-                    )
-                  })}
-                </>
-              )}
             </div>
           </nav>
         )}
