@@ -53,6 +53,8 @@ import {
   CalendarPlus,
   Phone,
   Video,
+  Users,
+  AlertCircle,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -456,37 +458,58 @@ export default function CoachTrackerPage() {
       <Header />
 
       {/* Page Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
-          {/* Breadcrumb */}
-          <div className="text-sm text-gray-500 mb-2">
-            <Link href="/dashboard" className="hover:text-gray-700">Dashboard</Link>
-            <span className="mx-2 text-gray-300">›</span>
-            <span className="text-gray-900 font-semibold">Coach List</span>
-          </div>
-
-          {/* Title Row */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🚀</span>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900">
-                  My Coaches
-                </h1>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Track team development, rank progression, and milestones
-                </p>
+      <div className="bg-gradient-to-r from-[hsl(var(--optavia-green))] to-[hsl(var(--optavia-green-dark))] text-white">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-sm opacity-90 mb-1">
+                <span>My Business</span>
+                <ChevronRight className="h-4 w-4" />
+                <span className="font-semibold">Coach List</span>
               </div>
+              <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                <Users className="h-8 w-8" />
+                My Coaches
+              </h1>
+              <p className="text-sm opacity-90 mt-1">
+                Track team development, rank progression, and milestones
+              </p>
             </div>
-
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               <Button
                 onClick={() => { resetAddForm(); setShowAddModal(true) }}
-                className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))]/90"
+                className="bg-white text-[hsl(var(--optavia-green))] hover:bg-white/90 order-first sm:order-last"
               >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Coach
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Coach</span>
+                <span className="sm:hidden">Add</span>
               </Button>
+              <Link href="/client-tracker">
+                <Button variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
+                  <Users className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">My Clients</span>
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Privacy Notice */}
+      <div className="bg-blue-50 border-b border-blue-200">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-blue-700">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>
+                <strong>Privacy:</strong> Use nicknames only. Contact info stays in OPTAVIA's portal.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-600">
+              <CalendarPlus className="h-4 w-4 flex-shrink-0" />
+              <span>
+                <strong>Schedule:</strong> Add coaching 1:1s to your calendar.
+              </span>
             </div>
           </div>
         </div>
@@ -494,15 +517,6 @@ export default function CoachTrackerPage() {
 
       <div className="container mx-auto px-4 py-6">
         <ErrorBoundary>
-          {/* Privacy / Info Banner */}
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500 mb-4">
-            <span>
-              <span className="font-bold text-amber-500">ℹ️ Privacy:</span> Use nicknames only. Contact info stays in OPTAVIA's portal.
-            </span>
-            <span>
-              <span className="font-bold text-green-600">📅 Schedule:</span> Add coaching 1:1s to your calendar.
-            </span>
-          </div>
 
           {/* Pipeline Stages */}
           {loading ? (
