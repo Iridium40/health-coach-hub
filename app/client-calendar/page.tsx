@@ -638,7 +638,7 @@ export default function ClientSupportCalendarPage() {
           </div>
 
           <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", justifyContent: "center", maxWidth: "800px" }}>
-            <button onClick={() => setSupportMode("calendar")} style={{
+            <button onClick={() => window.open("https://drive.google.com/file/d/1ov6TMnAIIXPBsVjdL6A8zn84X_ZKhOTV/view", "_blank")} style={{
               flex: "1 1 340px", maxWidth: "380px", padding: "32px 28px", background: "#fff", border: "2px solid #E0E0E0",
               borderRadius: "16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s",
               boxShadow: "0 2px 8px rgba(0,0,0,0.04)",

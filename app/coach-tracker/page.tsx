@@ -462,7 +462,7 @@ export default function CoachTrackerPage() {
           <div className="text-sm text-gray-500 mb-2">
             <Link href="/dashboard" className="hover:text-gray-700">Dashboard</Link>
             <span className="mx-2 text-gray-300">›</span>
-            <span className="text-gray-900 font-semibold">Coach Tracker</span>
+            <span className="text-gray-900 font-semibold">Coach List</span>
           </div>
 
           {/* Title Row */}

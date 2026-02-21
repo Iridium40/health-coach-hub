@@ -148,8 +148,8 @@ export default function ClientTrackerPage() {
         })
         if (coachResult) {
           toast({
-            title: "Added to Coach Tracker",
-            description: `${client.label} has been added to your Coach Tracker as a new coach.`,
+            title: "Added to Coach List",
+            description: `${client.label} has been added to your Coach List as a new coach.`,
           })
         }
       }
@@ -571,7 +571,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               <div className="flex items-center gap-2 text-sm opacity-90 mb-1">
                 <span>My Business</span>
                 <ChevronRight className="h-4 w-4" />
-                <span className="font-semibold">Client Tracker</span>
+                <span className="font-semibold">Client List</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
                 <Users className="h-8 w-8" />

@@ -141,7 +141,7 @@ const lessons: Lesson[] = [
             { id: "pre-2", task: "Confirm their order went through in your back office", detail: "Check OPTAVIA Connect to verify the order" },
             { id: "pre-3", task: "Schedule their Kickoff Call", detail: "Ideally the day before or day their box arrives" },
             { id: "pre-4", task: "Send Welcome & 9 Tips Text (Lesson 3.1.4)", detail: "Sets expectations and builds excitement" },
-            { id: "pre-5", task: "Add them to your Client Tracker spreadsheet", detail: "Name, start date, goals, contact info" },
+            { id: "pre-5", task: "Add them to your Client List", detail: "Name, start date, goals, contact info" },
             { id: "pre-6", task: "Send tracking number when available", detail: "They'll be watching for that box!" },
           ],
         },

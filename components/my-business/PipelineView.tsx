@@ -259,7 +259,7 @@ export function PipelineView() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Users className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium text-blue-700">100's List Tracker</span>
+                  <span className="font-medium text-blue-700">100's List</span>
                 </div>
                 <ChevronRight className="h-5 w-5 text-blue-400" />
               </div>
@@ -273,7 +273,7 @@ export function PipelineView() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Heart className="h-5 w-5 text-green-600" />
-                  <span className="font-medium text-green-700">Client Tracker</span>
+                  <span className="font-medium text-green-700">Client List</span>
                 </div>
                 <ChevronRight className="h-5 w-5 text-green-400" />
               </div>

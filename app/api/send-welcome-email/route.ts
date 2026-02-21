@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
           <h2 style="color: #2d5016; margin-top: 0; font-size: 20px; font-weight: bold;">What's Inside?</h2>
           <ul style="margin: 10px 0; padding-left: 20px; color: #333; font-size: 15px; line-height: 1.8;">
             <li>Step-by-step training modules for every stage of your coaching journey</li>
-            <li>Client Tracker to manage touchpoints and celebrate milestones</li>
+            <li>Client List to manage touchpoints and celebrate milestones</li>
             <li>100's List and Prospect Pipeline to grow your business</li>
             <li>Calendar with team calls and events</li>
             <li>Lean & Green recipes to share with your clients</li>
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
               <strong style="color: #2d5016;">📚 Training:</strong> Follow the guided curriculum from orientation through leadership development.
             </p>
             <p style="margin: 10px 0; font-size: 15px; color: #333;">
-              <strong style="color: #2d5016;">👥 My Business:</strong> Access your Client Tracker, 100's List, Prospect Pipeline, and Rank Calculator.
+              <strong style="color: #2d5016;">👥 My Business:</strong> Access your Client List, 100's List, Coach List, and Rank Calculator.
             </p>
             <p style="margin: 10px 0; font-size: 15px; color: #333;">
               <strong style="color: #2d5016;">📅 Calendar:</strong> Never miss a team call or event - join directly from the app.
@@ -100,7 +100,7 @@ Welcome to Coaching Amplifier! We're excited to have you join our community of c
 What's Inside?
 
 • Step-by-step training modules for every stage of your coaching journey
-• Client Tracker to manage touchpoints and celebrate milestones
+• Client List to manage touchpoints and celebrate milestones
 • 100's List and Prospect Pipeline to grow your business
 • Calendar with team calls and events
 • Lean & Green recipes to share with your clients
@@ -114,7 +114,7 @@ Quick Tips to Get Started:
 
 📚 Training: Follow the guided curriculum from orientation through leadership development.
 
-👥 My Business: Access your Client Tracker, 100's List, Prospect Pipeline, and Rank Calculator.
+👥 My Business: Access your Client List, 100's List, Coach List, and Rank Calculator.
 
 📅 Calendar: Never miss a team call or event - join directly from the app.
 

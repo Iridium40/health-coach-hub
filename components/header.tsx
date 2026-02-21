@@ -84,9 +84,9 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
 
   // Updated My Business items per Phase 5 UX redesign
   const businessItems = [
-    { label: "100's List Tracker", href: "/prospect-tracker", description: "Track your pipeline" },
-    { label: "Client Tracker", href: "/client-tracker", description: "Touchpoints & milestones" },
-    { label: "Coach Tracker", href: "/coach-tracker", description: "Track your team's progress" },
+    { label: "100's List", href: "/prospect-tracker", description: "Track your pipeline" },
+    { label: "Client List", href: "/client-tracker", description: "Touchpoints & milestones" },
+    { label: "Coach List", href: "/coach-tracker", description: "Track your team's progress" },
     ...(isAdmin ? [{ label: "Rank Calculator", href: "/my-business", description: "Track rank progress" }] : []),
   ]
 

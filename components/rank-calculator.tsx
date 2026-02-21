@@ -280,7 +280,7 @@ export function RankCalculator() {
           <div>
             <p className="font-medium">Reading from your trackers</p>
             <p className="text-xs text-green-600 mt-0.5">
-              Active clients from Client Tracker &bull; Coach ranks from Coach Tracker. Switch to Simulator to explore what-if scenarios.
+              Active clients from Client List &bull; Coach ranks from Coach List. Switch to Simulator to explore what-if scenarios.
             </p>
           </div>
         </div>
@@ -367,7 +367,7 @@ export function RankCalculator() {
                       </div>
                     )}
                     <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-600">
-                      from Client Tracker
+                      from Client List
                     </Badge>
                   </div>
                 ) : (
@@ -444,7 +444,7 @@ export function RankCalculator() {
 
                 {activeClients === 0 && (
                   <p className="text-sm text-gray-400 italic">
-                    {mode === "live" ? "No active clients in your Client Tracker" : "Add clients to see points"}
+                    {mode === "live" ? "No active clients in your Client List" : "Add clients to see points"}
                   </p>
                 )}
               </div>
@@ -491,7 +491,7 @@ export function RankCalculator() {
                   </Badge>
                   {mode === "live" && (
                     <Badge variant="secondary" className="text-[10px] bg-purple-50 text-purple-500">
-                      from Coach Tracker
+                      from Coach List
                     </Badge>
                   )}
                 </div>
@@ -581,7 +581,7 @@ export function RankCalculator() {
 
               {activeCoaches.length === 0 && (
                 <p className="text-xs text-gray-400 italic text-center py-2">
-                  {mode === "live" ? "No coaches in your Coach Tracker" : "No coaches added yet"}
+                  {mode === "live" ? "No coaches in your Coach List" : "No coaches added yet"}
                 </p>
               )}
 

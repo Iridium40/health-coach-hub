@@ -216,7 +216,7 @@ export default function NewCoachLaunchpad() {
       milestone: "Client Ready",
       tasks: [
         { title: "Learn Client Onboarding Process", type: "training", duration: "30 min", link: "/training/new-client-onboarding", description: "What to do when someone says YES" },
-        { title: "Set Up Client Tracker", type: "action", duration: "15 min", link: "/client-tracker", description: "Get ready to track your clients' progress" },
+        { title: "Set Up Client List", type: "action", duration: "15 min", link: "/client-tracker", description: "Get ready to track your clients' progress" },
         { title: "Review Day 1-9 Text Templates", type: "training", duration: "20 min", link: "/training/daily-client-support", description: "Know what to send your clients each day" },
         { title: "Prepare Client Welcome Package", type: "action", duration: "20 min", description: "What will you send/say when they start?" }
       ]
@@ -485,7 +485,7 @@ export default function NewCoachLaunchpad() {
                 <Heart size={20} color="#c2185b" />
               </div>
               <div>
-                <div style={{ fontWeight: 600, color: '#1a1a1a' }}>Client Tracker</div>
+                <div style={{ fontWeight: 600, color: '#1a1a1a' }}>Client List</div>
                 <div style={{ fontSize: 12, color: '#888' }}>Track client progress</div>
               </div>
             </div>
