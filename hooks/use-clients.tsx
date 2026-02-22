@@ -87,7 +87,7 @@ export function getProgramDay(startDate: string): number {
   const startDay = parseLocalDate(startDate)
   const diffTime = today.getTime() - startDay.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-  return Math.max(1, diffDays)
+  return Math.max(0, diffDays)
 }
 
 export function useClients() {

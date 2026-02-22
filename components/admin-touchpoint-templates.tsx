@@ -1069,10 +1069,10 @@ export function AdminTouchpointTemplates() {
                   type="number"
                   value={triggerDayStart}
                   onChange={(e) => setTriggerDayStart(e.target.value)}
-                  placeholder="e.g., 1"
-                  min={1}
+                  placeholder="e.g., 0"
+                  min={0}
                 />
-                <p className="text-xs text-gray-400 mt-1">First day of range</p>
+                <p className="text-xs text-gray-400 mt-1">First day of range (0 = day before start)</p>
               </div>
               <div>
                 <Label>Day End</Label>
@@ -1081,7 +1081,7 @@ export function AdminTouchpointTemplates() {
                   value={triggerDayEnd}
                   onChange={(e) => setTriggerDayEnd(e.target.value)}
                   placeholder="e.g., 7"
-                  min={1}
+                  min={0}
                 />
                 <p className="text-xs text-gray-400 mt-1">Last day of range</p>
               </div>
