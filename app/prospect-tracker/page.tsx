@@ -74,12 +74,13 @@ import { Footer } from "@/components/footer"
 import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
 import { ShareHealthAssessment } from "@/components/share-health-assessment"
 import { PipelineProgressionGuide } from "@/components/pipeline-progression-guide"
+import { ObjectionNavigator } from "@/components/objection-navigator"
 import { sendCalendarInviteEmail } from "@/lib/email"
 import { ReminderButton } from "@/components/reminders-panel"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { StatsCardsSkeleton, ProspectListSkeleton } from "@/components/ui/skeleton-loaders"
 import { ProspectCard } from "@/components/prospect-tracker/prospect-card"
-import { HelpCircle } from "lucide-react"
+import { HelpCircle, MessageCircleQuestion } from "lucide-react"
 import type { CalendarEvent } from "@/lib/calendar-utils"
 
 // Time options for HA scheduling
@@ -123,6 +124,7 @@ export default function ProspectTrackerPage() {
   const [showHAScheduleModal, setShowHAScheduleModal] = useState(false)
   const [showHASendModal, setShowHASendModal] = useState(false)
   const [showGuideModal, setShowGuideModal] = useState(false)
+  const [showObjectionNav, setShowObjectionNav] = useState(false)
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null)
   const [convertingProspect, setConvertingProspect] = useState<Prospect | null>(null)
   const [schedulingProspect, setSchedulingProspect] = useState<Prospect | null>(null)
@@ -579,6 +581,14 @@ Talking Points:
               >
                 <GraduationCap className="h-4 w-4 mr-2" />
                 Learn the 100's List
+              </Button>
+              <Button
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                variant="outline"
+                onClick={() => setShowObjectionNav(true)}
+              >
+                <MessageCircleQuestion className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Objection Navigator</span>
               </Button>
               <Link href="/client-tracker">
                 <Button variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
@@ -1510,6 +1520,24 @@ Talking Points:
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Objection Navigator Modal */}
+      <Dialog open={showObjectionNav} onOpenChange={setShowObjectionNav}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircleQuestion className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+              Objection Navigator
+            </DialogTitle>
+            <DialogDescription>
+              Scripts and strategies for common prospect objections.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto -mx-6 px-6 pb-2">
+            <ObjectionNavigator />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 100's List Guide Modal */}
       {showGuideModal && (
