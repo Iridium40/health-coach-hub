@@ -71,7 +71,7 @@ import { Footer } from "@/components/footer"
 import { MilestoneActionModal } from "@/components/milestone-action-modal"
 import { ClientJourneyGuide } from "@/components/client-journey-guide"
 import { ReminderButton } from "@/components/reminders-panel"
-import { GraduationCap, Trophy, Heart, Download } from "lucide-react"
+import { GraduationCap, Trophy, Heart, Download, Wrench, MessageCircleQuestion } from "lucide-react"
 import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
 import { sendCalendarInviteEmail } from "@/lib/email"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
@@ -79,6 +79,8 @@ import { useUserData } from "@/contexts/user-data-context"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { StatsCardsSkeleton, ClientListSkeleton } from "@/components/ui/skeleton-loaders"
 import { ClientCard } from "@/components/client-tracker/client-card"
+import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
+import { RecruitmentNavigator } from "@/components/recruitment-navigator"
 import type { CalendarEvent } from "@/lib/calendar-utils"
 
 // Days of the week
@@ -160,6 +162,8 @@ export default function ClientTrackerPage() {
   const [showTextModal, setShowTextModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [showGuideModal, setShowGuideModal] = useState(false)
+  const [showTroubleshootModal, setShowTroubleshootModal] = useState(false)
+  const [showRecruitmentNav, setShowRecruitmentNav] = useState(false)
   const [showMilestoneModal, setShowMilestoneModal] = useState(false)
   const [milestoneCount, setMilestoneCount] = useState(0)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
@@ -708,6 +712,26 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 )
               })}
             </div>
+
+            {/* Troubleshooting Guide */}
+            <Button
+              size="sm"
+              onClick={() => setShowTroubleshootModal(true)}
+              className="flex-shrink-0 bg-[#f88221] hover:bg-[#e07520] text-white"
+            >
+              <Wrench className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Troubleshooting</span>
+            </Button>
+
+            {/* Recruitment Navigator */}
+            <Button
+              size="sm"
+              onClick={() => setShowRecruitmentNav(true)}
+              className="flex-shrink-0 bg-[#f88221] hover:bg-[#e07520] text-white"
+            >
+              <MessageCircleQuestion className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Recruitment</span>
+            </Button>
 
             {/* Export */}
             <Button
@@ -1363,6 +1387,42 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               Cancel
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Client Troubleshooting Guide Modal */}
+      <Dialog open={showTroubleshootModal} onOpenChange={setShowTroubleshootModal}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+              Client Troubleshooting Guide
+            </DialogTitle>
+            <DialogDescription>
+              Identify and resolve common client challenges.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto -mx-6 px-6 pb-2">
+            <ClientTroubleshootingDialog />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Coach Recruitment Objections Modal */}
+      <Dialog open={showRecruitmentNav} onOpenChange={setShowRecruitmentNav}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircleQuestion className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+              Coach Recruitment Objections
+            </DialogTitle>
+            <DialogDescription>
+              Scripts and strategies for recruitment and re-engagement conversations.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto -mx-6 px-6 pb-2">
+            <RecruitmentNavigator />
+          </div>
         </DialogContent>
       </Dialog>
 
