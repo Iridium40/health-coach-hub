@@ -23,6 +23,9 @@ import {
   Star,
   Loader2,
   Lightbulb,
+  ClipboardList,
+  CheckCircle2,
+  Circle,
 } from "lucide-react"
 import { ClientContextualResources } from "@/components/resources"
 
@@ -129,6 +132,7 @@ export function MilestoneActionModal({
 
   const isMilestone = trigger.phase === "milestone"
   const isCallRecommended = trigger.action_type === "call"
+  const isReminder = trigger.action_type === "reminder"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -157,6 +161,8 @@ export function MilestoneActionModal({
               className={
                 isCallRecommended
                   ? "bg-purple-50 text-purple-700 border-purple-200"
+                  : isReminder
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
                   : "bg-blue-50 text-blue-700 border-blue-200"
               }
             >
@@ -164,6 +170,11 @@ export function MilestoneActionModal({
                 <>
                   <Phone className="h-3 w-3 mr-1" />
                   Recommended: Schedule a celebration call!
+                </>
+              ) : isReminder ? (
+                <>
+                  <ClipboardList className="h-3 w-3 mr-1" />
+                  Coach Reminder: Choose at least one action
                 </>
               ) : (
                 <>
@@ -175,8 +186,66 @@ export function MilestoneActionModal({
           </div>
         </DialogHeader>
 
-        {/* Tabs for call triggers */}
-        {isCallRecommended ? (
+        {/* Reminder triggers — checklist layout */}
+        {isReminder ? (
+          <div className="flex-1 overflow-y-auto space-y-5">
+            {/* Action Items */}
+            {trigger.templates.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  ✅ Choose at least one:
+                </h4>
+                <div className="space-y-2">
+                  {trigger.templates.map((template) => (
+                    <ReminderActionItem
+                      key={template.id}
+                      message={personalizeMessage(template.message, {
+                        firstName,
+                        days: programDay,
+                        coachName,
+                        nextMilestone: getNextMilestone(programDay),
+                      })}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Content Ideas */}
+            {trigger.talkingPoints.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  💡 Content ideas to pull from:
+                </h4>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                  {trigger.talkingPoints.map((point) => (
+                    <div key={point.id} className="flex items-start gap-2 text-sm text-amber-900">
+                      <span className="shrink-0">•</span>
+                      <span>{personalizeMessage(point.point, {
+                        firstName,
+                        days: programDay,
+                        coachName,
+                      })}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Resources */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                📚 Related Resources
+              </h4>
+              <ClientContextualResources
+                programDay={programDay}
+                clientName={clientLabel}
+                compact
+              />
+            </div>
+          </div>
+        ) : isCallRecommended ? (
+          /* Call triggers */
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 overflow-hidden flex flex-col">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="templates" className="text-xs">
@@ -400,10 +469,39 @@ export function MilestoneActionModal({
 
         {/* Tip */}
         <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-gray-600 shrink-0">
-          <strong>Tip:</strong> Copy the text, paste it into your messaging app, and personalize it before sending!
+          {isReminder ? (
+            <><strong>Tip:</strong> Pick at least one action above and personalize it for your client!</>
+          ) : (
+            <><strong>Tip:</strong> Copy the text, paste it into your messaging app, and personalize it before sending!</>
+          )}
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// Reminder action item — interactive checklist item
+function ReminderActionItem({ message }: { message: string }) {
+  const [checked, setChecked] = useState(false)
+
+  return (
+    <button
+      onClick={() => setChecked(!checked)}
+      className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${
+        checked
+          ? "bg-green-50 border-green-200"
+          : "bg-white border-gray-200 hover:bg-gray-50"
+      }`}
+    >
+      {checked ? (
+        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+      ) : (
+        <Circle className="h-5 w-5 text-gray-300 shrink-0 mt-0.5" />
+      )}
+      <span className={`text-sm ${checked ? "text-green-800 line-through" : "text-gray-700"}`}>
+        {message}
+      </span>
+    </button>
   )
 }
 

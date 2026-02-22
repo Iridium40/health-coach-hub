@@ -37,6 +37,7 @@ import {
   Calendar,
   Loader2,
   Star,
+  ClipboardList,
 } from "lucide-react"
 
 // Types
@@ -45,7 +46,7 @@ interface TouchpointTrigger {
   trigger_key: string
   trigger_label: string
   phase: string
-  action_type: "text" | "call"
+  action_type: "text" | "call" | "reminder"
   emoji: string
   day_start: number | null
   day_end: number | null
@@ -127,7 +128,7 @@ export function AdminTouchpointTemplates() {
   const [triggerLabel, setTriggerLabel] = useState("")
   const [triggerKey, setTriggerKey] = useState("")
   const [triggerPhase, setTriggerPhase] = useState("attention")
-  const [triggerActionType, setTriggerActionType] = useState<"text" | "call">("text")
+  const [triggerActionType, setTriggerActionType] = useState<"text" | "call" | "reminder">("text")
   const [triggerEmoji, setTriggerEmoji] = useState("📱")
   const [triggerDayStart, setTriggerDayStart] = useState("")
   const [triggerDayEnd, setTriggerDayEnd] = useState("")
@@ -559,6 +560,8 @@ export function AdminTouchpointTemplates() {
                             className={`text-xs ${
                               trigger.action_type === "call"
                                 ? "bg-purple-50 text-purple-700 border-purple-200"
+                                : trigger.action_type === "reminder"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
                                 : "bg-blue-50 text-blue-700 border-blue-200"
                             }`}
                           >
@@ -566,6 +569,11 @@ export function AdminTouchpointTemplates() {
                               <>
                                 <Phone className="h-3 w-3 mr-1" />
                                 Call
+                              </>
+                            ) : trigger.action_type === "reminder" ? (
+                              <>
+                                <ClipboardList className="h-3 w-3 mr-1" />
+                                Reminder
                               </>
                             ) : (
                               <>
@@ -630,11 +638,15 @@ export function AdminTouchpointTemplates() {
                           className={`text-xs ${
                             selectedTrigger.action_type === "call"
                               ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : selectedTrigger.action_type === "reminder"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
                               : "bg-blue-50 text-blue-700 border-blue-200"
                           }`}
                         >
                           {selectedTrigger.action_type === "call"
                             ? "📅 Recommend: Schedule Call"
+                            : selectedTrigger.action_type === "reminder"
+                            ? "📋 Coach Reminder: Choose from actions below"
                             : "📱 Recommend: Text Message"}
                         </Badge>
                       </div>
@@ -648,8 +660,8 @@ export function AdminTouchpointTemplates() {
                     </Button>
                   </div>
 
-                  {/* Sub-tabs for call triggers */}
-                  {selectedTrigger.action_type === "call" && (
+                  {/* Sub-tabs for call and reminder triggers */}
+                  {(selectedTrigger.action_type === "call" || selectedTrigger.action_type === "reminder") && (
                     <div className="border-t border-gray-100 mt-4 pt-3">
                       <div className="flex gap-1">
                         <button
@@ -660,18 +672,20 @@ export function AdminTouchpointTemplates() {
                               : "text-gray-500 hover:bg-gray-100"
                           }`}
                         >
-                          📱 Text Templates
+                          {selectedTrigger.action_type === "reminder" ? "✅ Action Items" : "📱 Text Templates"}
                         </button>
-                        <button
-                          onClick={() => setViewMode("meeting")}
-                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                            viewMode === "meeting"
-                              ? "bg-[hsl(var(--optavia-green))] text-white"
-                              : "text-gray-500 hover:bg-gray-100"
-                          }`}
-                        >
-                          📧 Meeting Invite
-                        </button>
+                        {selectedTrigger.action_type === "call" && (
+                          <button
+                            onClick={() => setViewMode("meeting")}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                              viewMode === "meeting"
+                                ? "bg-[hsl(var(--optavia-green))] text-white"
+                                : "text-gray-500 hover:bg-gray-100"
+                            }`}
+                          >
+                            📧 Meeting Invite
+                          </button>
+                        )}
                         <button
                           onClick={() => setViewMode("talking")}
                           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -680,7 +694,7 @@ export function AdminTouchpointTemplates() {
                               : "text-gray-500 hover:bg-gray-100"
                           }`}
                         >
-                          💬 Talking Points
+                          {selectedTrigger.action_type === "reminder" ? "💡 Content Ideas" : "💬 Talking Points"}
                         </button>
                       </div>
                     </div>
@@ -876,12 +890,14 @@ export function AdminTouchpointTemplates() {
                 <Card>
                   <CardContent className="p-4">
                     <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                      💬 Celebration Call Talking Points
+                      {selectedTrigger?.action_type === "reminder" ? "💡 Content Ideas to Pull From" : "💬 Celebration Call Talking Points"}
                     </h4>
 
                     {triggerTalkingPoints.length === 0 ? (
                       <p className="text-gray-500 text-sm">
-                        No talking points configured for this milestone.
+                        {selectedTrigger?.action_type === "reminder"
+                          ? "No content ideas configured for this reminder."
+                          : "No talking points configured for this milestone."}
                       </p>
                     ) : (
                       <div className="space-y-2">
@@ -1031,7 +1047,7 @@ export function AdminTouchpointTemplates() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Action Type *</Label>
-                <Select value={triggerActionType} onValueChange={(v) => setTriggerActionType(v as "text" | "call")}>
+                <Select value={triggerActionType} onValueChange={(v) => setTriggerActionType(v as "text" | "call" | "reminder")}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -1046,6 +1062,12 @@ export function AdminTouchpointTemplates() {
                       <span className="flex items-center gap-2">
                         <Phone className="h-4 w-4" />
                         Phone Call
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="reminder">
+                      <span className="flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4" />
+                        Coach Reminder
                       </span>
                     </SelectItem>
                   </SelectContent>

@@ -9,7 +9,7 @@ export interface TouchpointTrigger {
   trigger_key: string
   trigger_label: string
   phase: string
-  action_type: "text" | "call"
+  action_type: "text" | "call" | "reminder"
   emoji: string
   day_start: number | null
   day_end: number | null

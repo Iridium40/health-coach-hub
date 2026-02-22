@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS touchpoint_triggers (
   trigger_key TEXT NOT NULL UNIQUE, -- e.g., 'critical_phase', 'week_1', 'one_month'
   trigger_label TEXT NOT NULL, -- e.g., 'Critical Phase (Days 1-3)'
   phase TEXT NOT NULL, -- 'critical', 'week1', 'milestone', 'attention', etc.
-  action_type TEXT NOT NULL CHECK (action_type IN ('text', 'call')),
+  action_type TEXT NOT NULL CHECK (action_type IN ('text', 'call', 'reminder')),
   emoji TEXT DEFAULT '📱',
   day_start INTEGER, -- Starting day for this trigger (null for attention-based)
   day_end INTEGER, -- Ending day for this trigger (null for single day milestones)
