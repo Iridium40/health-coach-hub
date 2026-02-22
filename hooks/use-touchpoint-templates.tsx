@@ -91,8 +91,8 @@ export function getTriggerForDay(
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
 
   for (const trigger of phaseTriggers) {
-    const start = trigger.day_start || 0
-    const end = trigger.day_end || Infinity
+    const start = trigger.day_start ?? 0
+    const end = trigger.day_end ?? Infinity
 
     if (day >= start && day <= end) {
       return trigger
