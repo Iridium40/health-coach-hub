@@ -699,6 +699,16 @@ Talking Points:
               </TooltipProvider>
             </div>
 
+            {/* Objection Navigator */}
+            <Button
+              size="sm"
+              onClick={() => setShowObjectionNav(true)}
+              className="flex-shrink-0 bg-[#f88221] hover:bg-[#e07520] text-white"
+            >
+              <MessageCircleQuestion className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Objection Navigator</span>
+            </Button>
+
             {/* Export */}
             <Button
               variant="outline"
@@ -709,17 +719,6 @@ Talking Points:
             >
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline ml-1">Export</span>
-            </Button>
-
-            {/* Objection Navigator */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowObjectionNav(true)}
-              className="flex-shrink-0 text-[hsl(var(--optavia-green))] border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))]"
-            >
-              <MessageCircleQuestion className="h-4 w-4" />
-              <span className="hidden sm:inline ml-1">Objection Navigator</span>
             </Button>
           </div>
         </div>
