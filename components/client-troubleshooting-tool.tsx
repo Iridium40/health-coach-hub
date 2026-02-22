@@ -730,26 +730,6 @@ export function ClientTroubleshootingTool() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-6">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <Card className="text-center p-4">
-            <div className="text-2xl mb-1">📉</div>
-            <div className="text-xs font-semibold text-slate-500">Weight Issues</div>
-          </Card>
-          <Card className="text-center p-4">
-            <div className="text-2xl mb-1">😤</div>
-            <div className="text-xs font-semibold text-slate-500">Motivation</div>
-          </Card>
-          <Card className="text-center p-4">
-            <div className="text-2xl mb-1">🍽️</div>
-            <div className="text-xs font-semibold text-slate-500">Compliance</div>
-          </Card>
-          <Card className="text-center p-4">
-            <div className="text-2xl mb-1">💬</div>
-            <div className="text-xs font-semibold text-slate-500">Communication</div>
-          </Card>
-        </div>
-
         {/* Issue Cards */}
         {filteredIssues.length > 0 ? (
           <div className="space-y-4">
