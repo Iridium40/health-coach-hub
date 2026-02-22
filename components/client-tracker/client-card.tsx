@@ -132,7 +132,7 @@ export const ClientCard = memo(function ClientCard({
               )}
             </div>
             <div className="text-sm text-gray-500 mt-1">
-              {phase.label} • Started{" "}
+              {phase.label} • {parseLocalDate(client.start_date) > new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) ? "Starting" : "Started"}{" "}
               {parseLocalDate(client.start_date).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
