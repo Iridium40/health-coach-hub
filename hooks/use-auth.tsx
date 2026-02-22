@@ -102,6 +102,7 @@ export function useAuth() {
           coach_name: coachName,
           signup_access_code: signupAccessCode,
         },
+        emailRedirectTo: `${window.location.origin}/login`,
       },
     })
     return { data, error }
