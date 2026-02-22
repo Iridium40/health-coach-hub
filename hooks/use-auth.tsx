@@ -102,7 +102,7 @@ export function useAuth() {
           coach_name: coachName,
           signup_access_code: signupAccessCode,
         },
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
       },
     })
     return { data, error }
@@ -141,9 +141,9 @@ export function useAuth() {
 
   const resetPassword = async (email: string) => {
     console.log("[resetPassword] Requesting reset for:", email)
-    console.log("[resetPassword] redirectTo:", `${window.location.origin}/reset-password`)
+    console.log("[resetPassword] redirectTo:", `${window.location.origin}/auth/callback?next=/reset-password`)
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
     })
     console.log("[resetPassword] Response data:", JSON.stringify(data))
     console.log("[resetPassword] Response error:", error ? JSON.stringify(error) : "none")

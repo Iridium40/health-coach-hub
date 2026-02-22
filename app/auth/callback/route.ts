@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server"
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get("code")
-  const next = requestUrl.searchParams.get("next") || "/reset-password"
+  const next = requestUrl.searchParams.get("next") || "/dashboard"
 
   if (code) {
     const cookieStore = await cookies()
@@ -36,6 +36,6 @@ export async function GET(request: NextRequest) {
 
   // If code exchange fails, redirect to login with error
   return NextResponse.redirect(
-    new URL("/login?error=Could not reset password. Please try again.", requestUrl.origin)
+    new URL("/login?error=Verification failed. Please try again or request a new link.", requestUrl.origin)
   )
 }
