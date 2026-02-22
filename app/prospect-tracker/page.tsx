@@ -582,14 +582,6 @@ Talking Points:
                 <GraduationCap className="h-4 w-4 mr-2" />
                 Learn the 100's List
               </Button>
-              <Button
-                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
-                variant="outline"
-                onClick={() => setShowObjectionNav(true)}
-              >
-                <MessageCircleQuestion className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Objection Navigator</span>
-              </Button>
               <Link href="/client-tracker">
                 <Button variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20">
                   <Users className="h-4 w-4 sm:mr-2" />
@@ -717,6 +709,17 @@ Talking Points:
             >
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline ml-1">Export</span>
+            </Button>
+
+            {/* Objection Navigator */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowObjectionNav(true)}
+              className="flex-shrink-0 text-[hsl(var(--optavia-green))] border-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-light))]"
+            >
+              <MessageCircleQuestion className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Objection Navigator</span>
             </Button>
           </div>
         </div>
