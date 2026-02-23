@@ -11,9 +11,6 @@ import {
   Check,
   ChevronLeft,
   Search,
-  BarChart3,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react"
 
 interface Step {
@@ -29,12 +26,6 @@ interface Objection {
   toneLabel: string
   whyWorks: string
   steps: Step[]
-}
-
-interface LogEntry {
-  id: string
-  label: string
-  timestamp: string
 }
 
 const OBJECTIONS: Objection[] = [
@@ -170,8 +161,6 @@ export function RecruitmentNavigator() {
   const { toast } = useToast()
   const [selectedObjection, setSelectedObjection] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [objectionLog, setObjectionLog] = useState<LogEntry[]>([])
-  const [showLog, setShowLog] = useState(false)
   const detailRef = useRef<HTMLDivElement>(null)
 
   const filteredObjections = useMemo(() => {
@@ -192,28 +181,6 @@ export function RecruitmentNavigator() {
     setSelectedObjection(id)
     setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100)
   }, [])
-
-  const logObjection = useCallback((objection: Objection) => {
-    setObjectionLog((prev) => [
-      {
-        id: objection.id,
-        label: objection.label,
-        timestamp: new Date().toLocaleString(),
-      },
-      ...prev.slice(0, 19),
-    ])
-    toast({ title: "Logged!", description: `"${objection.label}" added to your conversation log` })
-  }, [toast])
-
-  const topObjections = useMemo(() => {
-    const counts: Record<string, number> = {}
-    objectionLog.forEach((item) => {
-      counts[item.label] = (counts[item.label] || 0) + 1
-    })
-    return Object.entries(counts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-  }, [objectionLog])
 
   const handleCopyAllScripts = async () => {
     if (!activeObjection) return
@@ -300,35 +267,6 @@ export function RecruitmentNavigator() {
             </div>
           </div>
 
-          {objectionLog.length > 0 && (
-            <div>
-              <button
-                onClick={() => setShowLog(!showLog)}
-                className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
-              >
-                <span className="flex items-center gap-2 text-xs font-semibold text-optavia-gray">
-                  <BarChart3 className="h-4 w-4" />
-                  Conversation Log ({objectionLog.length})
-                </span>
-                {showLog ? <ChevronUp className="h-4 w-4 text-optavia-gray" /> : <ChevronDown className="h-4 w-4 text-optavia-gray" />}
-              </button>
-              {showLog && (
-                <Card className="mt-2 p-4 border-gray-200">
-                  <h4 className="text-[10px] font-bold text-optavia-gray uppercase tracking-wider mb-3">
-                    Most Common Scenarios
-                  </h4>
-                  <div className="space-y-2">
-                    {topObjections.map(([label, count], i) => (
-                      <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
-                        <span className="text-sm text-optavia-dark">{label}</span>
-                        <span className="text-sm font-bold text-[hsl(var(--optavia-green))]">{count}x</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-            </div>
-          )}
         </>
       )}
 
@@ -343,19 +281,10 @@ export function RecruitmentNavigator() {
           </button>
 
           <Card className="p-5 border-gray-200 shadow-sm">
-            <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="mb-3">
               <h2 className="font-bold text-lg text-optavia-dark leading-tight">
                 {activeObjection.label}
               </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logObjection(activeObjection)}
-                className="flex-shrink-0 text-xs gap-1.5 border-gray-300 text-optavia-gray hover:text-[hsl(var(--optavia-green))] hover:border-[hsl(var(--optavia-green))]"
-              >
-                <BarChart3 className="h-3 w-3" />
-                Log
-              </Button>
             </div>
 
             <Badge variant="outline" className={`mb-4 text-xs font-bold ${TONE_STYLES[activeObjection.tone].badge}`}>

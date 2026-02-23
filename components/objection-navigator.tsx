@@ -14,9 +14,6 @@ import {
   ClipboardList,
   Phone,
   Handshake,
-  BarChart3,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -40,13 +37,6 @@ interface ContextDef {
   label: string
   icon: LucideIcon
   color: string
-}
-
-interface LogEntry {
-  id: string
-  label: string
-  context: string
-  timestamp: string
 }
 
 const CONTEXTS: ContextDef[] = [
@@ -289,8 +279,6 @@ export function ObjectionNavigator() {
   const [selectedContext, setSelectedContext] = useState<string | null>(null)
   const [selectedObjection, setSelectedObjection] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [objectionLog, setObjectionLog] = useState<LogEntry[]>([])
-  const [showLog, setShowLog] = useState(false)
   const detailRef = useRef<HTMLDivElement>(null)
 
   const allObjections = useMemo(
@@ -320,29 +308,6 @@ export function ObjectionNavigator() {
     setSelectedObjection(id)
     setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100)
   }, [])
-
-  const logObjection = useCallback((objection: Objection & { context: string }) => {
-    setObjectionLog((prev) => [
-      {
-        id: objection.id,
-        label: objection.label,
-        context: objection.context,
-        timestamp: new Date().toLocaleString(),
-      },
-      ...prev.slice(0, 19),
-    ])
-    toast({ title: "Logged!", description: `"${objection.label}" added to your objection log` })
-  }, [toast])
-
-  const topObjections = useMemo(() => {
-    const counts: Record<string, number> = {}
-    objectionLog.forEach((item) => {
-      counts[item.label] = (counts[item.label] || 0) + 1
-    })
-    return Object.entries(counts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-  }, [objectionLog])
 
   const handleCopyAllScripts = async () => {
     if (!activeObjection) return
@@ -478,36 +443,6 @@ export function ObjectionNavigator() {
             </div>
           )}
 
-          {/* Objection Log */}
-          {objectionLog.length > 0 && (
-            <div>
-              <button
-                onClick={() => setShowLog(!showLog)}
-                className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
-              >
-                <span className="flex items-center gap-2 text-xs font-semibold text-optavia-gray">
-                  <BarChart3 className="h-4 w-4" />
-                  Objection Log ({objectionLog.length})
-                </span>
-                {showLog ? <ChevronUp className="h-4 w-4 text-optavia-gray" /> : <ChevronDown className="h-4 w-4 text-optavia-gray" />}
-              </button>
-              {showLog && (
-                <Card className="mt-2 p-4 border-gray-200">
-                  <h4 className="text-[10px] font-bold text-optavia-gray uppercase tracking-wider mb-3">
-                    Most Common Objections
-                  </h4>
-                  <div className="space-y-2">
-                    {topObjections.map(([label, count], i) => (
-                      <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
-                        <span className="text-sm text-optavia-dark">{label}</span>
-                        <span className="text-sm font-bold text-[hsl(var(--optavia-green))]">{count}x</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-            </div>
-          )}
         </>
       )}
 
@@ -523,19 +458,10 @@ export function ObjectionNavigator() {
           </button>
 
           <Card className="p-5 border-gray-200 shadow-sm">
-            <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="mb-3">
               <h2 className="font-bold text-lg text-optavia-dark leading-tight">
                 {activeObjection.label}
               </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => logObjection(activeObjection)}
-                className="flex-shrink-0 text-xs gap-1.5 border-gray-300 text-optavia-gray hover:text-[hsl(var(--optavia-green))] hover:border-[hsl(var(--optavia-green))]"
-              >
-                <BarChart3 className="h-3 w-3" />
-                Log
-              </Button>
             </div>
 
             <Badge variant="outline" className={`mb-4 text-xs font-bold ${TONE_STYLES[activeObjection.tone].badge}`}>
