@@ -816,7 +816,6 @@ export function TodaysFocus({
                     )}
                     <Link href={
                       reminder.entity_type === "prospect" ? "/prospect-tracker"
-                        : reminder.entity_type === "coach" ? "/coach-tracker"
                         : "/client-tracker"
                     }>
                       <Button size="sm" variant="outline" className="h-8 text-xs px-3 text-gray-500 border-gray-200 hover:bg-gray-50">
