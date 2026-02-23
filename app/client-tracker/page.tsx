@@ -59,6 +59,10 @@ import {
   Info,
   Video,
   Pencil,
+  Loader2,
+  Copy,
+  Check,
+  Mail,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -66,7 +70,7 @@ import { MilestoneActionModal } from "@/components/milestone-action-modal"
 import { ClientJourneyGuide } from "@/components/client-journey-guide"
 import { ReminderButton } from "@/components/reminders-panel"
 import { GraduationCap, Trophy, Heart, Download, Wrench, MessageCircleQuestion } from "lucide-react"
-import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
+import { Switch } from "@/components/ui/switch"
 import { sendCalendarInviteEmail } from "@/lib/email"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
 import { useUserData } from "@/contexts/user-data-context"
@@ -174,6 +178,11 @@ export default function ClientTrackerPage() {
   const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>("none")
   const [clientEmail, setClientEmail] = useState<string>("")
   const [clientPhone, setClientPhone] = useState<string>("")
+  const [scheduleDate, setScheduleDate] = useState<string>("")
+  const [notifyClient, setNotifyClient] = useState(false)
+  const [notifyClientMethod, setNotifyClientMethod] = useState<"email" | "text">("email")
+  const [scheduleSaving, setScheduleSaving] = useState(false)
+  const [scheduleTextCopied, setScheduleTextCopied] = useState(false)
   
   // Edit client state
   const [showEditModal, setShowEditModal] = useState(false)
@@ -316,7 +325,6 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
   // Open schedule modal
   const openScheduleModal = (client: Client) => {
     setSelectedClient(client)
-    // Load existing recurring settings if available
     if (client.recurring_day !== null && client.recurring_day !== undefined) {
       setScheduleDay(client.recurring_day)
     } else {
@@ -334,8 +342,13 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       setScheduleAmPm("AM")
     }
     setRecurringFrequency(client.recurring_frequency || "none")
-    setClientEmail("")  // Clients don't store email (privacy-first CRM)
+    setClientEmail("")
     setClientPhone(client.phone || "")
+    setScheduleDate("")
+    setNotifyClient(false)
+    setNotifyClientMethod("email")
+    setScheduleSaving(false)
+    setScheduleTextCopied(false)
     setShowScheduleModal(true)
   }
 
@@ -343,7 +356,9 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
   const generateCalendarEvent = (): CalendarEvent | null => {
     if (!selectedClient) return null
     
-    const targetDate = getNextDayDate(scheduleDay)
+    const targetDate = recurringFrequency === "none" && scheduleDate
+      ? new Date(scheduleDate + "T00:00:00")
+      : getNextDayDate(scheduleDay)
     const hour24 = get24Hour(scheduleHour, scheduleAmPm)
     targetDate.setHours(hour24, parseInt(scheduleMinute), 0, 0)
     
@@ -386,20 +401,39 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     }
   }
 
-  // Handle saving schedule settings (called before calendar actions)
+  const generateCheckinTextInvite = (): string => {
+    if (!selectedClient) return ""
+    const firstName = selectedClient.label.split(" ")[0]
+    const dateStr = (() => {
+      if (recurringFrequency === "none" && scheduleDate) {
+        const d = new Date(scheduleDate + "T00:00:00")
+        return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })
+      }
+      return getNextDayDate(scheduleDay).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })
+    })()
+    const timeStr = `${scheduleHour}:${scheduleMinute} ${scheduleAmPm}`
+    return `Hi ${firstName}! 🌟 Just wanted to confirm our check-in scheduled for ${dateStr} at ${timeStr}. Looking forward to connecting! 💪`
+  }
+
   const handleSaveSchedule = async () => {
     if (!selectedClient) return
-    
-    // Calculate the scheduled datetime
-    const targetDate = getNextDayDate(scheduleDay)
+    setScheduleSaving(true)
+
+    const targetDate = recurringFrequency === "none" && scheduleDate
+      ? new Date(scheduleDate + "T00:00:00")
+      : getNextDayDate(scheduleDay)
     const hour24 = get24Hour(scheduleHour, scheduleAmPm)
     targetDate.setHours(hour24, parseInt(scheduleMinute), 0, 0)
-    
-    // Format time for storage (HH:MM in 24-hour format)
+
+    if (notifyClient && notifyClientMethod === "text") {
+      try {
+        await navigator.clipboard.writeText(generateCheckinTextInvite())
+        setScheduleTextCopied(true)
+      } catch {}
+    }
+
     const timeStr = `${hour24.toString().padStart(2, "0")}:${scheduleMinute}`
-    
-    // Save the scheduled time and recurring settings to the client record
-    // Note: email is not stored on client, only used for sending invites
+
     const success = await updateClient(selectedClient.id, {
       next_scheduled_at: targetDate.toISOString(),
       recurring_frequency: recurringFrequency,
@@ -407,8 +441,9 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       recurring_time: recurringFrequency !== "none" ? timeStr : null,
       phone: clientPhone || null,
     })
-    
+
     if (!success) {
+      setScheduleSaving(false)
       toast({
         title: "Failed to save schedule",
         description: "Please try again",
@@ -416,8 +451,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       })
       return
     }
-    
-    // Send calendar invite to the coach so they can save it to their calendar
+
     const coachEmail = profile?.notification_email || user?.email
     if (coachEmail) {
       const calEvent = generateCalendarEvent()
@@ -432,29 +466,54 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
           startDate: calEvent.startDate.toISOString(),
           endDate: calEvent.endDate.toISOString(),
           eventType: "check-in",
-        }).then((result) => {
-          if (result.success) {
-            toast({
-              title: "📧 Calendar invite sent to you",
-              description: `Check ${coachEmail} for the calendar invite`,
-            })
-          }
-        }).catch(() => {
-          // Silent fail - the check-in was still saved successfully
-        })
+        }).catch(() => {})
       }
     }
 
+    if (notifyClient && notifyClientMethod === "email" && clientEmail) {
+      const calEvent = generateCalendarEvent()
+      if (calEvent && coachEmail) {
+        sendCalendarInviteEmail({
+          to: clientEmail,
+          toName: selectedClient.label,
+          fromEmail: coachEmail,
+          fromName: profile?.full_name || "Your Coach",
+          eventTitle: calEvent.title,
+          eventDescription: calEvent.description,
+          startDate: calEvent.startDate.toISOString(),
+          endDate: calEvent.endDate.toISOString(),
+          eventType: "check-in",
+        }).then((result) => {
+          if (result.success) {
+            toast({
+              title: "📧 Invite sent",
+              description: `Calendar invite sent to ${selectedClient.label}`,
+            })
+          }
+        }).catch(() => {})
+      }
+    }
+
+    setScheduleSaving(false)
     setShowScheduleModal(false)
     setMeetingType("phone")
-    
-    const recurringLabel = recurringFrequency !== "none" 
-      ? ` (${RECURRING_OPTIONS.find(r => r.value === recurringFrequency)?.label})`
-      : ""
-    toast({
-      title: recurringFrequency !== "none" ? "🔄 Recurring Check-in Set" : "📅 Check-in Scheduled",
-      description: `${scheduleHour}:${scheduleMinute} ${scheduleAmPm} on ${DAYS_OF_WEEK[scheduleDay].full}${recurringLabel}`,
-    })
+    setNotifyClient(false)
+    setNotifyClientMethod("email")
+
+    if (notifyClient && notifyClientMethod === "text") {
+      toast({
+        title: "📋 Saved & text copied",
+        description: "Check-in saved. Paste the invite into your texting app.",
+      })
+    } else {
+      const recurringLabel = recurringFrequency !== "none"
+        ? ` (${RECURRING_OPTIONS.find(r => r.value === recurringFrequency)?.label})`
+        : ""
+      toast({
+        title: recurringFrequency !== "none" ? "🔄 Recurring Check-in Set" : "📅 Check-in Scheduled",
+        description: `${scheduleHour}:${scheduleMinute} ${scheduleAmPm} on ${DAYS_OF_WEEK[scheduleDay].full}${recurringLabel}`,
+      })
+    }
   }
 
   const handleAddClient = async () => {
@@ -1126,251 +1185,360 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       )}
 
       {/* Schedule Check-in Modal */}
-      <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarPlus className="h-5 w-5 text-purple-600" />
-              Schedule Check-in
-            </DialogTitle>
-            <DialogDescription>Set a day and time for the client check-in.</DialogDescription>
-          </DialogHeader>
+      <Dialog open={showScheduleModal} onOpenChange={(open) => {
+        setShowScheduleModal(open)
+        if (!open) {
+          setSelectedClient(null)
+          setMeetingType("phone")
+          setNotifyClient(false)
+          setNotifyClientMethod("email")
+        }
+      }}>
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
           {selectedClient && (
-            <div className="space-y-6">
-              {/* Client Info */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="font-medium text-gray-900">{selectedClient.label}</div>
-                <div className="text-sm text-gray-500">
-                  Day {getProgramDay(selectedClient.start_date)} • {getDayPhase(getProgramDay(selectedClient.start_date)).label}
-                </div>
-              </div>
-
-              {/* Day Picker */}
-              <div>
-                <Label className="text-sm font-medium mb-3 block">Select Day</Label>
-                <div className="grid grid-cols-7 gap-1">
-                  {DAYS_OF_WEEK.map((day) => (
-                    <button
-                      key={day.value}
-                      onClick={() => setScheduleDay(day.value)}
-                      className={`p-2 rounded-lg text-center transition-colors ${
-                        scheduleDay === day.value
-                          ? "bg-purple-600 text-white"
-                          : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                      }`}
-                    >
-                      <div className="text-xs font-medium">{day.short}</div>
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Next {DAYS_OF_WEEK[scheduleDay].full}: {getNextDayDate(scheduleDay).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </p>
-              </div>
-
-              {/* Time Picker */}
-              <div>
-                <Label className="text-sm font-medium mb-3 block">Select Time</Label>
-                <div className="flex items-center gap-2 justify-center">
-                  {/* Hour */}
-                  <select
-                    value={scheduleHour}
-                    onChange={(e) => setScheduleHour(parseInt(e.target.value))}
-                    className="w-16 h-12 text-center text-lg font-medium border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  >
-                    {HOUR_OPTIONS.map((h) => (
-                      <option key={h} value={h}>{h}</option>
-                    ))}
-                  </select>
-                  <span className="text-2xl font-bold text-gray-400">:</span>
-                  {/* Minute */}
-                  <select
-                    value={scheduleMinute}
-                    onChange={(e) => setScheduleMinute(e.target.value)}
-                    className="w-16 h-12 text-center text-lg font-medium border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  >
-                    {MINUTE_OPTIONS.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                  {/* AM/PM */}
-                  <div className="flex rounded-lg border overflow-hidden">
-                    <button
-                      onClick={() => setScheduleAmPm("AM")}
-                      className={`px-4 h-12 font-medium transition-colors ${
-                        scheduleAmPm === "AM"
-                          ? "bg-purple-600 text-white"
-                          : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      AM
-                    </button>
-                    <button
-                      onClick={() => setScheduleAmPm("PM")}
-                      className={`px-4 h-12 font-medium transition-colors ${
-                        scheduleAmPm === "PM"
-                          ? "bg-purple-600 text-white"
-                          : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      PM
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 text-center mt-2">30 minute check-in</p>
-              </div>
-
-              {/* Recurring Frequency */}
-              <div>
-                <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
-                  <Repeat className="h-4 w-4 text-purple-500" />
-                  Recurring
-                </Label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {RECURRING_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setRecurringFrequency(option.value)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        recurringFrequency === option.value
-                          ? "bg-purple-600 text-white"
-                          : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-                {recurringFrequency !== "none" && (
-                  <p className="text-xs text-purple-600 mt-2 flex items-center gap-1">
-                    <Repeat className="h-3 w-3" />
-                    Repeats every {recurringFrequency === "weekly" ? "week" : recurringFrequency === "biweekly" ? "2 weeks" : "month"} on {DAYS_OF_WEEK[scheduleDay].full}
-                  </p>
-                )}
-              </div>
-
-              {/* Meeting Type Selector */}
-              <div>
-                <Label className="text-sm font-medium mb-3 block">Meeting Type</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setMeetingType("phone")}
-                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-                      meetingType === "phone"
-                        ? "border-purple-600 bg-purple-50 text-purple-700"
-                        : "border-gray-200 hover:border-gray-300 text-gray-700"
-                    }`}
-                  >
-                    <Phone className="h-5 w-5" />
-                    <span className="font-medium">Phone</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMeetingType("zoom")}
-                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-                      meetingType === "zoom"
-                        ? "border-purple-600 bg-purple-50 text-purple-700"
-                        : "border-gray-200 hover:border-gray-300 text-gray-700"
-                    }`}
-                  >
-                    <Video className="h-5 w-5" />
-                    <span className="font-medium">Zoom</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Zoom Details (shown when Zoom is selected) - read-only from profile */}
-              {meetingType === "zoom" && (
-                <div className="space-y-3 bg-purple-50 border border-purple-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-purple-700 text-sm font-medium">
-                    <Video className="h-4 w-4" />
-                    Zoom Meeting Details
-                  </div>
-                  {profile?.zoom_link ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={profile.zoom_link}
-                        readOnly
-                        className="bg-white/60 text-gray-700 cursor-default"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          value={profile.zoom_meeting_id || ""}
-                          readOnly
-                          placeholder="No Meeting ID"
-                          className="bg-white/60 text-gray-700 cursor-default"
-                        />
-                        <Input
-                          value={profile.zoom_passcode || ""}
-                          readOnly
-                          placeholder="No Passcode"
-                          className="bg-white/60 text-gray-700 cursor-default"
-                        />
-                      </div>
-                      <p className="text-xs text-purple-500">
-                        Managed in <Link href="/settings" className="underline hover:text-purple-700 font-medium">My Settings → Zoom</Link> tab
-                      </p>
+            <>
+              {/* Header */}
+              <div className="px-6 pt-6 pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                      <CalendarPlus className="h-5 w-5 text-purple-600" />
                     </div>
-                  ) : (
-                    <div className="text-center py-3">
-                      <p className="text-sm text-purple-700 font-medium">No Zoom details configured</p>
-                      <p className="text-xs text-purple-600 mt-1">
-                        Go to <Link href="/settings" className="underline hover:text-purple-800 font-semibold">My Settings → Zoom</Link> tab to enter your Zoom link, meeting ID, and passcode.
+                    <div>
+                      <DialogTitle className="text-lg font-bold text-gray-900">Schedule Check-in</DialogTitle>
+                      <DialogDescription className="text-sm text-gray-500">30 minute check-in</DialogDescription>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Client Card */}
+                <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    {selectedClient.label.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">{selectedClient.label}</div>
+                    <div className="text-xs text-purple-600">
+                      Day {getProgramDay(selectedClient.start_date)} • {getDayPhase(getProgramDay(selectedClient.start_date)).label}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 pb-6 space-y-5">
+                {/* Recurring */}
+                <div>
+                  <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Repeat className="h-3.5 w-3.5 text-purple-500" />
+                    Recurring
+                  </Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {RECURRING_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setRecurringFrequency(option.value)}
+                        className={`px-2 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          recurringFrequency === option.value
+                            ? "bg-purple-600 text-white"
+                            : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Day of Week (recurring) or Date (one-time) */}
+                {recurringFrequency !== "none" ? (
+                  <div>
+                    <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Day of Week</Label>
+                    <div className="grid grid-cols-7 gap-1">
+                      {DAYS_OF_WEEK.map((day) => (
+                        <button
+                          key={day.value}
+                          onClick={() => setScheduleDay(day.value)}
+                          className={`p-2 rounded-lg text-center transition-colors ${
+                            scheduleDay === day.value
+                              ? "bg-purple-600 text-white"
+                              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                          }`}
+                        >
+                          <div className="text-xs font-medium">{day.short}</div>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-purple-600 mt-2">
+                      Starting: {DAYS_OF_WEEK[scheduleDay].full}, {getNextDayDate(scheduleDay).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Date</Label>
+                    <Input
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      min={today}
+                      className="w-full h-11"
+                    />
+                  </div>
+                )}
+
+                {/* Time */}
+                <div>
+                  <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Time</Label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={scheduleHour}
+                      onChange={(e) => setScheduleHour(parseInt(e.target.value))}
+                      className="w-16 h-11 text-center text-base font-medium border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      {HOUR_OPTIONS.map((h) => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                    <span className="text-xl font-bold text-gray-300">:</span>
+                    <select
+                      value={scheduleMinute}
+                      onChange={(e) => setScheduleMinute(e.target.value)}
+                      className="w-16 h-11 text-center text-base font-medium border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      {MINUTE_OPTIONS.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                    <div className="flex rounded-lg border overflow-hidden ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => setScheduleAmPm("AM")}
+                        className={`px-4 h-11 font-semibold text-sm transition-colors ${
+                          scheduleAmPm === "AM"
+                            ? "bg-purple-600 text-white"
+                            : "bg-white text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        AM
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setScheduleAmPm("PM")}
+                        className={`px-4 h-11 font-semibold text-sm transition-colors ${
+                          scheduleAmPm === "PM"
+                            ? "bg-purple-600 text-white"
+                            : "bg-white text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        PM
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Meeting Type */}
+                <div>
+                  <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Meeting Type</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setMeetingType("phone")}
+                      className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-medium ${
+                        meetingType === "phone"
+                          ? "border-purple-600 bg-purple-50 text-purple-700"
+                          : "border-gray-200 hover:border-gray-300 text-gray-600"
+                      }`}
+                    >
+                      <Phone className="h-4 w-4" />
+                      Phone
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMeetingType("zoom")}
+                      className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-medium ${
+                        meetingType === "zoom"
+                          ? "border-purple-600 bg-purple-50 text-purple-700"
+                          : "border-gray-200 hover:border-gray-300 text-gray-600"
+                      }`}
+                    >
+                      <Video className="h-4 w-4" />
+                      Zoom
+                    </button>
+                  </div>
+                </div>
+
+                {/* Zoom Details */}
+                {meetingType === "zoom" && (
+                  <div className="space-y-2 bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-purple-700 text-sm font-medium">
+                      <Video className="h-4 w-4" />
+                      Zoom Meeting Details
+                    </div>
+                    {profile?.zoom_link ? (
+                      <div className="space-y-2">
+                        <Input value={profile.zoom_link} readOnly className="bg-white/60 text-gray-700 cursor-default text-sm" />
+                        <p className="text-xs text-purple-500">
+                          Managed in <Link href="/settings" className="underline hover:text-purple-700 font-medium">My Settings → Zoom</Link>
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-purple-700">
+                        No Zoom details configured. <Link href="/settings" className="underline font-semibold">Set up in Settings</Link>
                       </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Notify Toggle */}
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                        <Send className="h-3.5 w-3.5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Also notify {selectedClient.label.split(" ")[0]}</p>
+                        <p className="text-xs text-gray-500">Send a calendar invite or text</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notifyClient}
+                      onCheckedChange={setNotifyClient}
+                    />
+                  </div>
+
+                  {notifyClient && (
+                    <div className="mt-4 space-y-3">
+                      <div className="flex rounded-lg border overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setNotifyClientMethod("email")}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                            notifyClientMethod === "email"
+                              ? "bg-purple-600 text-white"
+                              : "bg-white text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          Email
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNotifyClientMethod("text")}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                            notifyClientMethod === "text"
+                              ? "bg-purple-600 text-white"
+                              : "bg-white text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          Text
+                        </button>
+                      </div>
+
+                      {notifyClientMethod === "email" && (
+                        <div className="space-y-1.5">
+                          <Input
+                            type="text"
+                            placeholder={`${selectedClient.label.split(" ")[0]}'s email address`}
+                            value={clientEmail}
+                            onChange={(e) => setClientEmail(e.target.value)}
+                            className="h-10 text-sm"
+                          />
+                          {!profile?.notification_email && (
+                            <p className="text-xs text-amber-600">
+                              Set your notification email in Settings → Notifications first
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {notifyClientMethod === "text" && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed line-clamp-4">
+                            {generateCheckinTextInvite()}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(generateCheckinTextInvite())
+                                setScheduleTextCopied(true)
+                                setTimeout(() => setScheduleTextCopied(false), 3000)
+                              } catch {}
+                            }}
+                            className={`mt-2 w-full text-xs ${scheduleTextCopied ? "bg-teal-50 border-teal-300 text-teal-700" : ""}`}
+                          >
+                            {scheduleTextCopied ? <><Check className="h-3 w-3 mr-1" /> Copied!</> : <><Copy className="h-3 w-3 mr-1" /> Copy Text Invite</>}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* Info - only show for recurring */}
-              {recurringFrequency !== "none" && (
-                <div className="bg-purple-50 rounded-lg p-3 text-sm text-purple-700 flex items-start gap-2">
-                  <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                  <span>
-                    We'll track your recurring schedule and auto-advance to the next check-in date.
-                  </span>
-                </div>
-              )}
-
-              {/* Primary Save & Schedule Button */}
-              <Button
-                onClick={handleSaveSchedule}
-                className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base"
-                size="lg"
-              >
-                <CalendarPlus className="h-5 w-5 mr-2" />
-                Save & Schedule
-              </Button>
-
-              {/* Optional: Notify Client */}
-              {generateCalendarEvent() && (
-                <div className="border-t border-gray-200 pt-4">
-                  <p className="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-3">
-                    Optional — Notify Client
+                {/* Summary line */}
+                {(recurringFrequency !== "none" || scheduleDate) && (
+                  <p className="text-sm text-purple-600 font-medium text-center">
+                    {(() => {
+                      const d = recurringFrequency === "none" && scheduleDate
+                        ? new Date(scheduleDate + "T00:00:00")
+                        : getNextDayDate(scheduleDay)
+                      return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+                    })()} · {scheduleHour}:{scheduleMinute} {scheduleAmPm} · {meetingType === "phone" ? "Phone" : "Zoom"}
+                    {recurringFrequency !== "none" && ` · ${RECURRING_OPTIONS.find(r => r.value === recurringFrequency)?.label}`}
                   </p>
-                  <ScheduleCalendarOptions
-                    event={generateCalendarEvent()!}
-                    recipientName={selectedClient.label}
-                    recipientEmail={clientEmail}
-                    recipientPhone={clientPhone}
-                    onEmailChange={setClientEmail}
-                    onPhoneChange={setClientPhone}
-                    eventType="check-in"
-                    recurringFrequency={recurringFrequency}
-                  />
-                </div>
-              )}
-            </div>
+                )}
+
+                {/* Primary Action Button */}
+                <Button
+                  onClick={handleSaveSchedule}
+                  disabled={scheduleSaving || (recurringFrequency === "none" && !scheduleDate) || (notifyClient && notifyClientMethod === "email" && !clientEmail)}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-5 text-base rounded-xl"
+                  size="lg"
+                >
+                  {scheduleSaving ? (
+                    <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Saving...</>
+                  ) : notifyClient && notifyClientMethod === "email" && clientEmail ? (
+                    <><Send className="h-5 w-5 mr-2" /> Save & Send Invite to {selectedClient.label.split(" ")[0]}</>
+                  ) : notifyClient && notifyClientMethod === "text" ? (
+                    <><Copy className="h-5 w-5 mr-2" /> Save & Copy Text Invite</>
+                  ) : recurringFrequency !== "none" ? (
+                    <><CalendarPlus className="h-5 w-5 mr-2" /> Save {RECURRING_OPTIONS.find(r => r.value === recurringFrequency)?.label} Check-in</>
+                  ) : (
+                    <><CalendarPlus className="h-5 w-5 mr-2" /> Save to My Calendar</>
+                  )}
+                </Button>
+
+                {/* Contextual Explainer */}
+                <p className="text-xs text-gray-400 text-center leading-relaxed flex items-start gap-1.5 justify-center">
+                  <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                  {notifyClient && notifyClientMethod === "email" && clientEmail
+                    ? `This will save the check-in to your calendar and send a calendar invite to ${selectedClient.label.split(" ")[0]}.`
+                    : notifyClient && notifyClientMethod === "text"
+                    ? `This will save the check-in to your calendar and copy the text invite. Paste it into your texting app after saving.`
+                    : `This will add the check-in to your calendar only. Toggle the notify option above to also send ${selectedClient.label.split(" ")[0]} an invite.`
+                  }
+                </p>
+
+                {/* Cancel */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowScheduleModal(false)
+                    setSelectedClient(null)
+                    setMeetingType("phone")
+                    setNotifyClient(false)
+                    setNotifyClientMethod("email")
+                  }}
+                  className="w-full text-center text-sm text-gray-400 hover:text-gray-600 transition-colors py-1"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowScheduleModal(false)
-              setMeetingType("phone")
-            }}>
-              Cancel
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
