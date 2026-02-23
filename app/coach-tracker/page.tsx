@@ -574,42 +574,44 @@ export default function CoachTrackerPage() {
             </div>
           )}
 
-          {/* Search & Filter */}
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="relative max-w-md">
+          {/* Search, Filter & Actions */}
+          <div className="flex items-center gap-2 mb-6 flex-wrap">
+            <div className="relative flex-1 min-w-[140px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search by name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-9"
               />
             </div>
 
-            <div className="flex items-center justify-between gap-2">
-              {/* Filter Dropdown */}
-              <Select
-                value={filterStage}
-                onValueChange={(value) => setFilterStage(value as CoachStage | "all")}
-              >
-                <SelectTrigger className="w-[160px] sm:w-[180px] h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Coaches</SelectItem>
-                  <SelectItem value="new_coach">New Coach</SelectItem>
-                  <SelectItem value="building">Building</SelectItem>
-                  <SelectItem value="certified">Certified</SelectItem>
-                  <SelectItem value="leader">Leader</SelectItem>
-                </SelectContent>
-              </Select>
+            <Select
+              value={filterStage}
+              onValueChange={(value) => setFilterStage(value as CoachStage | "all")}
+            >
+              <SelectTrigger className="w-[140px] sm:w-[160px] h-9 text-sm flex-shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Coaches</SelectItem>
+                <SelectItem value="new_coach">New Coach</SelectItem>
+                <SelectItem value="building">Building</SelectItem>
+                <SelectItem value="certified">Certified</SelectItem>
+                <SelectItem value="leader">Leader</SelectItem>
+              </SelectContent>
+            </Select>
 
-              {/* Export */}
-              <Button variant="outline" size="sm" onClick={handleExport} className="text-xs">
-                <Download className="h-3.5 w-3.5 mr-1" />
-                Export
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="text-gray-600 flex-shrink-0 h-9"
+              title="Export to CSV"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Export</span>
+            </Button>
           </div>
 
           {/* Coach Count */}
