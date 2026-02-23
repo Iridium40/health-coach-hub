@@ -688,30 +688,23 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
           </div>
           
           <div className="flex items-center justify-between gap-2">
-            {/* Filter Tabs */}
-            <div className="flex gap-1 sm:gap-2 flex-wrap">
-              {(["all", "active", "goal_achieved", "future_coach", "coach_launched", "paused"] as const).map((status) => {
-                const filterLabels: Record<string, string> = {
-                  all: "All",
-                  active: "Client",
-                  goal_achieved: "Goal Achieved",
-                  future_coach: "Future Coach",
-                  coach_launched: "Coach Launched",
-                  paused: "Paused",
-                }
-                return (
-                  <Button
-                    key={status}
-                    variant={filterStatus === status ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterStatus(status)}
-                    className={`text-xs sm:text-sm px-2 sm:px-3 ${filterStatus === status ? "bg-[hsl(var(--optavia-green))]" : ""}`}
-                  >
-                    {filterLabels[status]}
-                  </Button>
-                )
-              })}
-            </div>
+            {/* Filter Dropdown */}
+            <Select
+              value={filterStatus}
+              onValueChange={(value) => setFilterStatus(value as ClientStatus | "all")}
+            >
+              <SelectTrigger className="w-[160px] sm:w-[180px] h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Clients</SelectItem>
+                <SelectItem value="active">Client</SelectItem>
+                <SelectItem value="goal_achieved">Goal Achieved</SelectItem>
+                <SelectItem value="future_coach">Future Coach</SelectItem>
+                <SelectItem value="coach_launched">Coach Launched</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* Troubleshooting Guide */}
             <Button
