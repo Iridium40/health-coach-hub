@@ -67,6 +67,7 @@ import {
   MessageSquare,
   Copy,
   Check,
+  Lock,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Header } from "@/components/header"
@@ -142,8 +143,8 @@ export default function ProspectTrackerPage() {
   const [prospectEmail, setProspectEmail] = useState("")
   const [prospectPhone, setProspectPhone] = useState("")
   const [haMeetingType, setHaMeetingType] = useState<"phone" | "zoom">("phone")
-  const [notifyProspect, setNotifyProspect] = useState(false)
-  const [notifyMethod, setNotifyMethod] = useState<"email" | "text">("email")
+  const [calendarOnly, setCalendarOnly] = useState(false)
+  const [inviteMethod, setInviteMethod] = useState<"email" | "text">("email")
   const [haSaving, setHaSaving] = useState(false)
   const [textCopied, setTextCopied] = useState(false)
 
@@ -304,23 +305,24 @@ Talking Points:
     const targetDate = new Date(haDate + "T00:00:00")
     const hour24 = get24Hour(haHour, haAmPm)
     targetDate.setHours(hour24, parseInt(haMinute), 0, 0)
-    const dateStr = targetDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+    const dateStr = targetDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })
     const timeStr = `${haHour}:${haMinute} ${haAmPm}`
-    return `Hi ${schedulingProspect.label}!\n\nI'd like to schedule a Health Assessment with you.\n\n📅 ${dateStr}\n⏰ ${timeStr}\n\nLooking forward to connecting with you!\n\n${profile?.full_name || "Your Coach"}`
+    if (haMeetingType === "zoom" && profile?.zoom_link) {
+      return `Hi ${schedulingProspect.label.split(" ")[0]}! Looking forward to our health assessment on ${dateStr} at ${timeStr}. Here's the Zoom link: ${profile.zoom_link} See you there!`
+    }
+    return `Hi ${schedulingProspect.label.split(" ")[0]}! Just confirming our health assessment on ${dateStr} at ${timeStr}. We'll connect via phone call. Talk soon!`
   }
 
   const handleSaveHASchedule = async () => {
     if (!schedulingProspect || !haDate) return
 
-    // If notify via text, copy first so user has it on clipboard
-    if (notifyProspect && notifyMethod === "text") {
+    const sendInvite = !calendarOnly
+    if (sendInvite && inviteMethod === "text") {
       try {
         await navigator.clipboard.writeText(generateHATextInvite())
         setTextCopied(true)
         setTimeout(() => setTextCopied(false), 3000)
-      } catch {
-        // Clipboard may fail silently
-      }
+      } catch {}
     }
 
     setHaSaving(true)
@@ -341,7 +343,6 @@ Talking Points:
         description: `${haHour}:${haMinute} ${haAmPm} on ${targetDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`,
       })
 
-      // Send calendar invite to the coach
       const coachEmail = profile?.notification_email || user?.email
       if (coachEmail) {
         const calEvent = generateHACalendarEvent()
@@ -360,8 +361,7 @@ Talking Points:
         }
       }
 
-      // If notify via email, send the invite to the prospect too
-      if (notifyProspect && notifyMethod === "email" && prospectEmail) {
+      if (sendInvite && inviteMethod === "email" && prospectEmail) {
         const organizerEmail = profile?.notification_email
         if (organizerEmail) {
           const calEvent = generateHACalendarEvent()
@@ -372,7 +372,7 @@ Talking Points:
                 to: toEmail,
                 toName: schedulingProspect.label,
                 fromEmail: organizerEmail,
-                fromName: profile?.full_name,
+                fromName: profile?.full_name ?? undefined,
                 eventTitle: calEvent.title,
                 eventDescription: calEvent.description,
                 startDate: calEvent.startDate.toISOString(),
@@ -392,7 +392,7 @@ Talking Points:
         }
       }
 
-      if (notifyProspect && notifyMethod === "text") {
+      if (sendInvite && inviteMethod === "text") {
         toast({
           title: "📋 Text invite copied!",
           description: "Paste the message into your texting app",
@@ -402,8 +402,8 @@ Talking Points:
       setShowHAScheduleModal(false)
       setSchedulingProspect(null)
       setHaMeetingType("phone")
-      setNotifyProspect(false)
-      setNotifyMethod("email")
+      setCalendarOnly(false)
+      setInviteMethod("email")
     } else {
       toast({
         title: "Failed to schedule HA",
@@ -826,7 +826,7 @@ Talking Points:
                             className={`flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium ${
                               new Date(prospect.ha_scheduled_at) < new Date() 
                                 ? "bg-red-100 text-red-700 border border-red-200" 
-                                : "bg-purple-100 text-purple-700 border border-purple-200"
+                                : "bg-green-100 text-[hsl(var(--optavia-green))] border border-green-200"
                             }`}
                           >
                             <Calendar className="h-3.5 w-3.5" />
@@ -847,7 +847,7 @@ Talking Points:
                               variant="ghost"
                               size="sm"
                               onClick={() => sendHASMS(prospect)}
-                              className="h-7 w-7 p-0 text-purple-500 hover:text-purple-700 hover:bg-purple-50"
+                              className="h-7 w-7 p-0 text-green-600 hover:text-[hsl(var(--optavia-green))] hover:bg-green-50"
                               title="Send SMS reminder"
                             >
                               <Send className="h-3 w-3" />
@@ -957,7 +957,7 @@ Talking Points:
                           setProspectPhone((prospect as any).phone || "")
                           setShowHAScheduleModal(true)
                         }}
-                        className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50"
+                        className="flex-1 text-[hsl(var(--optavia-green))] border-green-200 hover:bg-green-50"
                         title="Schedule HA"
                       >
                         <CalendarPlus className="h-4 w-4 mr-1" />
@@ -1282,8 +1282,8 @@ Talking Points:
         if (!open) {
           setSchedulingProspect(null)
           setHaMeetingType("phone")
-          setNotifyProspect(false)
-          setNotifyMethod("email")
+          setCalendarOnly(false)
+          setInviteMethod("email")
         }
       }}>
         <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
@@ -1433,77 +1433,64 @@ Talking Points:
                   </div>
                 )}
 
-                {/* Notify Toggle */}
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Send className="h-3.5 w-3.5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Also notify {schedulingProspect.label.split(" ")[0]}</p>
-                        <p className="text-xs text-gray-500">Send them a calendar invite or text</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={notifyProspect}
-                      onCheckedChange={setNotifyProspect}
-                    />
-                  </div>
+                {/* Send Invite Section */}
+                <div className="border-t border-gray-100 pt-4 space-y-3">
+                  {!calendarOnly && (
+                    <>
+                      <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                        <Send className="h-3.5 w-3.5 text-[hsl(var(--optavia-green))]" />
+                        Send Invite to {schedulingProspect.label.split(" ")[0]}
+                      </Label>
 
-                  {/* Notify Options (expanded when toggled on) */}
-                  {notifyProspect && (
-                    <div className="mt-4 space-y-3">
-                      {/* Email / Text toggle */}
                       <div className="flex rounded-lg border overflow-hidden">
                         <button
                           type="button"
-                          onClick={() => setNotifyMethod("email")}
-                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-                            notifyMethod === "email"
-                              ? "bg-blue-600 text-white"
+                          onClick={() => setInviteMethod("email")}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
+                            inviteMethod === "email"
+                              ? "bg-[hsl(var(--optavia-green))] text-white"
                               : "bg-white text-gray-600 hover:bg-gray-50"
                           }`}
                         >
                           <Mail className="h-3.5 w-3.5" />
-                          Email
+                          Email Invite
                         </button>
                         <button
                           type="button"
-                          onClick={() => setNotifyMethod("text")}
-                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-                            notifyMethod === "text"
-                              ? "bg-blue-600 text-white"
+                          onClick={() => setInviteMethod("text")}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
+                            inviteMethod === "text"
+                              ? "bg-green-600 text-white"
                               : "bg-white text-gray-600 hover:bg-gray-50"
                           }`}
                         >
                           <MessageSquare className="h-3.5 w-3.5" />
-                          Text
+                          Copy for Text
                         </button>
                       </div>
 
-                      {notifyMethod === "email" && (
+                      {inviteMethod === "email" && (
                         <div className="space-y-1.5">
                           <Input
                             type="text"
-                            placeholder={`${schedulingProspect.label.split(" ")[0]}'s email address`}
+                            placeholder={`${schedulingProspect.label.split(" ")[0].toLowerCase()}@email.com`}
                             value={prospectEmail}
                             onChange={(e) => setProspectEmail(e.target.value)}
                             className="h-10 text-sm"
                           />
-                          {!profile?.notification_email && (
-                            <p className="text-xs text-amber-600">
-                              Set your notification email in Settings → Notifications first
-                            </p>
-                          )}
+                          <p className="text-xs text-gray-500">
+                            Sends a calendar invite with meeting details to {schedulingProspect.label.split(" ")[0]}
+                          </p>
                         </div>
                       )}
 
-                      {notifyMethod === "text" && haDate && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                          <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed line-clamp-4">
-                            {generateHATextInvite()}
-                          </p>
+                      {inviteMethod === "text" && haDate && (
+                        <div className="space-y-1.5">
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                              {generateHATextInvite()}
+                            </p>
+                          </div>
                           <Button
                             type="button"
                             variant="outline"
@@ -1515,39 +1502,69 @@ Talking Points:
                                 setTimeout(() => setTextCopied(false), 3000)
                               } catch {}
                             }}
-                            className={`mt-2 w-full text-xs ${textCopied ? "bg-teal-50 border-teal-300 text-teal-700" : ""}`}
+                            className={`w-full text-sm ${textCopied ? "bg-teal-50 border-teal-300 text-teal-700" : ""}`}
                           >
-                            {textCopied ? <><Check className="h-3 w-3 mr-1" /> Copied!</> : <><Copy className="h-3 w-3 mr-1" /> Copy Text Invite</>}
+                            {textCopied ? <><Check className="h-3.5 w-3.5 mr-1.5" /> Copied!</> : <><Copy className="h-3.5 w-3.5 mr-1.5" /> Copy to Clipboard</>}
                           </Button>
+                          <p className="text-xs text-gray-500">
+                            Paste into your texting app to send manually
+                          </p>
                         </div>
                       )}
-                    </div>
+                    </>
                   )}
+
+                  {/* Calendar Only Toggle */}
+                  <div className={`rounded-xl p-3 flex items-center justify-between transition-all ${
+                    calendarOnly ? "border-2 border-[hsl(var(--optavia-green))] bg-green-50" : "border border-gray-200"
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <Lock className={`h-4 w-4 ${calendarOnly ? "text-[hsl(var(--optavia-green))]" : "text-gray-400"}`} />
+                      <div>
+                        <p className={`text-sm font-semibold ${calendarOnly ? "text-[hsl(var(--optavia-green))]" : "text-gray-700"}`}>
+                          Only add to my calendar
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Don't send an invite to {schedulingProspect.label.split(" ")[0]}
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={calendarOnly}
+                      onCheckedChange={setCalendarOnly}
+                    />
+                  </div>
                 </div>
 
                 {/* Summary line */}
                 {haDate && (
-                  <p className="text-sm text-[hsl(var(--optavia-green))] font-medium text-center">
-                    {(() => {
-                      const d = new Date(haDate + "T00:00:00")
-                      return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
-                    })()} · {haHour}:{haMinute} {haAmPm} · {haMeetingType === "phone" ? "Phone" : "Zoom"}
-                  </p>
+                  <div className="text-center">
+                    <p className="text-sm text-[hsl(var(--optavia-green))] font-medium">
+                      {(() => {
+                        const d = new Date(haDate + "T00:00:00")
+                        return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })
+                      })()} · {haHour}:{haMinute} {haAmPm} · {haMeetingType === "phone" ? "Phone" : "Zoom"}
+                    </p>
+                    <p className="text-xs text-green-600 mt-0.5">
+                      {calendarOnly
+                        ? "Coach calendar only"
+                        : inviteMethod === "email"
+                        ? prospectEmail ? `Email invite → ${prospectEmail}` : "Email invite → no email entered"
+                        : "Text invite (copy)"
+                      }
+                    </p>
+                  </div>
                 )}
 
                 {/* Primary Action Button */}
                 <Button
                   onClick={handleSaveHASchedule}
-                  disabled={!haDate || haSaving || (notifyProspect && notifyMethod === "email" && !prospectEmail)}
+                  disabled={!haDate || haSaving}
                   className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base rounded-xl"
                   size="lg"
                 >
                   {haSaving ? (
                     <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Saving...</>
-                  ) : notifyProspect && notifyMethod === "email" && prospectEmail ? (
-                    <><Send className="h-5 w-5 mr-2" /> Save & Send Invite to {schedulingProspect.label.split(" ")[0]}</>
-                  ) : notifyProspect && notifyMethod === "text" ? (
-                    <><Copy className="h-5 w-5 mr-2" /> Save & Copy Text Invite</>
                   ) : (
                     <><CalendarPlus className="h-5 w-5 mr-2" /> Save to My Calendar</>
                   )}
@@ -1556,11 +1573,13 @@ Talking Points:
                 {/* Contextual Explainer */}
                 <p className="text-xs text-gray-400 text-center leading-relaxed flex items-start gap-1.5 justify-center">
                   <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                  {notifyProspect && notifyMethod === "email" && prospectEmail
-                    ? `This will save the meeting to your calendar and send a calendar invite to ${schedulingProspect.label.split(" ")[0]}.`
-                    : notifyProspect && notifyMethod === "text"
-                    ? `This will save the meeting to your calendar and copy the text invite. Paste it into your texting app after saving.`
-                    : `This will add the meeting to your calendar only. Toggle the notify option above to also send ${schedulingProspect.label.split(" ")[0]} an invite.`
+                  {calendarOnly
+                    ? `This will add the HA to your calendar only. No invite will be sent to ${schedulingProspect.label.split(" ")[0]}.`
+                    : inviteMethod === "email" && prospectEmail
+                    ? `Enter ${schedulingProspect.label.split(" ")[0]}'s email above to send them an invite, or toggle "Only add to my calendar" to skip.`
+                    : inviteMethod === "text"
+                    ? `This will add the HA to your calendar. Don't forget to paste the copied invite text to ${schedulingProspect.label.split(" ")[0]}.`
+                    : `Enter ${schedulingProspect.label.split(" ")[0]}'s email above to send them an invite, or toggle "Only add to my calendar" to skip.`
                   }
                 </p>
 
@@ -1571,8 +1590,8 @@ Talking Points:
                     setShowHAScheduleModal(false)
                     setSchedulingProspect(null)
                     setHaMeetingType("phone")
-                    setNotifyProspect(false)
-                    setNotifyMethod("email")
+                    setCalendarOnly(false)
+                    setInviteMethod("email")
                   }}
                   className="w-full text-center text-sm text-gray-400 hover:text-gray-600 transition-colors py-1"
                 >

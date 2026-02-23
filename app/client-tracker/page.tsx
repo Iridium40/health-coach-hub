@@ -63,6 +63,7 @@ import {
   Copy,
   Check,
   Mail,
+  Lock,
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -179,8 +180,8 @@ export default function ClientTrackerPage() {
   const [clientEmail, setClientEmail] = useState<string>("")
   const [clientPhone, setClientPhone] = useState<string>("")
   const [scheduleDate, setScheduleDate] = useState<string>("")
-  const [notifyClient, setNotifyClient] = useState(false)
-  const [notifyClientMethod, setNotifyClientMethod] = useState<"email" | "text">("email")
+  const [calendarOnly, setCalendarOnly] = useState(false)
+  const [inviteMethod, setInviteMethod] = useState<"email" | "text">("email")
   const [scheduleSaving, setScheduleSaving] = useState(false)
   const [scheduleTextCopied, setScheduleTextCopied] = useState(false)
   
@@ -345,8 +346,8 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     setClientEmail("")
     setClientPhone(client.phone || "")
     setScheduleDate("")
-    setNotifyClient(false)
-    setNotifyClientMethod("email")
+    setCalendarOnly(false)
+    setInviteMethod("email")
     setScheduleSaving(false)
     setScheduleTextCopied(false)
     setShowScheduleModal(true)
@@ -412,7 +413,10 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       return getNextDayDate(scheduleDay).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })
     })()
     const timeStr = `${scheduleHour}:${scheduleMinute} ${scheduleAmPm}`
-    return `Hi ${firstName}! 🌟 Just wanted to confirm our check-in scheduled for ${dateStr} at ${timeStr}. Looking forward to connecting! 💪`
+    if (meetingType === "zoom" && profile?.zoom_link) {
+      return `Hi ${firstName}! Looking forward to our check-in on ${dateStr} at ${timeStr}. Here's the Zoom link: ${profile.zoom_link} See you there!`
+    }
+    return `Hi ${firstName}! Just confirming our check-in on ${dateStr} at ${timeStr}. We'll connect via phone call. Talk soon!`
   }
 
   const handleSaveSchedule = async () => {
@@ -425,7 +429,8 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     const hour24 = get24Hour(scheduleHour, scheduleAmPm)
     targetDate.setHours(hour24, parseInt(scheduleMinute), 0, 0)
 
-    if (notifyClient && notifyClientMethod === "text") {
+    const sendInvite = !calendarOnly
+    if (sendInvite && inviteMethod === "text") {
       try {
         await navigator.clipboard.writeText(generateCheckinTextInvite())
         setScheduleTextCopied(true)
@@ -470,7 +475,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
       }
     }
 
-    if (notifyClient && notifyClientMethod === "email" && clientEmail) {
+    if (sendInvite && inviteMethod === "email" && clientEmail) {
       const calEvent = generateCalendarEvent()
       if (calEvent && coachEmail) {
         sendCalendarInviteEmail({
@@ -497,10 +502,10 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     setScheduleSaving(false)
     setShowScheduleModal(false)
     setMeetingType("phone")
-    setNotifyClient(false)
-    setNotifyClientMethod("email")
+    setCalendarOnly(false)
+    setInviteMethod("email")
 
-    if (notifyClient && notifyClientMethod === "text") {
+    if (sendInvite && inviteMethod === "text") {
       toast({
         title: "📋 Saved & text copied",
         description: "Check-in saved. Paste the invite into your texting app.",
@@ -975,7 +980,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                       variant="outline"
                       size="sm"
                       onClick={() => openScheduleModal(client)}
-                      className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50"
+                      className="flex-1 text-[hsl(var(--optavia-green))] border-green-200 hover:bg-green-50"
                     >
                       <CalendarPlus className="h-4 w-4 mr-1" />
                       <span className="text-xs sm:text-sm">Schedule</span>
@@ -1190,8 +1195,8 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
         if (!open) {
           setSelectedClient(null)
           setMeetingType("phone")
-          setNotifyClient(false)
-          setNotifyClientMethod("email")
+          setCalendarOnly(false)
+          setInviteMethod("email")
         }
       }}>
         <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
@@ -1201,8 +1206,8 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               <div className="px-6 pt-6 pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                      <CalendarPlus className="h-5 w-5 text-purple-600" />
+                    <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                      <CalendarPlus className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
                     </div>
                     <div>
                       <DialogTitle className="text-lg font-bold text-gray-900">Schedule Check-in</DialogTitle>
@@ -1213,12 +1218,12 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
 
                 {/* Client Card */}
                 <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-[hsl(var(--optavia-green))] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                     {selectedClient.label.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <div className="font-semibold text-gray-900">{selectedClient.label}</div>
-                    <div className="text-xs text-purple-600">
+                    <div className="text-xs text-[hsl(var(--optavia-green))]">
                       Day {getProgramDay(selectedClient.start_date)} • {getDayPhase(getProgramDay(selectedClient.start_date)).label}
                     </div>
                   </div>
@@ -1229,7 +1234,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 {/* Recurring */}
                 <div>
                   <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <Repeat className="h-3.5 w-3.5 text-purple-500" />
+                    <Repeat className="h-3.5 w-3.5 text-[hsl(var(--optavia-green))]" />
                     Recurring
                   </Label>
                   <div className="grid grid-cols-4 gap-2">
@@ -1239,7 +1244,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                         onClick={() => setRecurringFrequency(option.value)}
                         className={`px-2 py-2 rounded-lg text-sm font-medium transition-colors ${
                           recurringFrequency === option.value
-                            ? "bg-purple-600 text-white"
+                            ? "bg-[hsl(var(--optavia-green))] text-white"
                             : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                         }`}
                       >
@@ -1260,7 +1265,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                           onClick={() => setScheduleDay(day.value)}
                           className={`p-2 rounded-lg text-center transition-colors ${
                             scheduleDay === day.value
-                              ? "bg-purple-600 text-white"
+                              ? "bg-[hsl(var(--optavia-green))] text-white"
                               : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                           }`}
                         >
@@ -1268,7 +1273,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-purple-600 mt-2">
+                    <p className="text-xs text-[hsl(var(--optavia-green))] mt-2">
                       Starting: {DAYS_OF_WEEK[scheduleDay].full}, {getNextDayDate(scheduleDay).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </p>
                   </div>
@@ -1292,7 +1297,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                     <select
                       value={scheduleHour}
                       onChange={(e) => setScheduleHour(parseInt(e.target.value))}
-                      className="w-16 h-11 text-center text-base font-medium border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      className="w-16 h-11 text-center text-base font-medium border rounded-lg bg-white focus:ring-2 focus:ring-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
                     >
                       {HOUR_OPTIONS.map((h) => (
                         <option key={h} value={h}>{h}</option>
@@ -1302,7 +1307,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                     <select
                       value={scheduleMinute}
                       onChange={(e) => setScheduleMinute(e.target.value)}
-                      className="w-16 h-11 text-center text-base font-medium border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      className="w-16 h-11 text-center text-base font-medium border rounded-lg bg-white focus:ring-2 focus:ring-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
                     >
                       {MINUTE_OPTIONS.map((m) => (
                         <option key={m} value={m}>{m}</option>
@@ -1314,7 +1319,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                         onClick={() => setScheduleAmPm("AM")}
                         className={`px-4 h-11 font-semibold text-sm transition-colors ${
                           scheduleAmPm === "AM"
-                            ? "bg-purple-600 text-white"
+                            ? "bg-[hsl(var(--optavia-green))] text-white"
                             : "bg-white text-gray-600 hover:bg-gray-50"
                         }`}
                       >
@@ -1325,7 +1330,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                         onClick={() => setScheduleAmPm("PM")}
                         className={`px-4 h-11 font-semibold text-sm transition-colors ${
                           scheduleAmPm === "PM"
-                            ? "bg-purple-600 text-white"
+                            ? "bg-[hsl(var(--optavia-green))] text-white"
                             : "bg-white text-gray-600 hover:bg-gray-50"
                         }`}
                       >
@@ -1344,7 +1349,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                       onClick={() => setMeetingType("phone")}
                       className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-medium ${
                         meetingType === "phone"
-                          ? "border-purple-600 bg-purple-50 text-purple-700"
+                          ? "border-[hsl(var(--optavia-green))] bg-green-50 text-[hsl(var(--optavia-green))]"
                           : "border-gray-200 hover:border-gray-300 text-gray-600"
                       }`}
                     >
@@ -1356,7 +1361,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                       onClick={() => setMeetingType("zoom")}
                       className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-medium ${
                         meetingType === "zoom"
-                          ? "border-purple-600 bg-purple-50 text-purple-700"
+                          ? "border-[hsl(var(--optavia-green))] bg-green-50 text-[hsl(var(--optavia-green))]"
                           : "border-gray-200 hover:border-gray-300 text-gray-600"
                       }`}
                     >
@@ -1368,95 +1373,84 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
 
                 {/* Zoom Details */}
                 {meetingType === "zoom" && (
-                  <div className="space-y-2 bg-purple-50 border border-purple-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-purple-700 text-sm font-medium">
+                  <div className="space-y-2 bg-green-50 border border-green-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-[hsl(var(--optavia-green))] text-sm font-medium">
                       <Video className="h-4 w-4" />
                       Zoom Meeting Details
                     </div>
                     {profile?.zoom_link ? (
                       <div className="space-y-2">
                         <Input value={profile.zoom_link} readOnly className="bg-white/60 text-gray-700 cursor-default text-sm" />
-                        <p className="text-xs text-purple-500">
-                          Managed in <Link href="/settings" className="underline hover:text-purple-700 font-medium">My Settings → Zoom</Link>
+                        <p className="text-xs text-green-600">
+                          Managed in <Link href="/settings" className="underline hover:text-green-700 font-medium">My Settings → Zoom</Link>
                         </p>
                       </div>
                     ) : (
-                      <p className="text-sm text-purple-700">
+                      <p className="text-sm text-[hsl(var(--optavia-green))]">
                         No Zoom details configured. <Link href="/settings" className="underline font-semibold">Set up in Settings</Link>
                       </p>
                     )}
                   </div>
                 )}
 
-                {/* Notify Toggle */}
-                <div className="border-t border-gray-100 pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Send className="h-3.5 w-3.5 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Also notify {selectedClient.label.split(" ")[0]}</p>
-                        <p className="text-xs text-gray-500">Send a calendar invite or text</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={notifyClient}
-                      onCheckedChange={setNotifyClient}
-                    />
-                  </div>
+                {/* Send Invite Section */}
+                <div className="border-t border-gray-100 pt-4 space-y-3">
+                  {!calendarOnly && (
+                    <>
+                      <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                        <Send className="h-3.5 w-3.5 text-[hsl(var(--optavia-green))]" />
+                        Send Invite to {selectedClient.label.split(" ")[0]}
+                      </Label>
 
-                  {notifyClient && (
-                    <div className="mt-4 space-y-3">
                       <div className="flex rounded-lg border overflow-hidden">
                         <button
                           type="button"
-                          onClick={() => setNotifyClientMethod("email")}
-                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-                            notifyClientMethod === "email"
-                              ? "bg-purple-600 text-white"
+                          onClick={() => setInviteMethod("email")}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
+                            inviteMethod === "email"
+                              ? "bg-[hsl(var(--optavia-green))] text-white"
                               : "bg-white text-gray-600 hover:bg-gray-50"
                           }`}
                         >
                           <Mail className="h-3.5 w-3.5" />
-                          Email
+                          Email Invite
                         </button>
                         <button
                           type="button"
-                          onClick={() => setNotifyClientMethod("text")}
-                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-                            notifyClientMethod === "text"
-                              ? "bg-purple-600 text-white"
+                          onClick={() => setInviteMethod("text")}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${
+                            inviteMethod === "text"
+                              ? "bg-green-600 text-white"
                               : "bg-white text-gray-600 hover:bg-gray-50"
                           }`}
                         >
                           <MessageSquare className="h-3.5 w-3.5" />
-                          Text
+                          Copy for Text
                         </button>
                       </div>
 
-                      {notifyClientMethod === "email" && (
+                      {inviteMethod === "email" && (
                         <div className="space-y-1.5">
                           <Input
                             type="text"
-                            placeholder={`${selectedClient.label.split(" ")[0]}'s email address`}
+                            placeholder={`${selectedClient.label.split(" ")[0].toLowerCase()}@email.com`}
                             value={clientEmail}
                             onChange={(e) => setClientEmail(e.target.value)}
                             className="h-10 text-sm"
                           />
-                          {!profile?.notification_email && (
-                            <p className="text-xs text-amber-600">
-                              Set your notification email in Settings → Notifications first
-                            </p>
-                          )}
+                          <p className="text-xs text-gray-500">
+                            Sends a calendar invite with meeting details to {selectedClient.label.split(" ")[0]}
+                          </p>
                         </div>
                       )}
 
-                      {notifyClientMethod === "text" && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                          <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed line-clamp-4">
-                            {generateCheckinTextInvite()}
-                          </p>
+                      {inviteMethod === "text" && (
+                        <div className="space-y-1.5">
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                              {generateCheckinTextInvite()}
+                            </p>
+                          </div>
                           <Button
                             type="button"
                             variant="outline"
@@ -1468,44 +1462,71 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                                 setTimeout(() => setScheduleTextCopied(false), 3000)
                               } catch {}
                             }}
-                            className={`mt-2 w-full text-xs ${scheduleTextCopied ? "bg-teal-50 border-teal-300 text-teal-700" : ""}`}
+                            className={`w-full text-sm ${scheduleTextCopied ? "bg-teal-50 border-teal-300 text-teal-700" : ""}`}
                           >
-                            {scheduleTextCopied ? <><Check className="h-3 w-3 mr-1" /> Copied!</> : <><Copy className="h-3 w-3 mr-1" /> Copy Text Invite</>}
+                            {scheduleTextCopied ? <><Check className="h-3.5 w-3.5 mr-1.5" /> Copied!</> : <><Copy className="h-3.5 w-3.5 mr-1.5" /> Copy to Clipboard</>}
                           </Button>
+                          <p className="text-xs text-gray-500">
+                            Paste into your texting app to send manually
+                          </p>
                         </div>
                       )}
-                    </div>
+                    </>
                   )}
+
+                  {/* Calendar Only Toggle */}
+                  <div className={`rounded-xl p-3 flex items-center justify-between transition-all ${
+                    calendarOnly ? "border-2 border-[hsl(var(--optavia-green))] bg-green-50" : "border border-gray-200"
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <Lock className={`h-4 w-4 ${calendarOnly ? "text-[hsl(var(--optavia-green))]" : "text-gray-400"}`} />
+                      <div>
+                        <p className={`text-sm font-semibold ${calendarOnly ? "text-[hsl(var(--optavia-green))]" : "text-gray-700"}`}>
+                          Only add to my calendar
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Don't send an invite to {selectedClient.label.split(" ")[0]}
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={calendarOnly}
+                      onCheckedChange={setCalendarOnly}
+                    />
+                  </div>
                 </div>
 
                 {/* Summary line */}
                 {(recurringFrequency !== "none" || scheduleDate) && (
-                  <p className="text-sm text-purple-600 font-medium text-center">
-                    {(() => {
-                      const d = recurringFrequency === "none" && scheduleDate
-                        ? new Date(scheduleDate + "T00:00:00")
-                        : getNextDayDate(scheduleDay)
-                      return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
-                    })()} · {scheduleHour}:{scheduleMinute} {scheduleAmPm} · {meetingType === "phone" ? "Phone" : "Zoom"}
-                    {recurringFrequency !== "none" && ` · ${RECURRING_OPTIONS.find(r => r.value === recurringFrequency)?.label}`}
-                  </p>
+                  <div className="text-center">
+                    <p className="text-sm text-[hsl(var(--optavia-green))] font-medium">
+                      {(() => {
+                        const d = recurringFrequency === "none" && scheduleDate
+                          ? new Date(scheduleDate + "T00:00:00")
+                          : getNextDayDate(scheduleDay)
+                        return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })
+                      })()} · {scheduleHour}:{scheduleMinute} {scheduleAmPm} · {meetingType === "phone" ? "Phone" : "Zoom"}
+                    </p>
+                    <p className="text-xs text-green-600 mt-0.5">
+                      {calendarOnly
+                        ? "Coach calendar only"
+                        : inviteMethod === "email"
+                        ? clientEmail ? `Email invite → ${clientEmail}` : "Email invite → no email entered"
+                        : "Text invite (copy)"
+                      }
+                    </p>
+                  </div>
                 )}
 
                 {/* Primary Action Button */}
                 <Button
                   onClick={handleSaveSchedule}
-                  disabled={scheduleSaving || (recurringFrequency === "none" && !scheduleDate) || (notifyClient && notifyClientMethod === "email" && !clientEmail)}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-5 text-base rounded-xl"
+                  disabled={scheduleSaving || (recurringFrequency === "none" && !scheduleDate)}
+                  className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base rounded-xl"
                   size="lg"
                 >
                   {scheduleSaving ? (
                     <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Saving...</>
-                  ) : notifyClient && notifyClientMethod === "email" && clientEmail ? (
-                    <><Send className="h-5 w-5 mr-2" /> Save & Send Invite to {selectedClient.label.split(" ")[0]}</>
-                  ) : notifyClient && notifyClientMethod === "text" ? (
-                    <><Copy className="h-5 w-5 mr-2" /> Save & Copy Text Invite</>
-                  ) : recurringFrequency !== "none" ? (
-                    <><CalendarPlus className="h-5 w-5 mr-2" /> Save {RECURRING_OPTIONS.find(r => r.value === recurringFrequency)?.label} Check-in</>
                   ) : (
                     <><CalendarPlus className="h-5 w-5 mr-2" /> Save to My Calendar</>
                   )}
@@ -1514,11 +1535,13 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 {/* Contextual Explainer */}
                 <p className="text-xs text-gray-400 text-center leading-relaxed flex items-start gap-1.5 justify-center">
                   <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                  {notifyClient && notifyClientMethod === "email" && clientEmail
-                    ? `This will save the check-in to your calendar and send a calendar invite to ${selectedClient.label.split(" ")[0]}.`
-                    : notifyClient && notifyClientMethod === "text"
-                    ? `This will save the check-in to your calendar and copy the text invite. Paste it into your texting app after saving.`
-                    : `This will add the check-in to your calendar only. Toggle the notify option above to also send ${selectedClient.label.split(" ")[0]} an invite.`
+                  {calendarOnly
+                    ? `This will add the check-in to your calendar only. No invite will be sent to ${selectedClient.label.split(" ")[0]}.`
+                    : inviteMethod === "email" && clientEmail
+                    ? `Enter ${selectedClient.label.split(" ")[0]}'s email above to send them an invite, or toggle "Only add to my calendar" to skip.`
+                    : inviteMethod === "text"
+                    ? `This will add the check-in to your calendar. Don't forget to paste the copied invite text to ${selectedClient.label.split(" ")[0]}.`
+                    : `Enter ${selectedClient.label.split(" ")[0]}'s email above to send them an invite, or toggle "Only add to my calendar" to skip.`
                   }
                 </p>
 
@@ -1529,8 +1552,8 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                     setShowScheduleModal(false)
                     setSelectedClient(null)
                     setMeetingType("phone")
-                    setNotifyClient(false)
-                    setNotifyClientMethod("email")
+                    setCalendarOnly(false)
+                    setInviteMethod("email")
                   }}
                   className="w-full text-center text-sm text-gray-400 hover:text-gray-600 transition-colors py-1"
                 >
