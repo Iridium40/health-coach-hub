@@ -72,27 +72,12 @@ export function QuickActions() {
             {buttons.map((button) => {
               const bgClass = COLOR_MAP[button.color] || DEFAULT_COLOR
               const isExternal = button.url.startsWith("http")
-
-              if (isExternal) {
-                return (
-                  <a
-                    key={button.id}
-                    href={button.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-full"
-                  >
-                    <div
-                      className={`w-full min-h-[120px] p-4 rounded-lg border transition-all cursor-pointer flex flex-col justify-center items-center text-center ${bgClass}`}
-                    >
-                      <p className="text-sm font-medium text-optavia-dark leading-tight">{button.label}</p>
-                    </div>
-                  </a>
-                )
-              }
+              const href = isExternal
+                ? `/viewer?url=${encodeURIComponent(button.url)}&title=${encodeURIComponent(button.label)}`
+                : button.url
 
               return (
-                <Link key={button.id} href={button.url} className="flex h-full">
+                <Link key={button.id} href={href} className="flex h-full">
                   <div
                     className={`w-full min-h-[120px] p-4 rounded-lg border transition-all cursor-pointer flex flex-col justify-center items-center text-center ${bgClass}`}
                   >
