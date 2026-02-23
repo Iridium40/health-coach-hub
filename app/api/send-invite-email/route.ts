@@ -60,14 +60,6 @@ export async function POST(request: NextRequest) {
           You've been invited by <strong>${invitedByName}</strong> to join <strong>Coaching Amplifier</strong>, your hub for coaching resources, training, and support.
         </p>
         
-        ${coachRank ? `
-          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2d5016;">
-            <p style="margin: 0; font-size: 15px; color: #333;">
-              <strong style="color: #2d5016;">Your Coach Rank:</strong> ${coachRank}
-            </p>
-          </div>
-        ` : ""}
-        
         <p style="font-size: 16px; color: #333; margin: 20px 0;">Click the button below to set your password and create your account:</p>
         
         <div style="text-align: center; margin: 30px 0;">
@@ -105,7 +97,6 @@ Hi ${fullName},
 
 You've been invited by ${invitedByName} to join Coaching Amplifier, your hub for coaching resources, training, and support.
 
-${coachRank ? `Your Coach Rank: ${coachRank}\n\n` : ""}
 Click the link below to set your password and create your account:
 
 ${inviteLink}

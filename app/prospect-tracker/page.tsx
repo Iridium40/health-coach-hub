@@ -62,10 +62,15 @@ import {
   CheckCircle,
   Phone,
   Video,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Copy,
+  Check,
 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { ScheduleCalendarOptions } from "@/components/schedule-calendar-options"
 import { ShareHealthAssessment } from "@/components/share-health-assessment"
 import { PipelineProgressionGuide } from "@/components/pipeline-progression-guide"
 import { ObjectionNavigator } from "@/components/objection-navigator"
@@ -136,9 +141,11 @@ export default function ProspectTrackerPage() {
   const [haAmPm, setHaAmPm] = useState<"AM" | "PM">("AM")
   const [prospectEmail, setProspectEmail] = useState("")
   const [prospectPhone, setProspectPhone] = useState("")
-  
-  // Meeting type state (Phone vs Zoom)
   const [haMeetingType, setHaMeetingType] = useState<"phone" | "zoom">("phone")
+  const [notifyProspect, setNotifyProspect] = useState(false)
+  const [notifyMethod, setNotifyMethod] = useState<"email" | "text">("email")
+  const [haSaving, setHaSaving] = useState(false)
+  const [textCopied, setTextCopied] = useState(false)
 
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -292,30 +299,49 @@ Talking Points:
     }
   }
 
-  // Handle saving HA schedule (called before calendar actions)
-  const handleSaveHASchedule = async () => {
-    if (!schedulingProspect || !haDate) return
-    
-    // Calculate the full scheduled datetime
+  const generateHATextInvite = (): string => {
+    if (!schedulingProspect || !haDate) return ""
     const targetDate = new Date(haDate + "T00:00:00")
     const hour24 = get24Hour(haHour, haAmPm)
     targetDate.setHours(hour24, parseInt(haMinute), 0, 0)
-    
-    // Update prospect with HA scheduled datetime
-    // Note: email is not stored on prospect, only used for sending invites
+    const dateStr = targetDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+    const timeStr = `${haHour}:${haMinute} ${haAmPm}`
+    return `Hi ${schedulingProspect.label}!\n\nI'd like to schedule a Health Assessment with you.\n\n📅 ${dateStr}\n⏰ ${timeStr}\n\nLooking forward to connecting with you!\n\n${profile?.full_name || "Your Coach"}`
+  }
+
+  const handleSaveHASchedule = async () => {
+    if (!schedulingProspect || !haDate) return
+
+    // If notify via text, copy first so user has it on clipboard
+    if (notifyProspect && notifyMethod === "text") {
+      try {
+        await navigator.clipboard.writeText(generateHATextInvite())
+        setTextCopied(true)
+        setTimeout(() => setTextCopied(false), 3000)
+      } catch {
+        // Clipboard may fail silently
+      }
+    }
+
+    setHaSaving(true)
+
+    const targetDate = new Date(haDate + "T00:00:00")
+    const hour24 = get24Hour(haHour, haAmPm)
+    targetDate.setHours(hour24, parseInt(haMinute), 0, 0)
+
     const success = await updateProspect(schedulingProspect.id, {
       next_action: haDate,
       ha_scheduled_at: targetDate.toISOString(),
       phone: prospectPhone || null,
     })
-    
+
     if (success) {
       toast({
         title: "📅 HA Scheduled!",
         description: `${haHour}:${haMinute} ${haAmPm} on ${targetDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`,
       })
 
-      // Send calendar invite to the coach so they can save it to their calendar
+      // Send calendar invite to the coach
       const coachEmail = profile?.notification_email || user?.email
       if (coachEmail) {
         const calEvent = generateHACalendarEvent()
@@ -330,22 +356,54 @@ Talking Points:
             startDate: calEvent.startDate.toISOString(),
             endDate: calEvent.endDate.toISOString(),
             eventType: "ha",
-          }).then((result) => {
-            if (result.success) {
-              toast({
-                title: "📧 Calendar invite sent to you",
-                description: `Check ${coachEmail} for the calendar invite`,
-              })
-            }
-          }).catch(() => {
-            // Silent fail - the HA was still saved successfully
-          })
+          }).catch(() => {})
         }
       }
-      
+
+      // If notify via email, send the invite to the prospect too
+      if (notifyProspect && notifyMethod === "email" && prospectEmail) {
+        const organizerEmail = profile?.notification_email
+        if (organizerEmail) {
+          const calEvent = generateHACalendarEvent()
+          if (calEvent) {
+            const emails = prospectEmail.split(",").map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+            await Promise.all(emails.map(toEmail =>
+              sendCalendarInviteEmail({
+                to: toEmail,
+                toName: schedulingProspect.label,
+                fromEmail: organizerEmail,
+                fromName: profile?.full_name,
+                eventTitle: calEvent.title,
+                eventDescription: calEvent.description,
+                startDate: calEvent.startDate.toISOString(),
+                endDate: calEvent.endDate.toISOString(),
+                eventType: "ha",
+              })
+            )).then(results => {
+              const sent = results.filter(r => r.success).length
+              if (sent > 0) {
+                toast({
+                  title: "📧 Invite sent!",
+                  description: `Calendar invite sent to ${schedulingProspect.label}`,
+                })
+              }
+            }).catch(() => {})
+          }
+        }
+      }
+
+      if (notifyProspect && notifyMethod === "text") {
+        toast({
+          title: "📋 Text invite copied!",
+          description: "Paste the message into your texting app",
+        })
+      }
+
       setShowHAScheduleModal(false)
       setSchedulingProspect(null)
       setHaMeetingType("phone")
+      setNotifyProspect(false)
+      setNotifyMethod("email")
     } else {
       toast({
         title: "Failed to schedule HA",
@@ -353,6 +411,8 @@ Talking Points:
         variant: "destructive",
       })
     }
+
+    setHaSaving(false)
   }
 
   const handleAddProspect = async () => {
@@ -1217,206 +1277,310 @@ Talking Points:
       </Dialog>
 
       {/* Schedule HA Modal */}
-      <Dialog open={showHAScheduleModal} onOpenChange={setShowHAScheduleModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarPlus className="h-5 w-5 text-blue-600" />
-              Schedule Health Assessment
-            </DialogTitle>
-            <DialogDescription>Set a date and time for the health assessment.</DialogDescription>
-          </DialogHeader>
+      <Dialog open={showHAScheduleModal} onOpenChange={(open) => {
+        setShowHAScheduleModal(open)
+        if (!open) {
+          setSchedulingProspect(null)
+          setHaMeetingType("phone")
+          setNotifyProspect(false)
+          setNotifyMethod("email")
+        }
+      }}>
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
           {schedulingProspect && (
-            <div className="space-y-6">
-              {/* Prospect Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="font-semibold text-blue-900">{schedulingProspect.label}</div>
-                <div className="text-sm text-blue-700 mt-1">
-                  {sourceOptions.find(s => s.value === schedulingProspect.source)?.label}
-                </div>
-              </div>
-
-              {/* Date Picker */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Select Date *</Label>
-                <Input
-                  type="date"
-                  value={haDate}
-                  onChange={(e) => setHaDate(e.target.value)}
-                  min={today}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Time Picker */}
-              <div>
-                <Label className="text-sm font-medium mb-3 block">Select Time</Label>
-                <div className="flex items-center gap-2 justify-center">
-                  {/* Hour */}
-                  <select
-                    value={haHour}
-                    onChange={(e) => setHaHour(parseInt(e.target.value))}
-                    className="w-16 h-12 text-center text-lg font-medium border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {HOUR_OPTIONS.map((h) => (
-                      <option key={h} value={h}>{h}</option>
-                    ))}
-                  </select>
-                  <span className="text-2xl font-bold text-gray-400">:</span>
-                  {/* Minute */}
-                  <select
-                    value={haMinute}
-                    onChange={(e) => setHaMinute(e.target.value)}
-                    className="w-16 h-12 text-center text-lg font-medium border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {MINUTE_OPTIONS.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                  {/* AM/PM */}
-                  <div className="flex rounded-lg border overflow-hidden">
-                    <button
-                      onClick={() => setHaAmPm("AM")}
-                      className={`px-4 h-12 font-medium transition-colors ${
-                        haAmPm === "AM"
-                          ? "bg-blue-600 text-white"
-                          : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      AM
-                    </button>
-                    <button
-                      onClick={() => setHaAmPm("PM")}
-                      className={`px-4 h-12 font-medium transition-colors ${
-                        haAmPm === "PM"
-                          ? "bg-blue-600 text-white"
-                          : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      PM
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 text-center mt-2">45 minute health assessment</p>
-              </div>
-
-              {/* Meeting Type Selector */}
-              <div>
-                <Label className="text-sm font-medium mb-3 block">Meeting Type</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setHaMeetingType("phone")}
-                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-                      haMeetingType === "phone"
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-200 hover:border-gray-300 text-gray-700"
-                    }`}
-                  >
-                    <Phone className="h-5 w-5" />
-                    <span className="font-medium">Phone</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setHaMeetingType("zoom")}
-                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-                      haMeetingType === "zoom"
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-200 hover:border-gray-300 text-gray-700"
-                    }`}
-                  >
-                    <Video className="h-5 w-5" />
-                    <span className="font-medium">Zoom</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Zoom Details (shown when Zoom is selected) - read-only from profile */}
-              {haMeetingType === "zoom" && (
-                <div className="space-y-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
-                    <Video className="h-4 w-4" />
-                    Zoom Meeting Details
-                  </div>
-                  {profile?.zoom_link ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={profile.zoom_link}
-                        readOnly
-                        className="bg-white/60 text-gray-700 cursor-default"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          value={profile.zoom_meeting_id || ""}
-                          readOnly
-                          placeholder="No Meeting ID"
-                          className="bg-white/60 text-gray-700 cursor-default"
-                        />
-                        <Input
-                          value={profile.zoom_passcode || ""}
-                          readOnly
-                          placeholder="No Passcode"
-                          className="bg-white/60 text-gray-700 cursor-default"
-                        />
-                      </div>
-                      <p className="text-xs text-blue-500">
-                        Managed in <Link href="/settings" className="underline hover:text-blue-700 font-medium">My Settings → Zoom</Link> tab
-                      </p>
+            <>
+              {/* Header */}
+              <div className="px-6 pt-6 pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                      <CalendarPlus className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
                     </div>
-                  ) : (
-                    <div className="text-center py-3">
-                      <p className="text-sm text-blue-700 font-medium">No Zoom details configured</p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        Go to <Link href="/settings" className="underline hover:text-blue-800 font-semibold">My Settings → Zoom</Link> tab to enter your Zoom link, meeting ID, and passcode.
+                    <div>
+                      <DialogTitle className="text-lg font-bold text-gray-900">Schedule Health Assessment</DialogTitle>
+                      <DialogDescription className="text-sm text-gray-500">45 minute assessment</DialogDescription>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Prospect Card */}
+                <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[hsl(var(--optavia-green))] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    {schedulingProspect.label.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">{schedulingProspect.label}</div>
+                    <div className="text-xs text-gray-500">
+                      {sourceOptions.find(s => s.value === schedulingProspect.source)?.label}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 pb-6 space-y-5">
+                {/* Date */}
+                <div>
+                  <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Date</Label>
+                  <Input
+                    type="date"
+                    value={haDate}
+                    onChange={(e) => setHaDate(e.target.value)}
+                    min={today}
+                    className="w-full h-11"
+                  />
+                </div>
+
+                {/* Time */}
+                <div>
+                  <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Time</Label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={haHour}
+                      onChange={(e) => setHaHour(parseInt(e.target.value))}
+                      className="w-16 h-11 text-center text-base font-medium border rounded-lg bg-white focus:ring-2 focus:ring-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
+                    >
+                      {HOUR_OPTIONS.map((h) => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                    <span className="text-xl font-bold text-gray-300">:</span>
+                    <select
+                      value={haMinute}
+                      onChange={(e) => setHaMinute(e.target.value)}
+                      className="w-16 h-11 text-center text-base font-medium border rounded-lg bg-white focus:ring-2 focus:ring-[hsl(var(--optavia-green))] focus:border-[hsl(var(--optavia-green))]"
+                    >
+                      {MINUTE_OPTIONS.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                    <div className="flex rounded-lg border overflow-hidden ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => setHaAmPm("AM")}
+                        className={`px-4 h-11 font-semibold text-sm transition-colors ${
+                          haAmPm === "AM"
+                            ? "bg-[hsl(var(--optavia-green))] text-white"
+                            : "bg-white text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        AM
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setHaAmPm("PM")}
+                        className={`px-4 h-11 font-semibold text-sm transition-colors ${
+                          haAmPm === "PM"
+                            ? "bg-[hsl(var(--optavia-green))] text-white"
+                            : "bg-white text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        PM
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Meeting Type */}
+                <div>
+                  <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Meeting Type</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setHaMeetingType("phone")}
+                      className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-medium ${
+                        haMeetingType === "phone"
+                          ? "border-[hsl(var(--optavia-green))] bg-green-50 text-[hsl(var(--optavia-green))]"
+                          : "border-gray-200 hover:border-gray-300 text-gray-600"
+                      }`}
+                    >
+                      <Phone className="h-4 w-4" />
+                      Phone
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHaMeetingType("zoom")}
+                      className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-medium ${
+                        haMeetingType === "zoom"
+                          ? "border-[hsl(var(--optavia-green))] bg-green-50 text-[hsl(var(--optavia-green))]"
+                          : "border-gray-200 hover:border-gray-300 text-gray-600"
+                      }`}
+                    >
+                      <Video className="h-4 w-4" />
+                      Zoom
+                    </button>
+                  </div>
+                </div>
+
+                {/* Zoom Details */}
+                {haMeetingType === "zoom" && (
+                  <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
+                      <Video className="h-4 w-4" />
+                      Zoom Meeting Details
+                    </div>
+                    {profile?.zoom_link ? (
+                      <div className="space-y-2">
+                        <Input value={profile.zoom_link} readOnly className="bg-white/60 text-gray-700 cursor-default text-sm" />
+                        <p className="text-xs text-blue-500">
+                          Managed in <Link href="/settings" className="underline hover:text-blue-700 font-medium">My Settings → Zoom</Link>
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-blue-700">
+                        No Zoom details configured. <Link href="/settings" className="underline font-semibold">Set up in Settings</Link>
                       </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Notify Toggle */}
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <Send className="h-3.5 w-3.5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Also notify {schedulingProspect.label.split(" ")[0]}</p>
+                        <p className="text-xs text-gray-500">Send them a calendar invite or text</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notifyProspect}
+                      onCheckedChange={setNotifyProspect}
+                    />
+                  </div>
+
+                  {/* Notify Options (expanded when toggled on) */}
+                  {notifyProspect && (
+                    <div className="mt-4 space-y-3">
+                      {/* Email / Text toggle */}
+                      <div className="flex rounded-lg border overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setNotifyMethod("email")}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                            notifyMethod === "email"
+                              ? "bg-blue-600 text-white"
+                              : "bg-white text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          Email
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNotifyMethod("text")}
+                          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                            notifyMethod === "text"
+                              ? "bg-blue-600 text-white"
+                              : "bg-white text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          Text
+                        </button>
+                      </div>
+
+                      {notifyMethod === "email" && (
+                        <div className="space-y-1.5">
+                          <Input
+                            type="text"
+                            placeholder={`${schedulingProspect.label.split(" ")[0]}'s email address`}
+                            value={prospectEmail}
+                            onChange={(e) => setProspectEmail(e.target.value)}
+                            className="h-10 text-sm"
+                          />
+                          {!profile?.notification_email && (
+                            <p className="text-xs text-amber-600">
+                              Set your notification email in Settings → Notifications first
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {notifyMethod === "text" && haDate && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed line-clamp-4">
+                            {generateHATextInvite()}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(generateHATextInvite())
+                                setTextCopied(true)
+                                setTimeout(() => setTextCopied(false), 3000)
+                              } catch {}
+                            }}
+                            className={`mt-2 w-full text-xs ${textCopied ? "bg-teal-50 border-teal-300 text-teal-700" : ""}`}
+                          >
+                            {textCopied ? <><Check className="h-3 w-3 mr-1" /> Copied!</> : <><Copy className="h-3 w-3 mr-1" /> Copy Text Invite</>}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* Primary Save & Schedule Button */}
-              {haDate && (
+                {/* Summary line */}
+                {haDate && (
+                  <p className="text-sm text-[hsl(var(--optavia-green))] font-medium text-center">
+                    {(() => {
+                      const d = new Date(haDate + "T00:00:00")
+                      return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+                    })()} · {haHour}:{haMinute} {haAmPm} · {haMeetingType === "phone" ? "Phone" : "Zoom"}
+                  </p>
+                )}
+
+                {/* Primary Action Button */}
                 <Button
                   onClick={handleSaveHASchedule}
-                  className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base"
+                  disabled={!haDate || haSaving || (notifyProspect && notifyMethod === "email" && !prospectEmail)}
+                  className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base rounded-xl"
                   size="lg"
                 >
-                  <CalendarPlus className="h-5 w-5 mr-2" />
-                  Save & Schedule
+                  {haSaving ? (
+                    <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Saving...</>
+                  ) : notifyProspect && notifyMethod === "email" && prospectEmail ? (
+                    <><Send className="h-5 w-5 mr-2" /> Save & Send Invite to {schedulingProspect.label.split(" ")[0]}</>
+                  ) : notifyProspect && notifyMethod === "text" ? (
+                    <><Copy className="h-5 w-5 mr-2" /> Save & Copy Text Invite</>
+                  ) : (
+                    <><CalendarPlus className="h-5 w-5 mr-2" /> Save to My Calendar</>
+                  )}
                 </Button>
-              )}
 
-              {/* Optional: Notify Prospect */}
-              {haDate && generateHACalendarEvent() && (
-                <div className="border-t border-gray-200 pt-4">
-                  <p className="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-3">
-                    Optional — Notify Prospect
-                  </p>
-                  <ScheduleCalendarOptions
-                    event={generateHACalendarEvent()!}
-                    recipientName={schedulingProspect.label}
-                    recipientEmail={prospectEmail}
-                    recipientPhone={prospectPhone}
-                    onEmailChange={setProspectEmail}
-                    onPhoneChange={setProspectPhone}
-                    eventType="ha"
-                  />
-                </div>
-              )}
-            </div>
+                {/* Contextual Explainer */}
+                <p className="text-xs text-gray-400 text-center leading-relaxed flex items-start gap-1.5 justify-center">
+                  <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                  {notifyProspect && notifyMethod === "email" && prospectEmail
+                    ? `This will save the meeting to your calendar and send a calendar invite to ${schedulingProspect.label.split(" ")[0]}.`
+                    : notifyProspect && notifyMethod === "text"
+                    ? `This will save the meeting to your calendar and copy the text invite. Paste it into your texting app after saving.`
+                    : `This will add the meeting to your calendar only. Toggle the notify option above to also send ${schedulingProspect.label.split(" ")[0]} an invite.`
+                  }
+                </p>
+
+                {/* Cancel */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowHAScheduleModal(false)
+                    setSchedulingProspect(null)
+                    setHaMeetingType("phone")
+                    setNotifyProspect(false)
+                    setNotifyMethod("email")
+                  }}
+                  className="w-full text-center text-sm text-gray-400 hover:text-gray-600 transition-colors py-1"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
           )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowHAScheduleModal(false)
-                setSchedulingProspect(null)
-                setHaMeetingType("phone")
-              }}
-            >
-              Cancel
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
