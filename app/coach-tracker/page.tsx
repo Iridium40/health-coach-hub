@@ -586,29 +586,23 @@ export default function CoachTrackerPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              {/* Filter Pills */}
-              <div className="flex gap-1 sm:gap-2 flex-wrap">
-                {[
-                  { id: "all" as const, label: "All" },
-                  { id: "new_coach" as const, label: "New Coach" },
-                  { id: "building" as const, label: "Building" },
-                  { id: "certified" as const, label: "Certified" },
-                  { id: "leader" as const, label: "Leader" },
-                ].map((f) => (
-                  <Button
-                    key={f.id}
-                    variant={filterStage === f.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterStage(f.id)}
-                    className={`text-xs sm:text-sm px-2 sm:px-3 ${
-                      filterStage === f.id ? "bg-[hsl(var(--optavia-green))]" : ""
-                    }`}
-                  >
-                    {f.label}
-                  </Button>
-                ))}
-              </div>
+            <div className="flex items-center justify-between gap-2">
+              {/* Filter Dropdown */}
+              <Select
+                value={filterStage}
+                onValueChange={(value) => setFilterStage(value as CoachStage | "all")}
+              >
+                <SelectTrigger className="w-[160px] sm:w-[180px] h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Coaches</SelectItem>
+                  <SelectItem value="new_coach">New Coach</SelectItem>
+                  <SelectItem value="building">Building</SelectItem>
+                  <SelectItem value="certified">Certified</SelectItem>
+                  <SelectItem value="leader">Leader</SelectItem>
+                </SelectContent>
+              </Select>
 
               {/* Export */}
               <Button variant="outline" size="sm" onClick={handleExport} className="text-xs">
