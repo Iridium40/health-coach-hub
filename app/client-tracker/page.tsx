@@ -1522,13 +1522,13 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 <Button
                   onClick={handleSaveSchedule}
                   disabled={scheduleSaving || (recurringFrequency === "none" && !scheduleDate) || (!calendarOnly && inviteMethod === "email" && !clientEmail.trim())}
-                  className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base rounded-xl"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-5 text-base rounded-xl"
                   size="lg"
                 >
                   {scheduleSaving ? (
                     <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Saving...</>
                   ) : (
-                    <><CalendarPlus className="h-5 w-5 mr-2" /> Save to My Calendar</>
+                    <><CalendarPlus className="h-5 w-5 mr-2" /> Save &amp; Send</>
                   )}
                 </Button>
 
