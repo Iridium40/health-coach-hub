@@ -409,16 +409,23 @@ export function TodaysFocus({
                       </div>
                     </div>
                   </div>
-                  {isToday && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openConfirmClient(client)}
-                      className="h-7 text-xs px-3 text-green-600 border-green-200"
-                    >
-                      Mark Done
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {isToday && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openConfirmClient(client)}
+                        className="h-7 text-xs px-3 text-green-600 border-green-200"
+                      >
+                        Mark Done
+                      </Button>
+                    )}
+                    <Link href="/client-tracker">
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-3 text-red-600 border-red-200 hover:bg-red-50">
+                        View
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               )
             })}
@@ -555,23 +562,30 @@ export function TodaysFocus({
                       <div className="text-xs text-orange-600">Check-in needed</div>
                     </div>
                   </div>
-                  {isToday && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openConfirmClient(client)}
-                      className={`h-7 text-xs px-3 ${client.am_done ? "bg-green-100 text-green-700 border-green-300" : "text-green-600 border-green-200"}`}
-                    >
-                      {client.am_done ? (
-                        <>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Done
-                        </>
-                      ) : (
-                        "Mark Done"
-                      )}
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {isToday && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openConfirmClient(client)}
+                        className={`h-7 text-xs px-3 ${client.am_done ? "bg-green-100 text-green-700 border-green-300" : "text-green-600 border-green-200"}`}
+                      >
+                        {client.am_done ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Done
+                          </>
+                        ) : (
+                          "Mark Done"
+                        )}
+                      </Button>
+                    )}
+                    <Link href="/client-tracker">
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-3 text-orange-600 border-orange-200 hover:bg-orange-50">
+                        View
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               )
             })}
@@ -601,16 +615,23 @@ export function TodaysFocus({
                       <div className="text-xs text-amber-600">{daysSince} days since last check-in</div>
                     </div>
                   </div>
-                  {isToday && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openConfirmClient(client)}
-                      className="h-7 text-xs px-3 text-green-600 border-green-200"
-                    >
-                      Mark Done
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {isToday && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openConfirmClient(client)}
+                        className="h-7 text-xs px-3 text-green-600 border-green-200"
+                      >
+                        Mark Done
+                      </Button>
+                    )}
+                    <Link href="/client-tracker">
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-3 text-amber-600 border-amber-200 hover:bg-amber-50">
+                        View
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               )
             })}
@@ -715,32 +736,39 @@ export function TodaysFocus({
                       <div className="text-xs text-yellow-600">{phase.label}</div>
                     </div>
                   </div>
-                  {isToday ? (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs h-7 px-3"
-                        onClick={() => {
-                          dismissMilestone?.(client.id, programDay)
-                        }}
-                      >
-                        Dismiss
+                  <div className="flex gap-2">
+                    {isToday ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 px-3"
+                          onClick={() => {
+                            dismissMilestone?.(client.id, programDay)
+                          }}
+                        >
+                          Dismiss
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs h-7"
+                          onClick={() => {
+                            dismissMilestone?.(client.id, programDay)
+                            onCelebrateClick?.(client)
+                          }}
+                        >
+                          🎉 Celebrate!
+                        </Button>
+                      </>
+                    ) : (
+                      <span className="text-xs text-yellow-600 font-medium px-2">🎉 Milestone</span>
+                    )}
+                    <Link href="/client-tracker">
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-3 text-yellow-600 border-yellow-200 hover:bg-yellow-50">
+                        View
                       </Button>
-                      <Button 
-                        size="sm" 
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs h-7"
-                        onClick={() => {
-                          dismissMilestone?.(client.id, programDay)
-                          onCelebrateClick?.(client)
-                        }}
-                      >
-                        🎉 Celebrate!
-                      </Button>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-yellow-600 font-medium px-2">🎉 Milestone</span>
-                  )}
+                    </Link>
+                  </div>
                 </div>
               )
             })}
@@ -769,17 +797,30 @@ export function TodaysFocus({
                       </div>
                     </div>
                   </div>
-                  {isToday && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => completeReminder?.(reminder.id)}
-                      className="h-7 text-xs px-3 text-green-600 border-green-200 hover:bg-green-50"
-                    >
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Done
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {isToday && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => completeReminder?.(reminder.id)}
+                        className="h-7 text-xs px-3 text-green-600 border-green-200 hover:bg-green-50"
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Done
+                      </Button>
+                    )}
+                    <Link href={
+                      reminder.entity_type === "prospect" ? "/prospect-tracker"
+                        : reminder.entity_type === "coach" ? "/coach-tracker"
+                        : "/client-tracker"
+                    }>
+                      <Button size="sm" variant="outline" className={`h-7 text-xs px-3 ${
+                        reminderIsOverdue ? "text-red-600 border-red-200 hover:bg-red-50" : "text-amber-600 border-amber-200 hover:bg-amber-50"
+                      }`}>
+                        View
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               )
             })}
