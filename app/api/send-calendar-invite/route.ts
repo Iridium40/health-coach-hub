@@ -122,8 +122,8 @@ export async function POST(request: NextRequest) {
         
         <p style="font-size: 16px; color: #333; margin: 0 0 25px 0;">
           ${isHA 
-            ? `${fromName || "Your coach"} has scheduled a Health Assessment call with you!`
-            : `${fromName || "Your coach"} has scheduled a check-in with you.`
+            ? `Here are the details for your upcoming Health Assessment call!`
+            : `Here are the details for your upcoming check-in.`
           }
         </p>
         
@@ -184,8 +184,8 @@ ${headerTitle}
 Hi ${toName || "there"},
 
 ${isHA 
-  ? `${fromName || "Your coach"} has scheduled a Health Assessment call with you!`
-  : `${fromName || "Your coach"} has scheduled a check-in with you.`
+  ? `Here are the details for your upcoming Health Assessment call!`
+  : `Here are the details for your upcoming check-in.`
 }
 
 ${eventTitle}
