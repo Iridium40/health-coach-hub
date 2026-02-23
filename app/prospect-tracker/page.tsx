@@ -684,6 +684,16 @@ Talking Points:
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline ml-1">Export</span>
           </Button>
+          </div>
+
+          <Button
+            onClick={() => setShowObjectionNav(true)}
+            className="w-full bg-[#f88221] hover:bg-[#e07520] text-white h-10"
+            title="Objection Navigator"
+          >
+            <MessageCircleQuestion className="h-4 w-4 mr-2" />
+            Objection Navigator
+          </Button>
         </div>
 
         {/* Prospect List */}
