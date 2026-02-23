@@ -645,50 +645,41 @@ Talking Points:
         </div>
 
         {/* Search, Filter & Actions */}
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
-          <div className="relative flex-1 min-w-[140px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search by label..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-9"
-            />
-          </div>
+        <div className="space-y-2 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 min-w-[140px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by label..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-9"
+              />
+            </div>
 
-          <Select
-            value={filterStatus}
-            onValueChange={(value) => setFilterStatus(value as ProspectStatus | "all")}
-          >
-            <SelectTrigger className="w-[140px] sm:w-[160px] h-9 text-sm flex-shrink-0">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Prospects</SelectItem>
-              <SelectItem value="new">{statusConfig.new.label}</SelectItem>
-              <SelectItem value="interested">{statusConfig.interested.label}</SelectItem>
-              <SelectItem value="converted">{statusConfig.converted.label}</SelectItem>
-              <SelectItem value="not_interested">{statusConfig.not_interested.label}</SelectItem>
-              <SelectItem value="not_closed">{statusConfig.not_closed.label}</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select
+              value={filterStatus}
+              onValueChange={(value) => setFilterStatus(value as ProspectStatus | "all")}
+            >
+              <SelectTrigger className="w-[140px] sm:w-[160px] h-9 text-sm flex-shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Prospects</SelectItem>
+                <SelectItem value="new">{statusConfig.new.label}</SelectItem>
+                <SelectItem value="interested">{statusConfig.interested.label}</SelectItem>
+                <SelectItem value="converted">{statusConfig.converted.label}</SelectItem>
+                <SelectItem value="not_interested">{statusConfig.not_interested.label}</SelectItem>
+                <SelectItem value="not_closed">{statusConfig.not_closed.label}</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Button
-            size="sm"
-            onClick={() => setShowObjectionNav(true)}
-            className="flex-shrink-0 bg-[#f88221] hover:bg-[#e07520] text-white h-9"
-            title="Objection Navigator"
-          >
-            <MessageCircleQuestion className="h-4 w-4" />
-            <span className="hidden sm:inline ml-1">Objections</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={exportToCSV}
-            className="text-gray-600 flex-shrink-0 h-9"
-            title="Export to CSV"
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToCSV}
+              className="text-gray-600 flex-shrink-0 h-9"
+              title="Export to CSV"
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline ml-1">Export</span>
