@@ -86,14 +86,6 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
         if (data.expires_at) {
           const expiresAt = new Date(data.expires_at)
           const now = new Date()
-          console.log("Invite expiration check:", {
-            expiresAt: expiresAt.toISOString(),
-            now: now.toISOString(),
-            expiresAtLocal: expiresAt.toLocaleString(),
-            nowLocal: now.toLocaleString(),
-            isExpired: expiresAt < now,
-            hoursUntilExpiry: Math.round((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60))
-          })
           if (expiresAt < now) {
             const hoursAgo = Math.round((now.getTime() - expiresAt.getTime()) / (1000 * 60 * 60))
             toast({
@@ -104,8 +96,6 @@ export function SetPasswordForm({ onSuccess, inviteKey }: SetPasswordFormProps) 
             setValidatingInvite(false)
             return
           }
-        } else {
-          console.log("Invite has no expiration date set")
         }
 
         // Check if invite has required email

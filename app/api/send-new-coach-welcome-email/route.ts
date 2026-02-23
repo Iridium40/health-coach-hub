@@ -26,7 +26,7 @@ async function addContactToResendSegment(email: string): Promise<void> {
       return
     }
 
-    console.log(`Added ${email} to Coaching Amplifier segment`, segmentData)
+    // Contact added to segment successfully
   } catch (error: any) {
     console.warn(`Failed to add ${email} to segment:`, error.message)
   }

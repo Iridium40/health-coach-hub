@@ -39,12 +39,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
   Users,
   Plus,
   Search,
@@ -80,7 +74,7 @@ import { ReminderButton } from "@/components/reminders-panel"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { StatsCardsSkeleton, ProspectListSkeleton } from "@/components/ui/skeleton-loaders"
 import { ProspectCard } from "@/components/prospect-tracker/prospect-card"
-import { HelpCircle, MessageCircleQuestion } from "lucide-react"
+import { MessageCircleQuestion } from "lucide-react"
 import type { CalendarEvent } from "@/lib/calendar-utils"
 
 // Time options for HA scheduling

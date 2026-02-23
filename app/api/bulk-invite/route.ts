@@ -41,7 +41,7 @@ async function addContactToResendSegment(
   try {
     // Skip if segment ID is not configured
     if (!RESEND_SEGMENT_ID) {
-      console.log("Resend segment not configured, skipping contact addition")
+      // Segment not configured, skipping
       return { success: true }
     }
 
@@ -57,7 +57,7 @@ async function addContactToResendSegment(
       return { success: true }
     }
 
-    console.log(`Successfully added ${email} to Coaching Amplifier segment`, segmentData)
+    // Contact added to segment successfully
     return { success: true }
 
   } catch (error: any) {
@@ -350,8 +350,6 @@ export async function POST(request: NextRequest) {
         chunks.push(preparedInvites.slice(i, i + RESEND_BATCH_SIZE))
       }
       
-      console.log(`Sending ${preparedInvites.length} emails in ${chunks.length} batch(es)`)
-      
       // Process each chunk
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
         const chunk = chunks[chunkIndex]
@@ -378,8 +376,6 @@ export async function POST(request: NextRequest) {
         })
         
         try {
-          // Send this batch (up to 100 emails)
-          console.log(`Sending batch ${chunkIndex + 1}/${chunks.length} (${chunk.length} emails)`)
           const { data: batchData, error: batchError } = await resend.batch.send(batchEmails)
           
           if (batchError) {

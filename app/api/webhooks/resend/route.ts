@@ -100,12 +100,6 @@ export async function POST(request: NextRequest) {
     
     const event: ResendWebhookEvent = JSON.parse(payload)
     
-    console.log(`Resend webhook received: ${event.type}`, {
-      email_id: event.data.email_id,
-      to: event.data.to,
-      subject: event.data.subject
-    })
-    
     // Handle bounce events
     if (BOUNCE_EVENTS.includes(event.type)) {
       await handleBounceEvent(event)
@@ -150,8 +144,6 @@ async function handleBounceEvent(event: ResendWebhookEvent) {
   
   const emailStatus = event.type === "email.complained" ? "complained" : "bounced"
   
-  console.log(`Processing ${emailStatus} for ${recipientEmail}: ${bounceReason}`)
-  
   // Update invite by resend_message_id first (most accurate)
   let updated = false
   
@@ -168,7 +160,6 @@ async function handleBounceEvent(event: ResendWebhookEvent) {
     
     if (!error && data && data.length > 0) {
       updated = true
-      console.log(`Updated invite by resend_message_id: ${emailId}`)
     }
   }
   
@@ -190,7 +181,6 @@ async function handleBounceEvent(event: ResendWebhookEvent) {
     
     if (!error && data && data.length > 0) {
       updated = true
-      console.log(`Updated invite by email: ${recipientEmail}`)
     }
   }
   
@@ -208,8 +198,6 @@ async function handleDeliveryEvent(event: ResendWebhookEvent) {
   const recipientEmail = event.data.to[0]?.toLowerCase()
   
   if (!recipientEmail) return
-  
-  console.log(`Processing delivery confirmation for ${recipientEmail}`)
   
   // Update invite by resend_message_id first
   let updated = false

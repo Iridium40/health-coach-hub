@@ -140,13 +140,9 @@ export function useAuth() {
   }
 
   const resetPassword = async (email: string) => {
-    console.log("[resetPassword] Requesting reset for:", email)
-    console.log("[resetPassword] redirectTo:", `${window.location.origin}/auth/callback?next=/reset-password`)
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
     })
-    console.log("[resetPassword] Response data:", JSON.stringify(data))
-    console.log("[resetPassword] Response error:", error ? JSON.stringify(error) : "none")
     return { data, error }
   }
 
