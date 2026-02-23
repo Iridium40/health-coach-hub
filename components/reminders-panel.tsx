@@ -755,8 +755,8 @@ export function RemindersBell() {
   const { stats } = useReminders()
   const smartAlerts = useSmartAlerts()
 
-  // Badge shows smart alerts + active reminders
-  const badgeCount = smartAlerts.stats.total + stats.active
+  // Badge shows smart alerts + reminders due today or overdue (not future)
+  const badgeCount = smartAlerts.stats.total + stats.overdue + stats.dueToday
   const hasUrgent = smartAlerts.stats.urgent > 0 || stats.overdue > 0
 
   return (
