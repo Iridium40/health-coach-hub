@@ -1559,7 +1559,7 @@ Talking Points:
                 {/* Primary Action Button */}
                 <Button
                   onClick={handleSaveHASchedule}
-                  disabled={!haDate || haSaving}
+                  disabled={!haDate || haSaving || (!calendarOnly && inviteMethod === "email" && !prospectEmail.trim())}
                   className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base rounded-xl"
                   size="lg"
                 >

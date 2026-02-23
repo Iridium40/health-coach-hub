@@ -1521,7 +1521,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
                 {/* Primary Action Button */}
                 <Button
                   onClick={handleSaveSchedule}
-                  disabled={scheduleSaving || (recurringFrequency === "none" && !scheduleDate)}
+                  disabled={scheduleSaving || (recurringFrequency === "none" && !scheduleDate) || (!calendarOnly && inviteMethod === "email" && !clientEmail.trim())}
                   className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white py-5 text-base rounded-xl"
                   size="lg"
                 >
