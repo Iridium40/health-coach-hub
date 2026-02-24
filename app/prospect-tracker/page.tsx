@@ -225,8 +225,8 @@ export default function ProspectTrackerPage() {
     targetDate.setHours(hour24, parseInt(minute), 0, 0)
     
     const endDate = new Date(targetDate)
-    endDate.setMinutes(endDate.getMinutes() + 45) // 45 min duration for HA
-    
+    endDate.setMinutes(endDate.getMinutes() + 30) // 30 min duration for HA
+
     const title = `Health Assessment: ${prospect.label}`
     const details = `Health Assessment Call with ${prospect.label}
 
@@ -264,8 +264,8 @@ Talking Points:
     targetDate.setHours(hour24, parseInt(haMinute), 0, 0)
     
     const endDate = new Date(targetDate)
-    endDate.setMinutes(endDate.getMinutes() + 45) // 45 min duration for HA
-    
+    endDate.setMinutes(endDate.getMinutes() + 30) // 30 min duration for HA
+
     // Build meeting details based on meeting type
     let meetingDetails = ""
     let location = ""
@@ -1310,7 +1310,7 @@ Talking Points:
                     </div>
                     <div>
                       <DialogTitle className="text-lg font-bold text-gray-900">Schedule Health Assessment</DialogTitle>
-                      <DialogDescription className="text-sm text-gray-500">45 minute assessment</DialogDescription>
+                      <DialogDescription className="text-sm text-gray-500">30 minute assessment</DialogDescription>
                     </div>
                   </div>
                 </div>
