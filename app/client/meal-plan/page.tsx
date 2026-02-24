@@ -22,12 +22,38 @@ import {
   Bookmark,
   Eye,
   Wand2,
+  Info,
+  Leaf,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { recipes as staticRecipes } from "@/lib/data"
 import { ClientRecipePicker } from "@/components/client/client-recipe-picker"
 import { RecipeDetailModal } from "@/components/client/recipe-detail-modal"
 import type { Recipe } from "@/lib/types"
+
+type PlanType = "5&1" | "4&2"
+
+interface DietaryFilters {
+  vegetarianOnly: boolean
+  proteins: {
+    chicken: boolean
+    beef: boolean
+    seafood: boolean
+    turkey: boolean
+    pork: boolean
+  }
+}
+
+const PROTEIN_OPTIONS = [
+  { key: "chicken" as const, label: "Chicken", emoji: "🍗" },
+  { key: "beef" as const, label: "Beef", emoji: "🥩" },
+  { key: "seafood" as const, label: "Seafood", emoji: "🐟" },
+  { key: "turkey" as const, label: "Turkey", emoji: "🦃" },
+  { key: "pork" as const, label: "Pork", emoji: "🥓" },
+]
 
 interface MealPlanEntry {
   day: string
@@ -114,10 +140,30 @@ function ClientMealPlanContent() {
     }
   }, [planData])
 
-  const planType = useMemo(() => {
+  const initialPlanType = useMemo(() => {
     const hasMealSlot = mealPlanEntries.some(entry => entry.meal === "meal")
-    return hasMealSlot ? "5&1" : "4&2"
+    return hasMealSlot ? "5&1" as PlanType : "4&2" as PlanType
   }, [mealPlanEntries])
+
+  const [planType, setPlanType] = useState<PlanType>("5&1")
+  const [dietaryFilters, setDietaryFilters] = useState<DietaryFilters>({
+    vegetarianOnly: false,
+    proteins: { chicken: true, beef: true, seafood: true, turkey: true, pork: true },
+  })
+
+  const filteredRecipes = useMemo(() => {
+    return recipes.filter((recipe) => {
+      if (dietaryFilters.vegetarianOnly) {
+        return recipe.category === "Vegetarian"
+      }
+      const categoryMap: Record<string, keyof DietaryFilters["proteins"]> = {
+        "Chicken": "chicken", "Beef": "beef", "Seafood": "seafood", "Turkey": "turkey", "Pork": "pork",
+      }
+      const proteinKey = categoryMap[recipe.category]
+      if (proteinKey && !dietaryFilters.proteins[proteinKey]) return false
+      return true
+    })
+  }, [recipes, dietaryFilters])
 
   useEffect(() => {
     async function loadRecipes() {
@@ -142,8 +188,11 @@ function ClientMealPlanContent() {
       const built = buildMealsByDay(mealPlanEntries, recipes)
       setMealsByDay(built)
       setOriginalMealsByDay(built)
+      if (mealPlanEntries.length > 0) {
+        setPlanType(initialPlanType)
+      }
     }
-  }, [loading, recipes, mealPlanEntries])
+  }, [loading, recipes, mealPlanEntries, initialPlanType])
 
   const totalMeals = useMemo(() => {
     let count = 0
@@ -219,13 +268,27 @@ function ClientMealPlanContent() {
     toast({ title: "Fresh Start", description: "All slots cleared. Tap any day to add recipes!" })
   }, [toast])
 
+  const handlePlanTypeChange = useCallback((newType: PlanType) => {
+    if (newType !== planType) {
+      setPlanType(newType)
+      const fresh: MealsByDay = {}
+      DAYS.forEach(day => { fresh[day] = {} })
+      setMealsByDay(fresh)
+      setIsCustomized(true)
+      setCheckedItems(new Set())
+      toast({ title: `Switched to ${newType} Plan`, description: newType === "5&1" ? "1 Lean & Green meal per day" : "2 Lean & Green meals per day" })
+    }
+  }, [planType, toast])
+
   const handleAutoFill = useCallback(() => {
-    if (recipes.length === 0) return
+    if (filteredRecipes.length === 0) {
+      toast({ title: "No recipes match", description: "Adjust your filters to include more recipes.", variant: "destructive" })
+      return
+    }
     const newPlan: MealsByDay = {}
-    const available = [...recipes]
 
     const recipesByCategory: Record<string, Recipe[]> = {}
-    available.forEach(r => {
+    filteredRecipes.forEach(r => {
       if (!recipesByCategory[r.category]) recipesByCategory[r.category] = []
       recipesByCategory[r.category].push(r)
     })
@@ -258,7 +321,7 @@ function ClientMealPlanContent() {
     setIsCustomized(true)
     setCheckedItems(new Set())
     toast({ title: "Meal Plan Generated!", description: "Your week has been auto-filled with a variety of recipes. Tap any meal to swap it out." })
-  }, [recipes, planType, toast])
+  }, [filteredRecipes, planType, toast])
 
   const handleViewRecipe = useCallback((recipe: Recipe, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -381,6 +444,94 @@ function ClientMealPlanContent() {
           <p className="text-xs text-gray-400 w-full text-center mt-1">
             Tap any meal slot to swap or add a recipe, or auto-fill your entire week
           </p>
+        </div>
+      </div>
+
+      {/* Plan Type & Dietary Filters */}
+      <div className="container mx-auto px-4 print:hidden">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mt-4">
+          <div className="flex flex-col gap-4">
+            {/* Plan Type Toggle */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-800">OPTAVIA Plan:</span>
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  <button
+                    onClick={() => handlePlanTypeChange("5&1")}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      planType === "5&1"
+                        ? "bg-[#2d5016] text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    5 & 1
+                  </button>
+                  <button
+                    onClick={() => handlePlanTypeChange("4&2")}
+                    className={`px-4 py-2 text-sm font-medium border-l border-gray-300 transition-colors ${
+                      planType === "4&2"
+                        ? "bg-[#2d5016] text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    4 & 2
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 rounded-md px-3 py-2 flex-1">
+                <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <div>
+                  {planType === "5&1" ? (
+                    <span><strong>5 & 1 Plan:</strong> 5 OPTAVIA Fuelings + 1 Lean & Green meal per day</span>
+                  ) : (
+                    <span><strong>4 & 2 Plan:</strong> 4 OPTAVIA Fuelings + 2 Lean & Green meals per day</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Dietary Filters */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="client-vegetarian"
+                  checked={dietaryFilters.vegetarianOnly}
+                  onCheckedChange={(checked) => setDietaryFilters(prev => ({ ...prev, vegetarianOnly: !!checked }))}
+                />
+                <Label htmlFor="client-vegetarian" className="flex items-center gap-1 cursor-pointer text-gray-800">
+                  <Leaf className="h-4 w-4 text-green-600" />
+                  Vegetarian Only
+                </Label>
+              </div>
+
+              {!dietaryFilters.vegetarianOnly && (
+                <>
+                  <div className="hidden sm:block w-px h-6 bg-gray-300" />
+                  <div className="flex flex-wrap items-center gap-4">
+                    <span className="text-sm text-gray-500 font-medium">Proteins:</span>
+                    {PROTEIN_OPTIONS.map((protein) => (
+                      <div key={protein.key} className="flex items-center gap-1.5">
+                        <Checkbox
+                          id={`client-${protein.key}`}
+                          checked={dietaryFilters.proteins[protein.key]}
+                          onCheckedChange={(checked) =>
+                            setDietaryFilters(prev => ({
+                              ...prev,
+                              proteins: { ...prev.proteins, [protein.key]: !!checked },
+                            }))
+                          }
+                        />
+                        <Label htmlFor={`client-${protein.key}`} className="text-sm cursor-pointer text-gray-800">
+                          <span className="mr-1">{protein.emoji}</span>
+                          {protein.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -653,7 +804,7 @@ function ClientMealPlanContent() {
       <ClientRecipePicker
         open={pickerOpen}
         onOpenChange={(open) => { setPickerOpen(open); if (!open) setEditingSlot(null) }}
-        recipes={recipes}
+        recipes={filteredRecipes}
         onSelect={handleRecipeSelected}
         onClear={editingSlot && mealsByDay[editingSlot.day]?.[editingSlot.slot] ? handleClearSlot : undefined}
         currentRecipe={editingSlot ? mealsByDay[editingSlot.day]?.[editingSlot.slot] ?? null : null}
