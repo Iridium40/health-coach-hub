@@ -5,9 +5,9 @@ import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { ArrowLeft, Clock, Users, ChefHat, Share2, Copy, Check, UtensilsCrossed, Flame } from "lucide-react"
+import Link from "next/link"
+import { ArrowLeft, Clock, Users, ChefHat, Share2, Copy, Check, UtensilsCrossed, Flame, Calendar } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { getRecipes } from "@/lib/supabase/data"
 import { estimateCaloriesPerServing } from "@/lib/calorie-utils"
 import { recipes as staticRecipes } from "@/lib/data"
 import type { Recipe } from "@/lib/types"
@@ -45,16 +45,16 @@ function ClientRecipeDetailContent() {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
-  // Load recipes from Supabase
   useEffect(() => {
     async function loadRecipes() {
       try {
-        const loadedRecipes = await getRecipes()
-        if (loadedRecipes.length > 0) {
-          setRecipes(loadedRecipes)
+        const res = await fetch("/api/public/recipes")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.length > 0) setRecipes(data)
         }
-      } catch (error) {
-        console.error("Error loading recipes:", error)
+      } catch {
+        // falls back to staticRecipes already in state
       } finally {
         setLoading(false)
       }
@@ -167,19 +167,22 @@ function ClientRecipeDetailContent() {
                 <span className="hidden sm:inline">All Recipes</span>
               </Button>
             </div>
-            <picture>
-              <source srcSet="/branding/ca_logo_large.svg" type="image/svg+xml" />
-              <img
-                src="/branding/ca_logo_large.png"
-                alt="Coaching Amplifier"
+            <div className="flex items-center gap-3">
+              <Link href="/client/meal-plan">
+                <Button variant="outline" size="sm" className="gap-1.5 border-gray-300 text-xs">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Meal Plan</span>
+                </Button>
+              </Link>
+              <picture>
+                <source srcSet="/branding/ca_logo_large.svg" type="image/svg+xml" />
+                <img
+                  src="/branding/ca_logo_large.png"
+                  alt="Coaching Amplifier"
                 className="h-8 w-auto"
               />
             </picture>
-            {coachName && (
-              <div className="text-sm text-gray-600 hidden sm:block">
-                Shared by <span className="font-medium text-[#2d5016]">{coachName}</span>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </header>

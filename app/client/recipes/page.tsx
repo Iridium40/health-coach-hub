@@ -14,8 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Clock, Users, ChefHat, UtensilsCrossed, ArrowLeft, Bell, CheckCircle, Loader2, Flame } from "lucide-react"
-import { getRecipes } from "@/lib/supabase/data"
+import Link from "next/link"
+import { Search, Clock, Users, ChefHat, UtensilsCrossed, ArrowLeft, Bell, CheckCircle, Loader2, Flame, Calendar } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { estimateCaloriesPerServing } from "@/lib/calorie-utils"
 import { Turnstile } from "@/components/turnstile"
@@ -65,16 +65,16 @@ function ClientRecipesContent() {
   // Get coach name from URL if present (from email link)
   const coachName = searchParams.get("coach")
 
-  // Load recipes from Supabase
   useEffect(() => {
     async function loadRecipes() {
       try {
-        const loadedRecipes = await getRecipes()
-        if (loadedRecipes.length > 0) {
-          setRecipes(loadedRecipes)
+        const res = await fetch("/api/public/recipes")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.length > 0) setRecipes(data)
         }
-      } catch (error) {
-        console.error("Error loading recipes:", error)
+      } catch {
+        // falls back to staticRecipes already in state
       } finally {
         setLoading(false)
       }
@@ -192,11 +192,19 @@ function ClientRecipesContent() {
                 />
               </picture>
             </div>
-            {coachName && (
-              <div className="text-sm text-gray-600">
-                Shared by <span className="font-medium text-[#2d5016]">{coachName}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {coachName && (
+                <span className="text-sm text-gray-600 hidden sm:inline">
+                  Shared by <span className="font-medium text-[#2d5016]">{coachName}</span>
+                </span>
+              )}
+              <Link href="/client/meal-plan">
+                <Button variant="outline" size="sm" className="gap-1.5 border-gray-300 text-sm">
+                  <Calendar className="h-3.5 w-3.5" />
+                  My Meal Plan
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>

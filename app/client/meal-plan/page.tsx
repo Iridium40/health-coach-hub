@@ -1,23 +1,28 @@
 "use client"
 
-import { useState, useMemo, useEffect, Suspense } from "react"
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   Calendar,
   ShoppingCart,
-  ChefHat,
   Printer,
   Check,
   Copy,
   ArrowRight,
   UtensilsCrossed,
+  RefreshCw,
+  Plus,
+  Pencil,
+  X,
+  Sparkles,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { getRecipes } from "@/lib/supabase/data"
 import { recipes as staticRecipes } from "@/lib/data"
+import { ClientRecipePicker } from "@/components/client/client-recipe-picker"
 import type { Recipe } from "@/lib/types"
 
 interface MealPlanEntry {
@@ -26,9 +31,11 @@ interface MealPlanEntry {
   recipeId: string
 }
 
+type DayMeals = { meal?: Recipe; lunch?: Recipe; dinner?: Recipe }
+type MealsByDay = Record<string, DayMeals>
+
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-// Loading component for Suspense fallback
 function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
@@ -40,7 +47,6 @@ function LoadingState() {
   )
 }
 
-// Main page wrapper with Suspense
 export default function ClientMealPlanPage() {
   return (
     <Suspense fallback={<LoadingState />}>
@@ -49,31 +55,64 @@ export default function ClientMealPlanPage() {
   )
 }
 
+function buildMealsByDay(entries: MealPlanEntry[], recipes: Recipe[]): MealsByDay {
+  const grouped: MealsByDay = {}
+  DAYS.forEach(day => { grouped[day] = {} })
+  entries.forEach(entry => {
+    const dayKey = entry.day.charAt(0).toUpperCase() + entry.day.slice(1).toLowerCase()
+    const recipe = recipes.find(r => r.id === entry.recipeId)
+    if (recipe && grouped[dayKey]) {
+      grouped[dayKey][entry.meal] = recipe
+    }
+  })
+  return grouped
+}
+
 function ClientMealPlanContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  
+
   const [recipes, setRecipes] = useState<Recipe[]>(staticRecipes)
   const [loading, setLoading] = useState(true)
   const [copiedList, setCopiedList] = useState(false)
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
-  
-  // Get data from URL params
+
+  // Interactive state
+  const [mealsByDay, setMealsByDay] = useState<MealsByDay>({})
+  const [originalMealsByDay, setOriginalMealsByDay] = useState<MealsByDay>({})
+  const [isCustomized, setIsCustomized] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [editingSlot, setEditingSlot] = useState<{ day: string; slot: "meal" | "lunch" | "dinner" } | null>(null)
+
   const clientName = searchParams.get("client") || "Client"
   const coachName = searchParams.get("coach") || "Your Coach"
-  const planData = searchParams.get("plan") // Base64 encoded meal plan data
+  const planData = searchParams.get("plan")
 
-  // Load recipes from Supabase
+  const mealPlanEntries = useMemo(() => {
+    if (!planData) return []
+    try {
+      return JSON.parse(atob(planData)) as MealPlanEntry[]
+    } catch {
+      return []
+    }
+  }, [planData])
+
+  const planType = useMemo(() => {
+    const hasMealSlot = mealPlanEntries.some(entry => entry.meal === "meal")
+    return hasMealSlot ? "5&1" : "4&2"
+  }, [mealPlanEntries])
+
   useEffect(() => {
     async function loadRecipes() {
       try {
-        const loadedRecipes = await getRecipes()
-        if (loadedRecipes.length > 0) {
-          setRecipes(loadedRecipes)
+        const res = await fetch("/api/public/recipes")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.length > 0) setRecipes(data)
         }
-      } catch (error) {
-        console.error("Error loading recipes:", error)
+      } catch {
+        // falls back to staticRecipes
       } finally {
         setLoading(false)
       }
@@ -81,53 +120,27 @@ function ClientMealPlanContent() {
     loadRecipes()
   }, [])
 
-  // Decode meal plan from URL
-  const mealPlanEntries = useMemo(() => {
-    if (!planData) return []
-    try {
-      const decoded = atob(planData)
-      return JSON.parse(decoded) as MealPlanEntry[]
-    } catch (error) {
-      console.error("Error decoding meal plan:", error)
-      return []
+  // Build initial meal plan once recipes are loaded
+  useEffect(() => {
+    if (!loading && recipes.length > 0) {
+      const built = buildMealsByDay(mealPlanEntries, recipes)
+      setMealsByDay(built)
+      setOriginalMealsByDay(built)
     }
-  }, [planData])
+  }, [loading, recipes, mealPlanEntries])
 
-  // Determine plan type based on meal entries
-  const planType = useMemo(() => {
-    const hasMealSlot = mealPlanEntries.some(entry => entry.meal === "meal")
-    return hasMealSlot ? "5&1" : "4&2"
-  }, [mealPlanEntries])
-
-  // Map meal plan entries to recipes
-  const mealsByDay = useMemo(() => {
-    const grouped: Record<string, { meal?: Recipe; lunch?: Recipe; dinner?: Recipe }> = {}
-    
-    DAYS.forEach(day => {
-      grouped[day] = {}
+  const totalMeals = useMemo(() => {
+    let count = 0
+    Object.values(mealsByDay).forEach(meals => {
+      if (meals.meal) count++
+      if (meals.lunch) count++
+      if (meals.dinner) count++
     })
-    
-    mealPlanEntries.forEach(entry => {
-      const dayKey = entry.day.charAt(0).toUpperCase() + entry.day.slice(1).toLowerCase()
-      const recipe = recipes.find(r => r.id === entry.recipeId)
-      if (recipe && grouped[dayKey]) {
-        if (entry.meal === "meal") {
-          grouped[dayKey].meal = recipe
-        } else if (entry.meal === "lunch") {
-          grouped[dayKey].lunch = recipe
-        } else if (entry.meal === "dinner") {
-          grouped[dayKey].dinner = recipe
-        }
-      }
-    })
-    
-    return grouped
-  }, [mealPlanEntries, recipes])
+    return count
+  }, [mealsByDay])
 
-  // Generate aggregated shopping list
   const shoppingList = useMemo(() => {
     const ingredientMap = new Map<string, number>()
-    
     Object.values(mealsByDay).forEach(meals => {
       [meals.meal, meals.lunch, meals.dinner].forEach(recipe => {
         if (recipe) {
@@ -138,7 +151,6 @@ function ClientMealPlanContent() {
         }
       })
     })
-    
     return Array.from(ingredientMap.entries())
       .map(([ingredient, count]) => ({
         ingredient: ingredient.charAt(0).toUpperCase() + ingredient.slice(1),
@@ -147,222 +159,219 @@ function ClientMealPlanContent() {
       .sort((a, b) => a.ingredient.localeCompare(b.ingredient))
   }, [mealsByDay])
 
+  const handleSwapRecipe = useCallback((day: string, slot: "meal" | "lunch" | "dinner") => {
+    setEditingSlot({ day, slot })
+    setPickerOpen(true)
+  }, [])
+
+  const handleRecipeSelected = useCallback((recipe: Recipe) => {
+    if (!editingSlot) return
+    setMealsByDay(prev => ({
+      ...prev,
+      [editingSlot.day]: { ...prev[editingSlot.day], [editingSlot.slot]: recipe }
+    }))
+    setIsCustomized(true)
+    setPickerOpen(false)
+    setEditingSlot(null)
+  }, [editingSlot])
+
+  const handleClearSlot = useCallback(() => {
+    if (!editingSlot) return
+    setMealsByDay(prev => {
+      const updated = { ...prev[editingSlot.day] }
+      delete updated[editingSlot.slot]
+      return { ...prev, [editingSlot.day]: updated }
+    })
+    setIsCustomized(true)
+    setPickerOpen(false)
+    setEditingSlot(null)
+  }, [editingSlot])
+
+  const handleResetPlan = useCallback(() => {
+    setMealsByDay(originalMealsByDay)
+    setIsCustomized(false)
+    setCheckedItems(new Set())
+    toast({ title: "Plan Reset", description: "Restored your coach's original meal plan." })
+  }, [originalMealsByDay, toast])
+
+  const handleStartFresh = useCallback(() => {
+    const fresh: MealsByDay = {}
+    DAYS.forEach(day => { fresh[day] = {} })
+    setMealsByDay(fresh)
+    setIsCustomized(true)
+    setCheckedItems(new Set())
+    toast({ title: "Fresh Start", description: "All slots cleared. Tap any day to add recipes!" })
+  }, [toast])
+
   const handleCopyShoppingList = async () => {
-    // Only copy items that are NOT checked (items you still need)
     const itemsNeeded = shoppingList.filter(item => !checkedItems.has(item.ingredient))
-    
     if (itemsNeeded.length === 0) {
-      toast({
-        title: "All items checked!",
-        description: "You've marked all items as already having them.",
-      })
+      toast({ title: "All items checked!", description: "You've marked all items as already having them." })
       return
     }
-    
     const listText = itemsNeeded
       .map(item => `- ${item.ingredient}${item.count > 1 ? ` (x${item.count})` : ''}`)
       .join('\n')
-    
     try {
       await navigator.clipboard.writeText(`Shopping List\n\n${listText}`)
       setCopiedList(true)
-      toast({
-        title: "Copied!",
-        description: `${itemsNeeded.length} items copied (${checkedItems.size} already-have items excluded)`,
-      })
+      toast({ title: "Copied!", description: `${itemsNeeded.length} items copied` })
       setTimeout(() => setCopiedList(false), 2000)
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to copy shopping list",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: "Error", description: "Failed to copy shopping list", variant: "destructive" })
     }
   }
 
   const toggleCheckedItem = (ingredient: string) => {
     setCheckedItems(prev => {
       const newSet = new Set(prev)
-      if (newSet.has(ingredient)) {
-        newSet.delete(ingredient)
-      } else {
-        newSet.add(ingredient)
-      }
+      if (newSet.has(ingredient)) newSet.delete(ingredient)
+      else newSet.add(ingredient)
       return newSet
     })
   }
 
-  const handlePrint = () => {
-    window.print()
-  }
-
-  const totalMeals = mealPlanEntries.length
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2d5016] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your meal plan...</p>
-        </div>
-      </div>
-    )
+    return <LoadingState />
   }
 
-  if (totalMeals === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
-        <div className="text-center max-w-md mx-auto px-4">
-          <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">No Meal Plan Found</h2>
-          <p className="text-gray-600 mb-6">
-            This link may have expired or the meal plan data is missing.
-          </p>
-          <Button
-            onClick={() => router.push("/client/recipes")}
-            className="bg-[#2d5016] hover:bg-[#3d6b1e] text-white gap-2"
-          >
-            <UtensilsCrossed className="h-4 w-4" />
-            Browse Recipes
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  const hasCoachPlan = mealPlanEntries.length > 0
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-amber-50 print:bg-white">
-      {/* Header - hidden in print */}
+      {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm print:hidden">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <picture>
               <source srcSet="/branding/ca_logo_large.svg" type="image/svg+xml" />
-              <img
-                src="/branding/ca_logo_large.png"
-                alt="Coaching Amplifier"
-                className="h-10 w-auto"
-              />
+              <img src="/branding/ca_logo_large.png" alt="Coaching Amplifier" className="h-9 w-auto" />
             </picture>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrint}
-              className="gap-2 border-gray-300"
-            >
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link href={`/client/recipes${coachName !== "Your Coach" ? `?coach=${encodeURIComponent(coachName)}` : ""}`}>
+                <Button variant="outline" size="sm" className="gap-1.5 border-gray-300 text-sm">
+                  <UtensilsCrossed className="h-3.5 w-3.5" />
+                  All Recipes
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5 border-gray-300 text-sm">
+                <Printer className="h-3.5 w-3.5" />
+                Print
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-[#2d5016] to-[#3d6b1e] text-white py-10 print:py-6 print:bg-[#2d5016]">
+      {/* Hero */}
+      <div className="bg-gradient-to-r from-[#2d5016] to-[#3d6b1e] text-white py-8 print:py-6 print:bg-[#2d5016]">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            Your Weekly Meal Plan
+          <h1 className="text-2xl md:text-3xl font-bold mb-1">
+            {hasCoachPlan ? "Your Weekly Meal Plan" : "Build Your Meal Plan"}
           </h1>
-          <p className="text-green-100 text-lg">
-            Prepared especially for <span className="font-semibold">{clientName}</span> by {coachName}
-          </p>
-          <div className="mt-4 flex justify-center gap-4">
+          {hasCoachPlan && (
+            <p className="text-green-100">
+              Prepared for <span className="font-semibold">{clientName}</span> by {coachName}
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap justify-center gap-3 print:hidden">
             <Badge variant="secondary" className="bg-white/20 text-white border-0">
-              <Calendar className="h-4 w-4 mr-1" />
-              {totalMeals} Meals Planned
+              <Calendar className="h-3.5 w-3.5 mr-1" />
+              {totalMeals} Meals
             </Badge>
             <Badge variant="secondary" className="bg-white/20 text-white border-0">
-              <ShoppingCart className="h-4 w-4 mr-1" />
+              <ShoppingCart className="h-3.5 w-3.5 mr-1" />
               {shoppingList.length} Ingredients
             </Badge>
+            {isCustomized && (
+              <Badge variant="secondary" className="bg-amber-400/30 text-white border-0">
+                <Sparkles className="h-3.5 w-3.5 mr-1" />
+                Customized
+              </Badge>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Action Bar */}
+      <div className="container mx-auto px-4 print:hidden">
+        <div className="flex flex-wrap items-center justify-center gap-2 py-3 border-b border-gray-100">
+          {hasCoachPlan && isCustomized && (
+            <Button variant="outline" size="sm" onClick={handleResetPlan} className="gap-1.5 text-sm">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Reset to Coach's Plan
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={handleStartFresh} className="gap-1.5 text-sm">
+            <Plus className="h-3.5 w-3.5" />
+            Start Fresh
+          </Button>
+          <p className="text-xs text-gray-400 w-full text-center mt-1">
+            Tap any meal slot to swap or add a recipe
+          </p>
+        </div>
+      </div>
+
       <main className="container mx-auto px-4 py-6">
-        {/* Weekly Schedule - Calendar View */}
+        {/* Weekly Schedule */}
         <section className="mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Calendar className="h-5 w-5 text-[#2d5016]" />
             Weekly Schedule
           </h2>
-          
-          {/* Desktop: Horizontal Calendar */}
+
+          {/* Desktop Grid */}
           <div className="hidden md:block overflow-x-auto">
             <div className="grid grid-cols-7 gap-2 min-w-[700px]">
               {DAYS.map(day => {
-                const meals = mealsByDay[day]
-                const hasMeal = !!meals?.meal
-                const hasLunch = !!meals?.lunch
-                const hasDinner = !!meals?.dinner
-                
+                const meals = mealsByDay[day] || {}
+                const slots: ("meal" | "lunch" | "dinner")[] = planType === "5&1" ? ["meal"] : ["lunch", "dinner"]
+
                 return (
                   <div key={day} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    {/* Day Header */}
                     <div className="bg-[#2d5016] px-2 py-1.5 text-center">
                       <span className="text-xs font-semibold text-white">{day.slice(0, 3)}</span>
                     </div>
-                    
-                    {/* Meal Content */}
-                    <div className="p-1.5 min-h-[120px]">
-                      {planType === "5&1" && hasMeal && meals.meal ? (
-                        <div
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => router.push(`/client/recipes/${meals.meal!.id}?coach=${encodeURIComponent(coachName)}`)}
-                        >
-                          <img
-                            src={meals.meal.image}
-                            alt={meals.meal.title}
-                            className="w-full h-16 rounded object-cover mb-1"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
-                            }}
-                          />
-                          <p className="text-xs font-medium text-gray-800 line-clamp-2 leading-tight">
-                            {meals.meal.title}
-                          </p>
-                        </div>
-                      ) : planType === "4&2" ? (
-                        <div className="space-y-1.5">
-                          {hasLunch && meals.lunch && (
-                            <div
-                              className="cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() => router.push(`/client/recipes/${meals.lunch!.id}?coach=${encodeURIComponent(coachName)}`)}
-                            >
-                              <img
-                                src={meals.lunch.image}
-                                alt={meals.lunch.title}
-                                className="w-full h-12 rounded object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
-                                }}
-                              />
-                              <p className="text-[10px] text-gray-700 line-clamp-1">{meals.lunch.title}</p>
+                    <div className="p-1.5 space-y-1.5 min-h-[120px]">
+                      {slots.map(slot => {
+                        const recipe = meals[slot]
+                        return recipe ? (
+                          <div
+                            key={slot}
+                            className="relative group cursor-pointer"
+                            onClick={() => handleSwapRecipe(day, slot)}
+                          >
+                            <img
+                              src={recipe.image}
+                              alt={recipe.title}
+                              className="w-full h-16 rounded object-cover mb-1 group-hover:opacity-70 transition-opacity"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop"
+                              }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                              <div className="bg-white/90 rounded-full p-1.5 shadow">
+                                <Pencil className="h-3.5 w-3.5 text-[#2d5016]" />
+                              </div>
                             </div>
-                          )}
-                          {hasDinner && meals.dinner && (
-                            <div
-                              className="cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() => router.push(`/client/recipes/${meals.dinner!.id}?coach=${encodeURIComponent(coachName)}`)}
-                            >
-                              <img
-                                src={meals.dinner.image}
-                                alt={meals.dinner.title}
-                                className="w-full h-12 rounded object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
-                                }}
-                              />
-                              <p className="text-[10px] text-gray-700 line-clamp-1">{meals.dinner.title}</p>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-gray-300">
-                          <span className="text-xs">-</span>
-                        </div>
-                      )}
+                            <p className="text-xs font-medium text-gray-800 line-clamp-2 leading-tight">
+                              {recipe.title}
+                            </p>
+                            {planType === "4&2" && (
+                              <p className="text-[9px] text-gray-400 uppercase">{slot === "lunch" ? "L&G #1" : "L&G #2"}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            key={slot}
+                            onClick={() => handleSwapRecipe(day, slot)}
+                            className="w-full h-20 rounded border-2 border-dashed border-gray-200 hover:border-[#2d5016] hover:bg-green-50/50 flex flex-col items-center justify-center gap-1 transition-colors print:hidden"
+                          >
+                            <Plus className="h-4 w-4 text-gray-300" />
+                            <span className="text-[10px] text-gray-400">Add recipe</span>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 )
@@ -370,79 +379,52 @@ function ClientMealPlanContent() {
             </div>
           </div>
 
-          {/* Mobile: Compact List */}
+          {/* Mobile List */}
           <div className="md:hidden space-y-2">
             {DAYS.map(day => {
-              const meals = mealsByDay[day]
-              const hasMeal = !!meals?.meal
-              const hasLunch = !!meals?.lunch
-              const hasDinner = !!meals?.dinner
-              
-              if (!hasMeal && !hasLunch && !hasDinner) return null
-              
+              const meals = mealsByDay[day] || {}
+              const slots: ("meal" | "lunch" | "dinner")[] = planType === "5&1" ? ["meal"] : ["lunch", "dinner"]
+
               return (
-                <div key={day} className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-2">
-                  {/* Day */}
-                  <div className="w-12 flex-shrink-0 text-center">
-                    <div className="text-xs font-bold text-[#2d5016]">{day.slice(0, 3)}</div>
-                  </div>
-                  
-                  {/* Meal(s) */}
-                  <div className="flex-1 min-w-0">
-                    {planType === "5&1" && hasMeal && meals.meal && (
-                      <div
-                        className="flex items-center gap-2 cursor-pointer"
-                        onClick={() => router.push(`/client/recipes/${meals.meal!.id}?coach=${encodeURIComponent(coachName)}`)}
-                      >
-                        <img
-                          src={meals.meal.image}
-                          alt={meals.meal.title}
-                          className="w-10 h-10 rounded object-cover flex-shrink-0"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
-                          }}
-                        />
-                        <span className="text-sm text-gray-800 truncate">{meals.meal.title}</span>
-                        <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      </div>
-                    )}
-                    
-                    {planType === "4&2" && (
-                      <div className="flex gap-2">
-                        {hasLunch && meals.lunch && (
+                <div key={day} className="bg-white rounded-lg border border-gray-200 p-2">
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 flex-shrink-0 text-center pt-1">
+                      <div className="text-xs font-bold text-[#2d5016]">{day.slice(0, 3)}</div>
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      {slots.map(slot => {
+                        const recipe = meals[slot]
+                        return recipe ? (
                           <div
-                            className="flex items-center gap-1 cursor-pointer flex-1 min-w-0"
-                            onClick={() => router.push(`/client/recipes/${meals.lunch!.id}?coach=${encodeURIComponent(coachName)}`)}
+                            key={slot}
+                            className="flex items-center gap-2 cursor-pointer group"
+                            onClick={() => handleSwapRecipe(day, slot)}
                           >
                             <img
-                              src={meals.lunch.image}
-                              alt={meals.lunch.title}
-                              className="w-8 h-8 rounded object-cover flex-shrink-0"
+                              src={recipe.image}
+                              alt={recipe.title}
+                              className="w-10 h-10 rounded object-cover flex-shrink-0"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
+                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop"
                               }}
                             />
-                            <span className="text-xs text-gray-700 truncate">{meals.lunch.title}</span>
+                            <span className="text-sm text-gray-800 truncate flex-1">{recipe.title}</span>
+                            <Pencil className="h-3.5 w-3.5 text-gray-300 group-hover:text-[#2d5016] flex-shrink-0 transition-colors print:hidden" />
                           </div>
-                        )}
-                        {hasDinner && meals.dinner && (
-                          <div
-                            className="flex items-center gap-1 cursor-pointer flex-1 min-w-0"
-                            onClick={() => router.push(`/client/recipes/${meals.dinner!.id}?coach=${encodeURIComponent(coachName)}`)}
+                        ) : (
+                          <button
+                            key={slot}
+                            onClick={() => handleSwapRecipe(day, slot)}
+                            className="w-full flex items-center gap-2 p-2 rounded border border-dashed border-gray-200 hover:border-[#2d5016] hover:bg-green-50/50 transition-colors print:hidden"
                           >
-                            <img
-                              src={meals.dinner.image}
-                              alt={meals.dinner.title}
-                              className="w-8 h-8 rounded object-cover flex-shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop'
-                              }}
-                            />
-                            <span className="text-xs text-gray-700 truncate">{meals.dinner.title}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                            <Plus className="h-4 w-4 text-gray-300" />
+                            <span className="text-xs text-gray-400">
+                              Add {planType === "4&2" ? (slot === "lunch" ? "L&G #1" : "L&G #2") : "recipe"}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               )
@@ -451,83 +433,96 @@ function ClientMealPlanContent() {
         </section>
 
         {/* Shopping List */}
-        <section>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-[#2d5016]" />
-                Shopping List
-              </h2>
-              <p className="text-xs text-gray-500 mt-1">
-                ✓ Check items you already have — they won't be included when you copy
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {checkedItems.size > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {shoppingList.length - checkedItems.size} needed
-                </Badge>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyShoppingList}
-                className="gap-2 border-gray-300 print:hidden"
-              >
-                {copiedList ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                {copiedList ? "Copied!" : "Copy List"}
-              </Button>
-            </div>
-          </div>
-          
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
-                {shoppingList.map((item, index) => {
-                  const isChecked = checkedItems.has(item.ingredient)
-                  return (
-                    <div 
-                      key={index} 
-                      className="flex items-center gap-2 py-1 cursor-pointer group"
-                      onClick={() => toggleCheckedItem(item.ingredient)}
-                    >
-                      <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                        isChecked 
-                          ? 'bg-[#2d5016] border-[#2d5016]' 
-                          : 'border-gray-300 group-hover:border-[#2d5016]'
-                      }`}>
-                        {isChecked && <Check className="h-3 w-3 text-white" />}
-                      </div>
-                      <span className={`transition-colors ${
-                        isChecked 
-                          ? 'text-gray-400 line-through' 
-                          : 'text-gray-700'
-                      }`}>
-                        {item.ingredient}
-                      </span>
-                      {item.count > 1 && (
-                        <span className={`text-sm ${isChecked ? 'text-gray-300' : 'text-gray-400'}`}>
-                          (x{item.count})
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
+        {shoppingList.length > 0 && (
+          <section>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5 text-[#2d5016]" />
+                  Shopping List
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  Check items you already have — they won't be included when you copy or print
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </section>
+              <div className="flex items-center gap-2">
+                {checkedItems.size > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {shoppingList.length - checkedItems.size} needed
+                  </Badge>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyShoppingList}
+                  className="gap-2 border-gray-300 print:hidden"
+                >
+                  {copiedList ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  {copiedList ? "Copied!" : "Copy List"}
+                </Button>
+              </div>
+            </div>
+            <Card className="bg-white">
+              <CardContent className="p-4">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
+                  {shoppingList.map((item, index) => {
+                    const isChecked = checkedItems.has(item.ingredient)
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 py-1 cursor-pointer group"
+                        onClick={() => toggleCheckedItem(item.ingredient)}
+                      >
+                        <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                          isChecked
+                            ? "bg-[#2d5016] border-[#2d5016]"
+                            : "border-gray-300 group-hover:border-[#2d5016]"
+                        }`}>
+                          {isChecked && <Check className="h-3 w-3 text-white" />}
+                        </div>
+                        <span className={`transition-colors ${isChecked ? "text-gray-400 line-through" : "text-gray-700"}`}>
+                          {item.ingredient}
+                        </span>
+                        {item.count > 1 && (
+                          <span className={`text-sm ${isChecked ? "text-gray-300" : "text-gray-400"}`}>
+                            (x{item.count})
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        )}
 
-        {/* Browse More Recipes - hidden in print */}
-        <div className="mt-6 text-center print:hidden">
-          <Button
-            onClick={() => router.push("/client/recipes")}
-            className="bg-[#2d5016] hover:bg-[#3d6b1e] text-white gap-2"
-          >
-            <UtensilsCrossed className="h-4 w-4" />
-            Browse More Recipes
-          </Button>
-        </div>
+        {/* Empty state when no meals */}
+        {totalMeals === 0 && (
+          <div className="text-center py-12">
+            <UtensilsCrossed className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-gray-700 mb-1">No meals added yet</h3>
+            <p className="text-sm text-gray-500 mb-4">Tap any slot above to start building your plan</p>
+            <Link href={`/client/recipes${coachName !== "Your Coach" ? `?coach=${encodeURIComponent(coachName)}` : ""}`}>
+              <Button className="bg-[#2d5016] hover:bg-[#3d6b1e] text-white gap-2">
+                <UtensilsCrossed className="h-4 w-4" />
+                Browse Recipes
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Browse link */}
+        {totalMeals > 0 && (
+          <div className="mt-6 text-center print:hidden">
+            <Link href={`/client/recipes${coachName !== "Your Coach" ? `?coach=${encodeURIComponent(coachName)}` : ""}`}>
+              <Button className="bg-[#2d5016] hover:bg-[#3d6b1e] text-white gap-2">
+                <UtensilsCrossed className="h-4 w-4" />
+                Browse All Recipes
+              </Button>
+            </Link>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
@@ -536,22 +531,28 @@ function ClientMealPlanContent() {
           <div className="flex justify-center mb-4">
             <picture>
               <source srcSet="/branding/ca_logo_large.svg" type="image/svg+xml" />
-              <img
-                src="/branding/ca_logo_large.png"
-                alt="Coaching Amplifier"
-                className="h-8 w-auto brightness-0 invert"
-              />
+              <img src="/branding/ca_logo_large.png" alt="Coaching Amplifier" className="h-8 w-auto brightness-0 invert" />
             </picture>
           </div>
           <p className="text-gray-400 text-sm">
-            Powered by Coaching Amplifier • Supporting OPTAVIA Health Coaches
+            Powered by Coaching Amplifier
           </p>
           <p className="text-gray-500 text-xs mt-2">
-            © {new Date().getFullYear()} Coaching Amplifier. All rights reserved.
+            &copy; {new Date().getFullYear()} Coaching Amplifier. All rights reserved.
           </p>
         </div>
       </footer>
+
+      {/* Recipe Picker Dialog */}
+      <ClientRecipePicker
+        open={pickerOpen}
+        onOpenChange={(open) => { setPickerOpen(open); if (!open) setEditingSlot(null) }}
+        recipes={recipes}
+        onSelect={handleRecipeSelected}
+        onClear={editingSlot && mealsByDay[editingSlot.day]?.[editingSlot.slot] ? handleClearSlot : undefined}
+        currentRecipe={editingSlot ? mealsByDay[editingSlot.day]?.[editingSlot.slot] ?? null : null}
+        slotLabel={editingSlot ? `${editingSlot.day}${planType === "4&2" ? ` ${editingSlot.slot === "lunch" ? "L&G #1" : "L&G #2"}` : ""}` : undefined}
+      />
     </div>
   )
 }
-
