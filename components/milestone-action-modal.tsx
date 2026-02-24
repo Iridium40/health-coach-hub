@@ -116,15 +116,114 @@ export function MilestoneActionModal({
   }
 
   if (!trigger) {
+    const phase = programDay <= 3 ? "critical" : programDay <= 10 ? "early" : programDay <= 20 ? "mid" : "later"
+
+    const checkInTemplates: { label: string; message: string }[] = [
+      {
+        label: "Quick Check-In",
+        message: `Hey {firstName}! Just checking in — how are you feeling today? Anything I can help with? 😊`,
+      },
+      ...(phase === "critical" ? [
+        { label: "First Days Support", message: `Hi {firstName}! The first few days are the hardest — you're doing amazing by sticking with it! How are your meals going so far? 💪` },
+      ] : phase === "early" ? [
+        { label: "Hydration Tip", message: `Hey {firstName}! Quick tip — try to get at least 64oz of water today. It makes a huge difference with energy and cravings! How's your water intake been? 💧` },
+        { label: "Meal Check", message: `Hi {firstName}! How are your meals going? Getting into a rhythm yet? Let me know if you need any recipe ideas! 🍽️` },
+      ] : phase === "mid" ? [
+        { label: "Celebrate Consistency", message: `Hey {firstName}! You've been at this for {days} days now — that consistency is building real habits! What's been your biggest win so far? 🌟` },
+        { label: "Recipe Share", message: `Hi {firstName}! Have you tried any new Lean & Green recipes lately? I've got some great ones if you need inspiration! 👩‍🍳` },
+      ] : [
+        { label: "Non-Scale Victory", message: `Hi {firstName}! Day {days} — amazing! Let's talk non-scale victories. What changes have you noticed beyond the scale? More energy? Better sleep? Clothes fitting differently? 🎯` },
+        { label: "What's Getting Easier", message: `Hey {firstName}! You're {days} days in! What parts of the program feel easier now compared to when you started? I love hearing about those shifts! ✨` },
+      ]),
+    ]
+
+    const suggestions: string[] = phase === "critical"
+      ? ["Ask how their first meals went", "Remind them cravings are normal & temporary", "Share a hydration or sleep tip"]
+      : phase === "early"
+      ? ["Share a hydration tip", "Ask how meals are going", "Check if they have questions about fuelings"]
+      : phase === "mid"
+      ? ["Share a Lean & Green recipe", "Celebrate their consistency", "Ask about energy levels"]
+      : ["Ask about non-scale victories", "Discuss what's feeling easier", "Talk about their long-term vision"]
+
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Day {programDay} - No Template</DialogTitle>
-            <DialogDescription>
-              No touchpoint template configured for this day.
-            </DialogDescription>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-2">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">💬</span>
+              <div>
+                <DialogTitle className="text-lg">Day {programDay} — Check-In Time!</DialogTitle>
+                <DialogDescription>
+                  No milestone today for {clientLabel} — but a quick check-in goes a long way!
+                </DialogDescription>
+              </div>
+            </div>
+            <div className="mt-3">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                <MessageSquare className="h-3 w-3 mr-1" />
+                A quick message can make their day
+              </Badge>
+            </div>
           </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto space-y-5">
+            {/* Ready-to-send templates */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                📱 Copy & send a message
+              </h4>
+              <div className="space-y-3">
+                {checkInTemplates.map((tpl, idx) => (
+                  <GeneralTemplateCard
+                    key={idx}
+                    label={tpl.label}
+                    message={personalizeMessage(tpl.message, {
+                      firstName,
+                      days: programDay,
+                      coachName,
+                      nextMilestone: getNextMilestone(programDay),
+                    })}
+                    rawMessage={tpl.message}
+                    copiedId={copiedId}
+                    copyId={`general-${idx}`}
+                    onCopy={(msg, id) => copyToClipboard(msg, id)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Context-aware suggestions */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <Lightbulb className="h-4 w-4 text-amber-500" />
+                Ideas for today
+              </h4>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                {suggestions.map((s, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm text-amber-900">
+                    <span className="shrink-0">•</span>
+                    <span>{s}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                📚 Related Resources
+              </h4>
+              <ClientContextualResources
+                programDay={programDay}
+                clientName={clientLabel}
+                compact
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-gray-600 shrink-0">
+            <strong>Tip:</strong> Even a short "thinking of you" message builds trust and keeps your client engaged!
+          </div>
         </DialogContent>
       </Dialog>
     )
@@ -502,6 +601,61 @@ function ReminderActionItem({ message }: { message: string }) {
         {message}
       </span>
     </button>
+  )
+}
+
+// General check-in template card (for no-milestone days)
+function GeneralTemplateCard({
+  label,
+  message,
+  rawMessage,
+  copiedId,
+  copyId,
+  onCopy,
+}: {
+  label: string
+  message: string
+  rawMessage: string
+  copiedId: string | null
+  copyId: string
+  onCopy: (msg: string, id: string) => void
+}) {
+  const isCopied = copiedId === copyId
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <div className="px-3 py-2 bg-gray-50 border-b">
+        <span className="font-medium text-sm text-gray-800">{label}</span>
+      </div>
+      <div className="p-3">
+        <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed">
+          {message}
+        </pre>
+      </div>
+      <div className="px-3 py-2 bg-gray-50 border-t flex items-center justify-between">
+        <span className="text-xs text-gray-400">{message.length} chars</span>
+        <Button
+          onClick={() => onCopy(rawMessage, copyId)}
+          size="sm"
+          className={
+            isCopied
+              ? "bg-green-100 text-green-700 hover:bg-green-100"
+              : "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+          }
+        >
+          {isCopied ? (
+            <>
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="h-3.5 w-3.5 mr-1" />
+              Copy
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
   )
 }
 

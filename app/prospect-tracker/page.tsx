@@ -333,6 +333,7 @@ Talking Points:
     targetDate.setHours(hour24, parseInt(haMinute), 0, 0)
 
     const success = await updateProspect(schedulingProspect.id, {
+      status: "ha_scheduled",
       next_action: haDate,
       ha_scheduled_at: targetDate.toISOString(),
       phone: prospectPhone || null,

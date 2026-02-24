@@ -666,7 +666,8 @@ export function ClientTroubleshootingTool() {
   })
 
   const copyScript = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
+    const cleaned = text.replace(/^[""]|[""]$/g, "").trim()
+    navigator.clipboard.writeText(cleaned).then(() => {
       toast({
         title: "Copied!",
         description: "Script copied to clipboard",
