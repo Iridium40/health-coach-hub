@@ -3,8 +3,9 @@
 import { useState, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Wand2, Send, Trash2, Info, ExternalLink } from "lucide-react"
+import { ArrowLeft, Wand2, Send, Trash2, Info, ExternalLink, Share2, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 import { WeeklyGrid } from "./weekly-grid"
 import { DietaryFilterBar } from "./dietary-filter-bar"
 import { ShoppingListPanel } from "./shopping-list-panel"
@@ -50,8 +51,10 @@ const MEALS_4_2 = ["lunch", "dinner"] as const  // Two meals for 4&2 plan
 
 export function MealPlanner({ recipes, coachName, coachId, coachOptaviaId }: MealPlannerProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const [planType, setPlanType] = useState<PlanType>("5&1")
   const [mealPlan, setMealPlan] = useState<MealPlan>({})
+  const [copiedLink, setCopiedLink] = useState(false)
   const [dietaryFilters, setDietaryFilters] = useState<DietaryFilters>({
     vegetarianOnly: false,
     proteins: {
@@ -133,6 +136,20 @@ export function MealPlanner({ recipes, coachName, coachId, coachOptaviaId }: Mea
       window.open(url, '_blank')
     }
   }, [generatePreviewUrl])
+
+  // Share the client-facing meal planner link (empty, so clients can build their own)
+  const shareMealPlanner = useCallback(async () => {
+    const appUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    const plannerUrl = `${appUrl}/client/meal-plan?coach=${encodeURIComponent(coachName)}`
+    try {
+      await navigator.clipboard.writeText(plannerUrl)
+      setCopiedLink(true)
+      toast({ title: "Link Copied!", description: "Client meal planner link copied to clipboard. Share it via text or message." })
+      setTimeout(() => setCopiedLink(false), 2500)
+    } catch {
+      toast({ title: "Error", description: "Failed to copy link", variant: "destructive" })
+    }
+  }, [coachName, toast])
 
   // Set a meal in the plan
   const setMeal = useCallback((slotKey: string, recipe: Recipe | null) => {
@@ -227,7 +244,15 @@ export function MealPlanner({ recipes, coachName, coachId, coachOptaviaId }: Mea
           </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={shareMealPlanner}
+            className="gap-2 border-gray-300"
+          >
+            {copiedLink ? <Check className="h-4 w-4 text-green-600" /> : <Share2 className="h-4 w-4" />}
+            {copiedLink ? "Copied!" : "Share Planner"}
+          </Button>
           <Button
             onClick={autoFillMeals}
             className="gap-2 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white shadow-md px-6"
