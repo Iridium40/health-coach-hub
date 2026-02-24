@@ -472,6 +472,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
           startDate: calEvent.startDate.toISOString(),
           endDate: calEvent.endDate.toISOString(),
           eventType: "check-in",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }).catch(() => {})
       }
     }
@@ -498,6 +499,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
           startDate: calEvent.startDate.toISOString(),
           endDate: calEvent.endDate.toISOString(),
           eventType: "check-in",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }).then((result) => {
           if (result.success) {
             toast({

@@ -66,6 +66,7 @@ export interface CalendarInviteEmailData {
   startDate: string // ISO string
   endDate: string // ISO string
   eventType: "check-in" | "ha"
+  timezone?: string // IANA timezone (e.g. "America/New_York")
 }
 
 export interface NewCoachWelcomeEmailData {

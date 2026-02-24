@@ -358,6 +358,7 @@ Talking Points:
             startDate: calEvent.startDate.toISOString(),
             endDate: calEvent.endDate.toISOString(),
             eventType: "ha",
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           }).catch(() => {})
         }
       }
@@ -388,6 +389,7 @@ Talking Points:
                 startDate: calEvent.startDate.toISOString(),
                 endDate: calEvent.endDate.toISOString(),
                 eventType: "ha",
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
               })
             )).then(results => {
               const sent = results.filter(r => r.success).length

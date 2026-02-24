@@ -84,7 +84,8 @@ export function AddToCalendar({
         eventDescription: buildDescription(),
         startDate: eventStartDate.toISOString(),
         endDate: eventEndDate.toISOString(),
-        eventType: "check-in", // Use check-in styling for meetings
+        eventType: "check-in",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
 
       if (result.success) {

@@ -173,6 +173,7 @@ ${organizerName || "Your Coach"}`
             startDate: event.startDate.toISOString(),
             endDate: event.endDate.toISOString(),
             eventType: eventType,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           })
         )
       )

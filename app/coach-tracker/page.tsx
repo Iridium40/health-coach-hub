@@ -412,6 +412,7 @@ export default function CoachTrackerPage() {
         startDate: targetDate.toISOString(),
         endDate: endDate.toISOString(),
         eventType: "check-in",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       }).catch(() => {})
 
       if (sendInvite && inviteMethod === "email" && coachEmail) {
@@ -434,6 +435,7 @@ export default function CoachTrackerPage() {
           startDate: targetDate.toISOString(),
           endDate: endDate.toISOString(),
           eventType: "check-in",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }).then((result) => {
           if (result.success) {
             toast({

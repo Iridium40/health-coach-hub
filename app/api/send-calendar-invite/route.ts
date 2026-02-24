@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
       startDate,
       endDate,
       eventType, // "check-in" | "ha"
+      timezone, // IANA timezone string from the client
     } = await request.json()
 
     if (!to || !fromEmail || !eventTitle || !startDate || !endDate) {
@@ -76,17 +77,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Format dates for display
+    const tz = timezone || "America/New_York"
+
+    // Format dates for display using the sender's timezone
     const startDateTime = new Date(startDate)
     const dateStr = startDateTime.toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
       year: "numeric",
+      timeZone: tz,
     })
     const timeStr = startDateTime.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
+      timeZone: tz,
     })
 
     // Calculate duration
