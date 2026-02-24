@@ -479,13 +479,22 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     if (sendInvite && inviteMethod === "email" && clientEmail) {
       const calEvent = generateCalendarEvent()
       if (calEvent && coachEmail) {
+        let clientDescription = `Check-in with ${profile?.full_name || "Your Coach"}`
+        if (meetingType === "zoom" && profile?.zoom_link) {
+          clientDescription += `\n\n📹 Zoom Meeting:\n${profile.zoom_link}`
+          if (profile.zoom_meeting_id) clientDescription += `\nMeeting ID: ${profile.zoom_meeting_id}`
+          if (profile.zoom_passcode) clientDescription += `\nPasscode: ${profile.zoom_passcode}`
+        } else if (meetingType === "phone") {
+          clientDescription += "\n\n📱 Phone Call"
+        }
+
         sendCalendarInviteEmail({
           to: clientEmail,
           toName: selectedClient.label,
           fromEmail: coachEmail,
           fromName: profile?.full_name || "Your Coach",
           eventTitle: calEvent.title,
-          eventDescription: calEvent.description,
+          eventDescription: clientDescription,
           startDate: calEvent.startDate.toISOString(),
           endDate: calEvent.endDate.toISOString(),
           eventType: "check-in",

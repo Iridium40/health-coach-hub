@@ -367,6 +367,15 @@ Talking Points:
         if (organizerEmail) {
           const calEvent = generateHACalendarEvent()
           if (calEvent) {
+            let clientDescription = `Health Assessment Call with ${schedulingProspect.label}`
+            if (haMeetingType === "zoom" && profile?.zoom_link) {
+              clientDescription += `\n\n📹 Zoom Meeting:\n${profile.zoom_link}`
+              if (profile.zoom_meeting_id) clientDescription += `\nMeeting ID: ${profile.zoom_meeting_id}`
+              if (profile.zoom_passcode) clientDescription += `\nPasscode: ${profile.zoom_passcode}`
+            } else if (haMeetingType === "phone") {
+              clientDescription += "\n\n📱 Phone Call"
+            }
+
             const emails = prospectEmail.split(",").map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
             await Promise.all(emails.map(toEmail =>
               sendCalendarInviteEmail({
@@ -375,7 +384,7 @@ Talking Points:
                 fromEmail: organizerEmail,
                 fromName: profile?.full_name ?? undefined,
                 eventTitle: calEvent.title,
-                eventDescription: calEvent.description,
+                eventDescription: clientDescription,
                 startDate: calEvent.startDate.toISOString(),
                 endDate: calEvent.endDate.toISOString(),
                 eventType: "ha",

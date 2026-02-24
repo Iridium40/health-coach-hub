@@ -415,13 +415,22 @@ export default function CoachTrackerPage() {
       }).catch(() => {})
 
       if (sendInvite && inviteMethod === "email" && coachEmail) {
+        let recipientDescription = `Coaching call with ${profile?.full_name || "Your Coach"}`
+        if (meetingType === "zoom" && profile?.zoom_link) {
+          recipientDescription += `\n\nZoom Meeting:\n${profile.zoom_link}`
+          if (profile.zoom_meeting_id) recipientDescription += `\nMeeting ID: ${profile.zoom_meeting_id}`
+          if (profile.zoom_passcode) recipientDescription += `\nPasscode: ${profile.zoom_passcode}`
+        } else if (meetingType === "phone") {
+          recipientDescription += `\n\nMeeting Type: Phone Call`
+        }
+
         sendCalendarInviteEmail({
           to: coachEmail,
           toName: selectedCoach.label,
           fromEmail,
           fromName: profile?.full_name || "Your Coach",
           eventTitle: `Coach 1:1: ${selectedCoach.label}`,
-          eventDescription: description,
+          eventDescription: recipientDescription,
           startDate: targetDate.toISOString(),
           endDate: endDate.toISOString(),
           eventType: "check-in",
