@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import Link from "next/link"
-import { Search, Clock, Users, ChefHat, UtensilsCrossed, Flame, Calendar, ShoppingCart, ArrowRight } from "lucide-react"
+import { Search, Clock, Users, ChefHat, UtensilsCrossed, Flame, Calendar, ShoppingCart, ArrowRight, Bookmark, X } from "lucide-react"
 import { estimateCaloriesPerServing } from "@/lib/calorie-utils"
 import type { Recipe } from "@/lib/types"
 import { recipes as staticRecipes } from "@/lib/data"
@@ -48,6 +48,15 @@ function ClientRecipesContent() {
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")
+  const [bookmarkDismissed, setBookmarkDismissed] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("recipesBookmarkDismissed") === "true"
+    return false
+  })
+
+  const handleDismissBookmark = () => {
+    setBookmarkDismissed(true)
+    localStorage.setItem("recipesBookmarkDismissed", "true")
+  }
   
   const coachName = searchParams.get("coach")
 
@@ -152,9 +161,9 @@ function ClientRecipesContent() {
                 <Calendar className="h-6 w-6 text-[#2d5016]" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-800 text-base">Your Personalized Meal Plan</h3>
+                <h3 className="font-bold text-gray-800 text-base">Build Your Weekly Meal Plan</h3>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  View your weekly schedule, swap recipes, and get an auto-generated shopping list.
+                  Create a 7-day meal plan, auto-fill your week, and get a shopping list instantly.
                 </p>
               </div>
             </div>
@@ -172,7 +181,7 @@ function ClientRecipesContent() {
               <Link href="/client/meal-plan">
                 <Button className="bg-[#2d5016] hover:bg-[#3d6b1e] text-white gap-2">
                   <Calendar className="h-4 w-4" />
-                  View Meal Plan
+                  Create Meal Plan
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -180,6 +189,21 @@ function ClientRecipesContent() {
           </div>
         </div>
       </div>
+
+      {/* Bookmark Tip */}
+      {!bookmarkDismissed && (
+        <div className="container mx-auto px-4 mt-3">
+          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <Bookmark className="h-4 w-4 text-amber-600 flex-shrink-0" />
+            <p className="text-sm text-amber-800 flex-1">
+              <span className="font-medium">Tip:</span> Bookmark this page so you can easily come back to browse recipes and create meal plans anytime!
+            </p>
+            <button onClick={handleDismissBookmark} className="text-amber-400 hover:text-amber-600 flex-shrink-0">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">

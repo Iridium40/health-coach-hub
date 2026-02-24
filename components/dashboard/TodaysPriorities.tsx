@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { getLocalDateString } from "@/lib/dateHelpers"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -38,7 +39,7 @@ export function TodaysPriorities({
   needsAttention,
   toggleTouchpoint,
 }: TodaysPrioritiesProps) {
-  const today = new Date().toISOString().split("T")[0]
+  const today = getLocalDateString()
 
   // Get clients needing touchpoints (limited to 3)
   const clientsNeedingAction = clients

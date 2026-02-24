@@ -6,6 +6,7 @@ import { useClients, getDayPhase, getProgramDay, parseLocalDate, type ClientStat
 import { useCoaches } from "@/hooks/use-coaches"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useToast } from "@/hooks/use-toast"
+import { getLocalDateString } from "@/lib/dateHelpers"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -145,7 +146,7 @@ export default function ClientTrackerPage() {
           label: client.label,
           stage: newStatus === "coach_launched" ? "new_coach" : "new_coach",
           rank: 1,
-          launch_date: new Date().toISOString().split("T")[0],
+          launch_date: getLocalDateString(),
         })
         if (coachResult) {
           toast({
@@ -237,7 +238,7 @@ export default function ClientTrackerPage() {
     { value: "monthly", label: "Monthly" },
   ]
 
-  const today = new Date().toISOString().split("T")[0]
+  const today = getLocalDateString()
 
   const [newClient, setNewClient] = useState({
     label: "",
@@ -571,7 +572,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = `clients-${new Date().toISOString().split("T")[0]}.csv`
+    link.download = `clients-${getLocalDateString()}.csv`
     link.click()
     URL.revokeObjectURL(url)
 

@@ -12,6 +12,7 @@ import {
 } from "@/hooks/use-coaches"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useToast } from "@/hooks/use-toast"
+import { getLocalDateString } from "@/lib/dateHelpers"
 import { useUserData } from "@/contexts/user-data-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -119,7 +120,7 @@ export default function CoachTrackerPage() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
 
   // Add form
-  const today = new Date().toISOString().split("T")[0]
+  const today = getLocalDateString()
   const [addForm, setAddForm] = useState({
     label: "",
     stage: "new_coach" as CoachStage,

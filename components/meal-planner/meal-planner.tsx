@@ -137,14 +137,14 @@ export function MealPlanner({ recipes, coachName, coachId, coachOptaviaId }: Mea
     }
   }, [generatePreviewUrl])
 
-  // Share the client-facing meal planner link (empty, so clients can build their own)
+  // Share the client-facing recipes page link where clients can browse and create their own meal plan
   const shareMealPlanner = useCallback(async () => {
     const appUrl = typeof window !== 'undefined' ? window.location.origin : ''
-    const plannerUrl = `${appUrl}/client/meal-plan?coach=${encodeURIComponent(coachName)}`
+    const plannerUrl = `${appUrl}/client/recipes?coach=${encodeURIComponent(coachName)}`
     try {
       await navigator.clipboard.writeText(plannerUrl)
       setCopiedLink(true)
-      toast({ title: "Link Copied!", description: "Client meal planner link copied to clipboard. Share it via text or message." })
+      toast({ title: "Link Copied!", description: "Client recipes & meal planner link copied to clipboard. Share it via text or message." })
       setTimeout(() => setCopiedLink(false), 2500)
     } catch {
       toast({ title: "Error", description: "Failed to copy link", variant: "destructive" })

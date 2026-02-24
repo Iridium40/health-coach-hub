@@ -3,6 +3,18 @@
  */
 
 /**
+ * Returns a YYYY-MM-DD string in the user's local timezone.
+ * Unlike toISOString().split("T")[0] which converts to UTC first
+ * (causing the date to shift forward for users in US timezones after ~4-7 PM).
+ */
+export function getLocalDateString(date: Date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
  * Calculate the program day number from a start date
  * Day 0 = start date, Day 1 = next day, etc.
  */

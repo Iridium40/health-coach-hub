@@ -21,6 +21,7 @@ import {
   Sparkles,
   Bookmark,
   Eye,
+  Wand2,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { recipes as staticRecipes } from "@/lib/data"
@@ -218,6 +219,47 @@ function ClientMealPlanContent() {
     toast({ title: "Fresh Start", description: "All slots cleared. Tap any day to add recipes!" })
   }, [toast])
 
+  const handleAutoFill = useCallback(() => {
+    if (recipes.length === 0) return
+    const newPlan: MealsByDay = {}
+    const available = [...recipes]
+
+    const recipesByCategory: Record<string, Recipe[]> = {}
+    available.forEach(r => {
+      if (!recipesByCategory[r.category]) recipesByCategory[r.category] = []
+      recipesByCategory[r.category].push(r)
+    })
+
+    const categories = Object.keys(recipesByCategory)
+    let lastCategory = ""
+    let catIdx = 0
+    const slots: ("meal" | "lunch" | "dinner")[] = planType === "5&1" ? ["meal"] : ["lunch", "dinner"]
+
+    DAYS.forEach(day => {
+      newPlan[day] = {}
+      slots.forEach(slot => {
+        let attempts = 0
+        let selectedCat = categories[catIdx % categories.length]
+        while (selectedCat === lastCategory && attempts < categories.length) {
+          catIdx++
+          selectedCat = categories[catIdx % categories.length]
+          attempts++
+        }
+        const catRecipes = recipesByCategory[selectedCat]
+        if (catRecipes && catRecipes.length > 0) {
+          newPlan[day][slot] = catRecipes[Math.floor(Math.random() * catRecipes.length)]
+          lastCategory = selectedCat
+          catIdx++
+        }
+      })
+    })
+
+    setMealsByDay(newPlan)
+    setIsCustomized(true)
+    setCheckedItems(new Set())
+    toast({ title: "Meal Plan Generated!", description: "Your week has been auto-filled with a variety of recipes. Tap any meal to swap it out." })
+  }, [recipes, planType, toast])
+
   const handleViewRecipe = useCallback((recipe: Recipe, e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedRecipe(recipe)
@@ -322,6 +364,10 @@ function ClientMealPlanContent() {
       {/* Action Bar */}
       <div className="container mx-auto px-4 print:hidden">
         <div className="flex flex-wrap items-center justify-center gap-2 py-3 border-b border-gray-100">
+          <Button size="sm" onClick={handleAutoFill} className="gap-1.5 text-sm bg-[#2d5016] hover:bg-[#3d6b1e] text-white">
+            <Wand2 className="h-3.5 w-3.5" />
+            Auto-Fill Week
+          </Button>
           {hasCoachPlan && isCustomized && (
             <Button variant="outline" size="sm" onClick={handleResetPlan} className="gap-1.5 text-sm">
               <RefreshCw className="h-3.5 w-3.5" />
@@ -333,7 +379,7 @@ function ClientMealPlanContent() {
             Start Fresh
           </Button>
           <p className="text-xs text-gray-400 w-full text-center mt-1">
-            Tap any meal slot to swap or add a recipe
+            Tap any meal slot to swap or add a recipe, or auto-fill your entire week
           </p>
         </div>
       </div>

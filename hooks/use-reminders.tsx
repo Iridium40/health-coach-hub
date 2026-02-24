@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
+import { getLocalDateString } from "@/lib/dateHelpers"
 
 export type ReminderPriority = 'normal' | 'high' | 'urgent'
 export type EntityType = 'prospect' | 'client' | null
@@ -54,7 +55,7 @@ export function useReminders() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalDateString()
 
   // Load reminders
   const loadReminders = useCallback(async () => {

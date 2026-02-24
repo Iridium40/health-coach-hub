@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Announcements } from "@/components/announcements"
 import { useUserData } from "@/contexts/user-data-context"
+import { getLocalDateString } from "@/lib/dateHelpers"
 import { createClient } from "@/lib/supabase/client"
 import {
   Video, Calendar, Clock, Users, ChevronRight,
@@ -132,7 +133,7 @@ export function DashboardOverview() {
   // Milestone dismissals (per day) so "Celebrate!" cards can be cleared
   useEffect(() => {
     try {
-      const todayKey = new Date().toISOString().split("T")[0]
+      const todayKey = getLocalDateString()
       const raw = localStorage.getItem(`dismissedMilestones_${todayKey}`)
       if (raw) {
         const parsed = JSON.parse(raw)
@@ -144,7 +145,7 @@ export function DashboardOverview() {
   }, [])
 
   const dismissMilestoneForToday = useCallback((clientId: string, programDay: number) => {
-    const todayKey = new Date().toISOString().split("T")[0]
+    const todayKey = getLocalDateString()
     const key = `${clientId}:${programDay}`
     setDismissedMilestoneKeys((prev) => {
       const next = new Set(prev)
@@ -315,10 +316,10 @@ export function DashboardOverview() {
 
   const logDashboardProspectFollowUp = useCallback(async (prospect: any, daysUntilNext = 3) => {
     const today = new Date()
-    const todayStr = today.toISOString().split("T")[0]
+    const todayStr = getLocalDateString()
     const nextDate = new Date(today)
     nextDate.setDate(nextDate.getDate() + daysUntilNext)
-    const nextStr = nextDate.toISOString().split("T")[0]
+    const nextStr = getLocalDateString(nextDate)
 
     await updateProspect(prospect.id, {
       last_action: todayStr,
@@ -328,10 +329,9 @@ export function DashboardOverview() {
   }, [updateProspect])
 
   const completeDashboardHA = useCallback(async (prospect: any) => {
-    const todayStr = new Date().toISOString().split("T")[0]
     await updateProspect(prospect.id, {
       ha_scheduled_at: null,
-      last_action: todayStr,
+      last_action: getLocalDateString(),
     })
   }, [updateProspect])
 

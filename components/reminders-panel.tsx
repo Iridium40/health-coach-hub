@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useReminders, type Reminder, type ReminderPriority, type EntityType } from "@/hooks/use-reminders"
 import { useSmartAlerts, type SmartAlert } from "@/hooks/use-smart-alerts"
+import { getLocalDateString } from "@/lib/dateHelpers"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -97,7 +98,7 @@ function CreateReminderModal({ isOpen, onClose, editingReminder, prefillEntity }
   const { addReminder, updateReminder } = useReminders()
   const { toast } = useToast()
   
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalDateString()
   
   const [title, setTitle] = useState(editingReminder?.title || "")
   const [notes, setNotes] = useState(editingReminder?.notes || "")
@@ -151,7 +152,7 @@ function CreateReminderModal({ isOpen, onClose, editingReminder, prefillEntity }
   const getQuickDate = (daysFromNow: number) => {
     const date = new Date()
     date.setDate(date.getDate() + daysFromNow)
-    return date.toISOString().split('T')[0]
+    return getLocalDateString(date)
   }
 
   const quickDates = [

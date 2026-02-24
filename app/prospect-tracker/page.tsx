@@ -7,6 +7,7 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { useClients } from "@/hooks/use-clients"
 import { useUserData } from "@/contexts/user-data-context"
 import { useToast } from "@/hooks/use-toast"
+import { getLocalDateString } from "@/lib/dateHelpers"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -160,10 +161,10 @@ export default function ProspectTrackerPage() {
   const confirmFollowUpDone = async () => {
     if (!followUpProspectId) return
     const todayDate = new Date()
-    const todayStr = todayDate.toISOString().split("T")[0]
+    const todayStr = getLocalDateString()
     const next = new Date(todayDate)
     next.setDate(next.getDate() + 3)
-    const nextStr = next.toISOString().split("T")[0]
+    const nextStr = getLocalDateString(next)
 
     await updateProspect(followUpProspectId, {
       last_action: todayStr,
@@ -186,7 +187,7 @@ export default function ProspectTrackerPage() {
     notes: "",
   })
 
-  const today = new Date().toISOString().split("T")[0]
+  const today = getLocalDateString()
 
   // Generate SMS text for HA invite
   const generateHASMSText = (prospect: Prospect, scheduledAt: Date): string => {
@@ -553,7 +554,7 @@ Talking Points:
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = `100s-list-${new Date().toISOString().split("T")[0]}.csv`
+    link.download = `100s-list-${getLocalDateString()}.csv`
     link.click()
     URL.revokeObjectURL(url)
 

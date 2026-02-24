@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
+import { getLocalDateString } from "@/lib/dateHelpers"
 
 // Types
 export type ClientStatus = 'active' | 'goal_achieved' | 'future_coach' | 'coach_launched' | 'paused' | 'completed'
@@ -116,7 +117,7 @@ export function useClients() {
   })
   const [statsLoading, setStatsLoading] = useState(true)
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalDateString()
   const PAGE_SIZE = 200
 
   const applyDailyTouchpointView = useCallback((rows: Client[]): Client[] => {
@@ -347,12 +348,12 @@ export function useClients() {
     if (client.last_touchpoint_date === today && client.am_done) return false
     
     const now = new Date()
-    const todayStr = now.toISOString().split('T')[0]
+    const todayStr = getLocalDateString()
     
     // Check if there's a scheduled check-in for today or past
     if (client.next_scheduled_at) {
       const scheduledDate = new Date(client.next_scheduled_at)
-      const scheduledDateStr = scheduledDate.toISOString().split('T')[0]
+      const scheduledDateStr = getLocalDateString(scheduledDate)
       if (scheduledDateStr <= todayStr) {
         return true
       }

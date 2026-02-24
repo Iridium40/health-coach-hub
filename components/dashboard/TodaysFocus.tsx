@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { getLocalDateString } from "@/lib/dateHelpers"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -77,7 +78,7 @@ export function TodaysFocus({
   const isToday = dayOffset === 0
 
   const now = new Date()
-  const actualToday = new Date().toISOString().split("T")[0]
+  const actualToday = getLocalDateString()
 
   // Compute the selected date based on offset
   const selectedDate = useMemo(() => {
@@ -87,8 +88,7 @@ export function TodaysFocus({
   }, [dayOffset])
 
   const viewDateStr = useMemo(() => {
-    const d = new Date(selectedDate)
-    return d.toISOString().split("T")[0]
+    return getLocalDateString(selectedDate)
   }, [selectedDate])
 
   const viewStart = useMemo(() => {

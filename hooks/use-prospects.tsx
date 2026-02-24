@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
+import { getLocalDateString } from "@/lib/dateHelpers"
 
 // Types
 // Simplified flow: NEW → INTERESTED → HA_SCHEDULED → CLIENT
@@ -200,7 +201,7 @@ export function useProspects() {
   const addProspect = useCallback(async (newProspect: NewProspect): Promise<Prospect | null> => {
     if (!user) return null
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalDateString()
     
     const prospectData = {
       user_id: user.id,
@@ -237,7 +238,7 @@ export function useProspects() {
     // If status is being updated, also update last_action
     const updateData: UpdateProspect = { ...updates }
     if (updates.status) {
-      updateData.last_action = new Date().toISOString().split('T')[0]
+      updateData.last_action = getLocalDateString()
     }
 
     const { error: updateError } = await supabase
@@ -287,8 +288,8 @@ export function useProspects() {
     nextDate.setDate(nextDate.getDate() + daysUntilNext)
 
     return updateProspect(id, {
-      last_action: today.toISOString().split('T')[0],
-      next_action: nextDate.toISOString().split('T')[0]
+      last_action: getLocalDateString(today),
+      next_action: getLocalDateString(nextDate)
     })
   }, [updateProspect])
 
@@ -308,7 +309,7 @@ export function useProspects() {
       recycled: prev.recycled || prospects.filter(p => ['not_interested', 'not_closed'].includes(p.status)).length,
       overdue: prev.overdue || prospects.filter(p => {
         if (!p.next_action || ['converted', 'coach', 'not_interested', 'not_closed'].includes(p.status)) return false
-        return new Date(p.next_action) < new Date(new Date().toISOString().split('T')[0])
+        return new Date(p.next_action) < new Date(getLocalDateString())
       }).length,
     }))
   }, [prospects, statsLoading])
@@ -318,7 +319,7 @@ export function useProspects() {
     filterStatus: ProspectStatus | 'all' = 'all',
     searchTerm: string = ''
   ): Prospect[] => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalDateString()
     
     return prospects
       .filter(p => {
@@ -343,7 +344,7 @@ export function useProspects() {
   // Calculate days until next action
   const getDaysUntil = useCallback((dateStr: string | null): number | null => {
     if (!dateStr) return null
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalDateString()
     const diff = Math.ceil((new Date(dateStr).getTime() - new Date(today).getTime()) / (1000 * 60 * 60 * 24))
     return diff
   }, [])

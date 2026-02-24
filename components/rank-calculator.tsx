@@ -29,6 +29,7 @@ import {
 } from "@/hooks/use-rank-calculator"
 import { useClients } from "@/hooks/use-clients"
 import { useCoaches, mapRankNumberToRankType } from "@/hooks/use-coaches"
+import { getLocalDateString } from "@/lib/dateHelpers"
 import {
   Users,
   Star,
@@ -189,7 +190,7 @@ export function RankCalculator() {
   const handleRankChange = async (newRank: RankType) => {
     await updateRankData({
       current_rank: newRank,
-      rank_achieved_date: new Date().toISOString().split("T")[0]
+      rank_achieved_date: getLocalDateString()
     })
     setShowRankSelector(false)
   }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
+import { getLocalDateString } from "@/lib/dateHelpers"
 
 // Types
 export type CoachStage = 'new_coach' | 'building' | 'certified' | 'leader'
@@ -130,7 +131,7 @@ export function useCoaches() {
     total: 0,
   })
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalDateString()
 
   // Load coaches
   const loadCoaches = useCallback(async () => {

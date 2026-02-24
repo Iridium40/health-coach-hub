@@ -3,6 +3,7 @@
 import { useMemo, useState, useCallback } from "react"
 import { useClients, getProgramDay, getDayPhase, type Client } from "@/hooks/use-clients"
 import { useProspects, type Prospect } from "@/hooks/use-prospects"
+import { getLocalDateString } from "@/lib/dateHelpers"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
 
 export type AlertSeverity = "urgent" | "high" | "normal"
@@ -31,7 +32,7 @@ export function useSmartAlerts() {
   // Dismissed alerts persist for this session only
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
 
-  const today = new Date().toISOString().split("T")[0]
+  const today = getLocalDateString()
   const now = new Date()
 
   const allAlerts = useMemo(() => {
