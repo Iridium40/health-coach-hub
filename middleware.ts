@@ -56,6 +56,7 @@ export async function middleware(request: NextRequest) {
     "/branding",
     "/media",
     "/recipies", // Note: keeping existing spelling
+    "/client",
   ]
 
   const isPublicRoute = publicRoutes.some(
