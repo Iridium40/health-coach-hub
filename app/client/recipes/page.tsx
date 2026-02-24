@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,16 +14,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import Link from "next/link"
-import { Search, Clock, Users, ChefHat, UtensilsCrossed, ArrowLeft, Bell, CheckCircle, Loader2, Flame, Calendar } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { Search, Clock, Users, ChefHat, UtensilsCrossed, Flame, Calendar, ShoppingCart, ArrowRight } from "lucide-react"
 import { estimateCaloriesPerServing } from "@/lib/calorie-utils"
-import { Turnstile } from "@/components/turnstile"
 import type { Recipe } from "@/lib/types"
 import { recipes as staticRecipes } from "@/lib/data"
 
 const categories = ["All", "Chicken", "Seafood", "Beef", "Turkey", "Pork", "Vegetarian", "Breakfast"]
 
-// Loading component for Suspense fallback
 function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
@@ -36,7 +32,6 @@ function LoadingState() {
   )
 }
 
-// Main page wrapper with Suspense
 export default function ClientRecipesPage() {
   return (
     <Suspense fallback={<LoadingState />}>
@@ -48,21 +43,12 @@ export default function ClientRecipesPage() {
 function ClientRecipesContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { toast } = useToast()
   
   const [recipes, setRecipes] = useState<Recipe[]>(staticRecipes)
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
   const [searchQuery, setSearchQuery] = useState("")
   
-  // Newsletter signup state
-  const [subscriberEmail, setSubscriberEmail] = useState("")
-  const [subscriberName, setSubscriberName] = useState("")
-  const [subscribing, setSubscribing] = useState(false)
-  const [subscribed, setSubscribed] = useState(false)
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
-  
-  // Get coach name from URL if present (from email link)
   const coachName = searchParams.get("coach")
 
   useEffect(() => {
@@ -93,77 +79,6 @@ function ClientRecipesContent() {
     }),
     [recipes, selectedCategory, searchQuery]
   )
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!subscriberEmail.trim()) {
-      toast({
-        title: "Email required",
-        description: "Please enter your email address",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(subscriberEmail)) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Check Turnstile token (allow bypass in development)
-    if (!turnstileToken && process.env.NODE_ENV !== "development") {
-      toast({
-        title: "Verification required",
-        description: "Please complete the security check",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setSubscribing(true)
-
-    try {
-      const response = await fetch("/api/subscribe-recipes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: subscriberEmail.trim(),
-          name: subscriberName.trim() || null,
-          turnstileToken: turnstileToken || "development-bypass",
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to subscribe")
-      }
-
-      setSubscribed(true)
-      toast({
-        title: "Subscribed!",
-        description: "You'll receive email notifications when new recipes are added.",
-      })
-    } catch (error: any) {
-      console.error("Error subscribing:", error)
-      toast({
-        title: "Error",
-        description: error.message || "Failed to subscribe. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setSubscribing(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -212,78 +127,55 @@ function ClientRecipesContent() {
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#2d5016] to-[#3d6b1e] text-white py-10">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            {/* Left side - Title and description */}
-            <div className="text-center lg:text-left flex-1">
-              <div className="flex justify-center lg:justify-start mb-4">
-                <div className="p-3 bg-white/20 rounded-full">
-                  <UtensilsCrossed className="h-8 w-8" />
-                </div>
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-white/20 rounded-full">
+                <UtensilsCrossed className="h-8 w-8" />
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                Lean & Green Recipes
-              </h1>
-              <p className="text-green-100 max-w-lg text-base">
-                Delicious, healthy meals to support your wellness journey.
-              </p>
             </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+              Lean & Green Recipes
+            </h1>
+            <p className="text-green-100 max-w-lg mx-auto text-base">
+              Delicious, healthy meals to support your wellness journey. Tap any recipe to see full cooking instructions and ingredients.
+            </p>
+          </div>
+        </div>
+      </div>
 
-            {/* Right side - Newsletter signup */}
-            <div className="w-full lg:w-auto lg:max-w-md">
-              {subscribed ? (
-                <div className="bg-white/10 rounded-xl p-4 text-center backdrop-blur-sm border border-white/20">
-                  <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-300" />
-                  <p className="font-semibold text-sm">You&apos;re Subscribed!</p>
-                  <p className="text-green-200 text-xs mt-1">
-                    We&apos;ll notify you of new recipes.
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Bell className="h-5 w-5 text-green-200" />
-                    <span className="font-semibold text-sm">Get notified of new recipes</span>
-                  </div>
-                  <form onSubmit={handleSubscribe} className="space-y-2">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Input
-                        type="text"
-                        placeholder="Name (optional)"
-                        value={subscriberName}
-                        onChange={(e) => setSubscriberName(e.target.value)}
-                        className="bg-white/10 border-white/30 text-white placeholder:text-green-200/70 focus:border-white h-9 text-sm"
-                      />
-                      <Input
-                        type="email"
-                        placeholder="Email address"
-                        value={subscriberEmail}
-                        onChange={(e) => setSubscriberEmail(e.target.value)}
-                        required
-                        className="bg-white/10 border-white/30 text-white placeholder:text-green-200/70 focus:border-white h-9 text-sm"
-                      />
-                      <Button
-                        type="submit"
-                        disabled={subscribing || (!turnstileToken && process.env.NODE_ENV !== "development")}
-                        size="sm"
-                        className="bg-white text-[#2d5016] hover:bg-green-50 font-semibold px-4 h-9 whitespace-nowrap disabled:opacity-50"
-                      >
-                        {subscribing ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "Notify Me"
-                        )}
-                      </Button>
-                    </div>
-                    <Turnstile
-                      onVerify={(token) => setTurnstileToken(token)}
-                      onExpire={() => setTurnstileToken(null)}
-                    />
-                    <p className="text-[10px] text-green-200/70 text-center sm:text-left">
-                      We respect your privacy. Unsubscribe anytime.
-                    </p>
-                  </form>
-                </div>
-              )}
+      {/* Meal Plan CTA Banner */}
+      <div className="container mx-auto px-4 -mt-5">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-md p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-3 flex-1 text-center sm:text-left">
+              <div className="hidden sm:flex flex-shrink-0 w-12 h-12 rounded-full bg-green-100 items-center justify-center">
+                <Calendar className="h-6 w-6 text-[#2d5016]" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800 text-base">Your Personalized Meal Plan</h3>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  View your weekly schedule, swap recipes, and get an auto-generated shopping list.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="hidden md:flex items-center gap-4 text-xs text-gray-500 mr-2">
+                <span className="flex items-center gap-1">
+                  <UtensilsCrossed className="h-3.5 w-3.5 text-[#2d5016]" />
+                  Full recipes
+                </span>
+                <span className="flex items-center gap-1">
+                  <ShoppingCart className="h-3.5 w-3.5 text-[#2d5016]" />
+                  Shopping list
+                </span>
+              </div>
+              <Link href="/client/meal-plan">
+                <Button className="bg-[#2d5016] hover:bg-[#3d6b1e] text-white gap-2">
+                  <Calendar className="h-4 w-4" />
+                  View Meal Plan
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -421,14 +313,13 @@ function ClientRecipesContent() {
             </picture>
           </div>
           <p className="text-gray-400 text-sm">
-            Powered by Coaching Amplifier • Supporting OPTAVIA Health Coaches
+            Powered by Coaching Amplifier
           </p>
           <p className="text-gray-500 text-xs mt-2">
-            © {new Date().getFullYear()} Coaching Amplifier. All rights reserved.
+            &copy; {new Date().getFullYear()} Coaching Amplifier. All rights reserved.
           </p>
         </div>
       </footer>
     </div>
   )
 }
-

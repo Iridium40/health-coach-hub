@@ -12,11 +12,6 @@ interface MealPlanEntry {
   recipeImage: string
 }
 
-interface ShoppingItem {
-  ingredient: string
-  count: number
-}
-
 export async function POST(request: NextRequest) {
   try {
     const { 
@@ -25,15 +20,13 @@ export async function POST(request: NextRequest) {
       coachName, 
       personalMessage,
       mealPlanEntries, 
-      shoppingList,
-      planType = "5&1" // Default to 5&1 for backwards compatibility
+      planType = "5&1"
     } = await request.json() as {
       to: string
       clientName: string
       coachName: string
       personalMessage?: string
       mealPlanEntries: MealPlanEntry[]
-      shoppingList: ShoppingItem[]
       planType?: "5&1" | "4&2"
     }
 
@@ -43,115 +36,19 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    
-    const is5and1 = planType === "5&1"
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://www.coachingamplifier.com"
 
-    // Create shareable meal plan URL with encoded data
     const planDataForUrl = mealPlanEntries.map(entry => ({
       day: entry.day,
       meal: entry.meal,
-      recipeId: entry.recipeId || entry.recipeTitle.toLowerCase().replace(/\s+/g, '-'), // Fallback for older entries
+      recipeId: entry.recipeId || entry.recipeTitle.toLowerCase().replace(/\s+/g, '-'),
     }))
     const encodedPlan = Buffer.from(JSON.stringify(planDataForUrl)).toString('base64')
     const mealPlanUrl = `${appUrl}/client/meal-plan?client=${encodeURIComponent(clientName)}&coach=${encodeURIComponent(coachName)}&plan=${encodedPlan}`
     
-    // Client-facing recipe URL (public, no auth required)
     const clientRecipesUrl = `${appUrl}/client/recipes?coach=${encodeURIComponent(coachName)}`
 
-    // Group meals by day
-    const mealsByDay: Record<string, { meal?: string; lunch?: string; dinner?: string }> = {}
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    
-    days.forEach(day => {
-      mealsByDay[day] = { meal: undefined, lunch: undefined, dinner: undefined }
-    })
-    
-    mealPlanEntries.forEach(entry => {
-      const dayCapitalized = entry.day.charAt(0).toUpperCase() + entry.day.slice(1)
-      if (mealsByDay[dayCapitalized]) {
-        if (entry.meal === "meal") {
-          mealsByDay[dayCapitalized].meal = entry.recipeTitle
-        } else if (entry.meal === "lunch") {
-          mealsByDay[dayCapitalized].lunch = entry.recipeTitle
-        } else if (entry.meal === "dinner") {
-          mealsByDay[dayCapitalized].dinner = entry.recipeTitle
-        }
-      }
-    })
-
-    // Build meal plan table based on plan type
-    let mealPlanRows: string
-    let tableHeaders: string
-    
-    if (is5and1) {
-      // 5&1 plan: single Lean & Green column
-      tableHeaders = `
-        <tr>
-          <th style="padding: 12px; border: 1px solid #e5e7eb; background-color: #2d5016; color: white; text-align: left;">Day</th>
-          <th style="padding: 12px; border: 1px solid #e5e7eb; background-color: #2d5016; color: white; text-align: left;">Lean & Green</th>
-        </tr>
-      `
-      mealPlanRows = days.map(day => {
-        const meals = mealsByDay[day]
-        return `
-          <tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold; background-color: #f9fafb; color: #374151;">
-              ${day}
-            </td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #4b5563;">
-              ${meals.meal || '<span style="color: #9ca3af;">-</span>'}
-            </td>
-          </tr>
-        `
-      }).join("")
-    } else {
-      // 4&2 plan: two columns for lunch and dinner
-      tableHeaders = `
-        <tr>
-          <th style="padding: 12px; border: 1px solid #e5e7eb; background-color: #2d5016; color: white; text-align: left;">Day</th>
-          <th style="padding: 12px; border: 1px solid #e5e7eb; background-color: #2d5016; color: white; text-align: left;">L&G #1</th>
-          <th style="padding: 12px; border: 1px solid #e5e7eb; background-color: #2d5016; color: white; text-align: left;">L&G #2</th>
-        </tr>
-      `
-      mealPlanRows = days.map(day => {
-        const meals = mealsByDay[day]
-        return `
-          <tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; font-weight: bold; background-color: #f9fafb; color: #374151;">
-              ${day}
-            </td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #4b5563;">
-              ${meals.lunch || '<span style="color: #9ca3af;">-</span>'}
-            </td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #4b5563;">
-              ${meals.dinner || '<span style="color: #9ca3af;">-</span>'}
-            </td>
-          </tr>
-        `
-      }).join("")
-    }
-
-    // Build shopping list
-    const shoppingListHtml = shoppingList.length > 0 
-      ? `
-        <div style="margin-top: 30px;">
-          <h3 style="color: #2d5016; font-size: 20px; margin: 0 0 15px 0; border-bottom: 2px solid #2d5016; padding-bottom: 10px;">
-            🛒 Shopping List
-          </h3>
-          <div style="columns: 2; column-gap: 30px;">
-            ${shoppingList.map(item => `
-              <div style="break-inside: avoid; padding: 6px 0; color: #4b5563;">
-                • ${item.ingredient}${item.count > 1 ? ` <span style="color: #9ca3af;">(x${item.count})</span>` : ''}
-              </div>
-            `).join("")}
-          </div>
-        </div>
-      `
-      : ""
-
-    // Personal message section
     const personalMessageHtml = personalMessage 
       ? `
         <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 0 6px 6px 0;">
@@ -165,7 +62,7 @@ export async function POST(request: NextRequest) {
       `
       : ""
 
-    // Create email content
+    const mealCount = mealPlanEntries.length
     const subject = `Your Personalized Meal Plan from ${coachName}`
     
     const header = getEmailHeader("Your Weekly Meal Plan", `Prepared especially for you by ${coachName}`)
@@ -175,15 +72,33 @@ export async function POST(request: NextRequest) {
         <p style="font-size: 16px; color: #333; margin: 0 0 20px 0;">Hi ${clientName},</p>
         
         <p style="font-size: 16px; color: #333; margin: 0 0 25px 0;">
-          I've prepared a personalized weekly meal plan just for you! These Lean & Green recipes are designed to support your health journey while keeping your meals delicious and satisfying.
+          I've prepared a personalized weekly ${planType === "5&1" ? "5 & 1" : "4 & 2"} meal plan with ${mealCount} Lean & Green ${mealCount === 1 ? "recipe" : "recipes"} just for you! Click the button below to view your plan online.
         </p>
 
         ${personalMessageHtml}
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${mealPlanUrl}" style="${getButtonStyle()}">
-            View Your Meal Plan Online
+            View Your Meal Plan
           </a>
+        </div>
+
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 25px 0;">
+          <p style="margin: 0 0 10px 0; font-size: 15px; color: #166534; font-weight: bold;">What you'll find online:</p>
+          <table style="width: 100%;">
+            <tr>
+              <td style="padding: 4px 0; font-size: 14px; color: #166534;">✅ Full recipes with cooking instructions</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; font-size: 14px; color: #166534;">✅ Complete ingredient lists</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; font-size: 14px; color: #166534;">✅ Auto-generated shopping list</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; font-size: 14px; color: #166534;">✅ Swap recipes to customize your plan</td>
+            </tr>
+          </table>
         </div>
         
         <div style="text-align: center; margin: 20px 0 30px 0;">
@@ -191,27 +106,10 @@ export async function POST(request: NextRequest) {
             Browse All Lean & Green Recipes →
           </a>
         </div>
-        
-        <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 25px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-          <h3 style="color: #2d5016; font-size: 20px; margin: 0 0 20px 0; border-bottom: 2px solid #2d5016; padding-bottom: 10px;">
-            📅 Weekly Meal Schedule
-          </h3>
-          
-          <table style="width: 100%; border-collapse: collapse; margin: 0;">
-            <thead>
-              ${tableHeaders}
-            </thead>
-            <tbody>
-              ${mealPlanRows}
-            </tbody>
-          </table>
-        </div>
-        
-        ${shoppingListHtml}
-        
-        <div style="background-color: #ecfdf5; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2d5016;">
-          <p style="margin: 0; font-size: 14px; color: #065f46;">
-            <strong>Tip:</strong> Print out your shopping list and meal plan to keep them handy throughout the week. Remember, preparation is key to success!
+
+        <div style="background-color: #fffbeb; padding: 12px 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+          <p style="margin: 0; font-size: 13px; color: #92400e;">
+            <strong>Tip:</strong> Bookmark the meal plan page so you can access it anytime!
           </p>
         </div>
         
@@ -228,41 +126,26 @@ export async function POST(request: NextRequest) {
     
     const htmlContent = getEmailWrapper(header + bodyContent + footer, "Your Weekly Meal Plan")
 
-    // Plain text version
-    const shoppingListText = shoppingList.length > 0
-      ? `\n\nSHOPPING LIST\n${"-".repeat(20)}\n${shoppingList.map(item => `- ${item.ingredient}${item.count > 1 ? ` (x${item.count})` : ""}`).join("\n")}`
-      : ""
-
-    const mealPlanText = is5and1
-      ? days.map(day => {
-          const meals = mealsByDay[day]
-          return `${day}: ${meals.meal || "-"}`
-        }).join("\n")
-      : days.map(day => {
-          const meals = mealsByDay[day]
-          return `${day}:\n  L&G #1: ${meals.lunch || "-"}\n  L&G #2: ${meals.dinner || "-"}`
-        }).join("\n")
-
     const textContent = `
 Your Weekly Meal Plan from ${coachName}
 ${"=".repeat(40)}
 
 Hi ${clientName},
 
-I've prepared a personalized weekly meal plan just for you! These Lean & Green recipes are designed to support your health journey while keeping your meals delicious and satisfying.
+I've prepared a personalized weekly ${planType === "5&1" ? "5 & 1" : "4 & 2"} meal plan with ${mealCount} Lean & Green ${mealCount === 1 ? "recipe" : "recipes"} just for you!
 
 ${personalMessage ? `"${personalMessage}" — ${coachName}\n` : ""}
-
-WEEKLY MEAL SCHEDULE
-${"-".repeat(20)}
-${mealPlanText}
-${shoppingListText}
-
 View your meal plan online: ${mealPlanUrl}
+
+What you'll find online:
+- Full recipes with cooking instructions
+- Complete ingredient lists
+- Auto-generated shopping list
+- Swap recipes to customize your plan
 
 Browse all recipes at: ${clientRecipesUrl}
 
-Tip: Print out your shopping list and meal plan to keep them handy throughout the week. Remember, preparation is key to success!
+Tip: Bookmark the meal plan page so you can access it anytime!
 
 You've got this! Let me know if you have any questions.
 
@@ -271,7 +154,6 @@ ${coachName}
 Your OPTAVIA Health Coach
     `
 
-    // Send email using Resend
     const { data, error } = await resend.emails.send({
       from: "Coaching Amplifier <noreply@coachingamplifier.com>",
       to: [to],
@@ -297,4 +179,3 @@ Your OPTAVIA Health Coach
     )
   }
 }
-

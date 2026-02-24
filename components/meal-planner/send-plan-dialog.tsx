@@ -124,7 +124,6 @@ export function SendPlanDialog({ open, onOpenChange, mealPlan, coachName, coachI
           coachName,
           personalMessage: personalMessage.trim() || undefined,
           mealPlanEntries,
-          shoppingList,
           planType,
         }),
       })
@@ -196,7 +195,7 @@ export function SendPlanDialog({ open, onOpenChange, mealPlan, coachName, coachI
             Send Meal Plan to Client
           </DialogTitle>
           <DialogDescription>
-            Your client will receive a beautifully formatted email with their weekly meal plan and shopping list.
+            Your client will receive an email with a link to view their interactive meal plan online, where they can see full recipes, cooking instructions, and a shopping list.
           </DialogDescription>
         </DialogHeader>
 

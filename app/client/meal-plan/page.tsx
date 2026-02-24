@@ -19,10 +19,13 @@ import {
   Pencil,
   X,
   Sparkles,
+  Bookmark,
+  Eye,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { recipes as staticRecipes } from "@/lib/data"
 import { ClientRecipePicker } from "@/components/client/client-recipe-picker"
+import { RecipeDetailModal } from "@/components/client/recipe-detail-modal"
 import type { Recipe } from "@/lib/types"
 
 interface MealPlanEntry {
@@ -84,6 +87,18 @@ function ClientMealPlanContent() {
   const [isCustomized, setIsCustomized] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [editingSlot, setEditingSlot] = useState<{ day: string; slot: "meal" | "lunch" | "dinner" } | null>(null)
+
+  // Recipe detail modal state
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
+  const [recipeModalOpen, setRecipeModalOpen] = useState(false)
+
+  // Bookmark tip state
+  const [bookmarkDismissed, setBookmarkDismissed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("mealplan-bookmark-dismissed") === "true"
+    }
+    return false
+  })
 
   const clientName = searchParams.get("client") || "Client"
   const coachName = searchParams.get("coach") || "Your Coach"
@@ -203,6 +218,17 @@ function ClientMealPlanContent() {
     toast({ title: "Fresh Start", description: "All slots cleared. Tap any day to add recipes!" })
   }, [toast])
 
+  const handleViewRecipe = useCallback((recipe: Recipe, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedRecipe(recipe)
+    setRecipeModalOpen(true)
+  }, [])
+
+  const handleDismissBookmark = useCallback(() => {
+    setBookmarkDismissed(true)
+    localStorage.setItem("mealplan-bookmark-dismissed", "true")
+  }, [])
+
   const handleCopyShoppingList = async () => {
     const itemsNeeded = shoppingList.filter(item => !checkedItems.has(item.ingredient))
     if (itemsNeeded.length === 0) {
@@ -312,6 +338,24 @@ function ClientMealPlanContent() {
         </div>
       </div>
 
+      {/* Bookmark Tip */}
+      {!bookmarkDismissed && (
+        <div className="container mx-auto px-4 print:hidden">
+          <div className="mt-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <Bookmark className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <p className="text-sm text-amber-800 flex-1">
+              <strong>Tip:</strong> Bookmark this page to easily access your meal plan, recipes, and shopping list anytime!
+            </p>
+            <button
+              onClick={handleDismissBookmark}
+              className="text-amber-400 hover:text-amber-600 transition-colors flex-shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <main className="container mx-auto px-4 py-6">
         {/* Weekly Schedule */}
         <section className="mb-8">
@@ -336,22 +380,23 @@ function ClientMealPlanContent() {
                       {slots.map(slot => {
                         const recipe = meals[slot]
                         return recipe ? (
-                          <div
-                            key={slot}
-                            className="relative group cursor-pointer"
-                            onClick={() => handleSwapRecipe(day, slot)}
-                          >
-                            <img
-                              src={recipe.image}
-                              alt={recipe.title}
-                              className="w-full h-16 rounded object-cover mb-1 group-hover:opacity-70 transition-opacity"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop"
-                              }}
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
-                              <div className="bg-white/90 rounded-full p-1.5 shadow">
-                                <Pencil className="h-3.5 w-3.5 text-[#2d5016]" />
+                          <div key={slot}>
+                            <div
+                              className="relative group cursor-pointer"
+                              onClick={() => handleSwapRecipe(day, slot)}
+                            >
+                              <img
+                                src={recipe.image}
+                                alt={recipe.title}
+                                className="w-full h-16 rounded object-cover mb-1 group-hover:opacity-70 transition-opacity"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop"
+                                }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                                <div className="bg-white/90 rounded-full p-1.5 shadow">
+                                  <Pencil className="h-3.5 w-3.5 text-[#2d5016]" />
+                                </div>
                               </div>
                             </div>
                             <p className="text-xs font-medium text-gray-800 line-clamp-2 leading-tight">
@@ -360,6 +405,13 @@ function ClientMealPlanContent() {
                             {planType === "4&2" && (
                               <p className="text-[9px] text-gray-400 uppercase">{slot === "lunch" ? "L&G #1" : "L&G #2"}</p>
                             )}
+                            <button
+                              onClick={(e) => handleViewRecipe(recipe, e)}
+                              className="mt-1 w-full flex items-center justify-center gap-1 text-[10px] font-medium text-[#2d5016] hover:text-[#3d6b1e] hover:bg-green-50 rounded py-0.5 transition-colors print:hidden"
+                            >
+                              <Eye className="h-3 w-3" />
+                              View Recipe
+                            </button>
                           </div>
                         ) : (
                           <button
@@ -395,21 +447,29 @@ function ClientMealPlanContent() {
                       {slots.map(slot => {
                         const recipe = meals[slot]
                         return recipe ? (
-                          <div
-                            key={slot}
-                            className="flex items-center gap-2 cursor-pointer group"
-                            onClick={() => handleSwapRecipe(day, slot)}
-                          >
-                            <img
-                              src={recipe.image}
-                              alt={recipe.title}
-                              className="w-10 h-10 rounded object-cover flex-shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop"
-                              }}
-                            />
-                            <span className="text-sm text-gray-800 truncate flex-1">{recipe.title}</span>
-                            <Pencil className="h-3.5 w-3.5 text-gray-300 group-hover:text-[#2d5016] flex-shrink-0 transition-colors print:hidden" />
+                          <div key={slot} className="flex items-center gap-2">
+                            <div
+                              className="flex items-center gap-2 cursor-pointer group flex-1 min-w-0"
+                              onClick={() => handleSwapRecipe(day, slot)}
+                            >
+                              <img
+                                src={recipe.image}
+                                alt={recipe.title}
+                                className="w-10 h-10 rounded object-cover flex-shrink-0"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop"
+                                }}
+                              />
+                              <span className="text-sm text-gray-800 truncate flex-1">{recipe.title}</span>
+                              <Pencil className="h-3.5 w-3.5 text-gray-300 group-hover:text-[#2d5016] flex-shrink-0 transition-colors print:hidden" />
+                            </div>
+                            <button
+                              onClick={(e) => handleViewRecipe(recipe, e)}
+                              className="flex items-center gap-1 text-[10px] font-medium text-[#2d5016] hover:bg-green-50 rounded px-1.5 py-1 transition-colors flex-shrink-0 print:hidden"
+                            >
+                              <Eye className="h-3 w-3" />
+                              <span className="hidden sm:inline">View</span>
+                            </button>
                           </div>
                         ) : (
                           <button
@@ -552,6 +612,13 @@ function ClientMealPlanContent() {
         onClear={editingSlot && mealsByDay[editingSlot.day]?.[editingSlot.slot] ? handleClearSlot : undefined}
         currentRecipe={editingSlot ? mealsByDay[editingSlot.day]?.[editingSlot.slot] ?? null : null}
         slotLabel={editingSlot ? `${editingSlot.day}${planType === "4&2" ? ` ${editingSlot.slot === "lunch" ? "L&G #1" : "L&G #2"}` : ""}` : undefined}
+      />
+
+      {/* Recipe Detail Modal */}
+      <RecipeDetailModal
+        recipe={selectedRecipe}
+        open={recipeModalOpen}
+        onOpenChange={(open) => { setRecipeModalOpen(open); if (!open) setSelectedRecipe(null) }}
       />
     </div>
   )
