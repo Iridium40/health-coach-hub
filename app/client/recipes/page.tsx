@@ -122,12 +122,6 @@ function ClientRecipesContent() {
                   Shared by <span className="font-medium text-[#2d5016]">{coachName}</span>
                 </span>
               )}
-              <Link href="/client/meal-plan">
-                <Button variant="outline" size="sm" className="gap-1.5 border-gray-300 text-sm">
-                  <Calendar className="h-3.5 w-3.5" />
-                  My Meal Plan
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
