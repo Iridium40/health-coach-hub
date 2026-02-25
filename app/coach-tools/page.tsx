@@ -16,7 +16,7 @@ export default function CoachToolsPage() {
         <div className="container mx-auto px-4 py-4 sm:py-8 bg-white">
           <div className="text-center py-2 sm:py-4 mb-6">
             <h1 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark mb-2">
-              Coach Tools
+              Social Media Generator
             </h1>
             <p className="text-optavia-gray text-sm sm:text-base max-w-2xl mx-auto">
               Use the Social Media Post Generator to create engaging social posts from your phone.

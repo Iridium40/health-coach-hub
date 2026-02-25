@@ -75,7 +75,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
     { id: "training" as const, label: "Coaching Resource Library", href: "/training", fullAccessOnly: false, external: false },
     { id: "coaching-quicklinks" as const, label: "Coaching Quicklinks", href: "/coaching-quick-links", fullAccessOnly: true, external: false },
     { id: "recipes" as const, label: "Meal Planning & Recipes", href: "/recipes", fullAccessOnly: true, external: false },
-    { id: "coach-tools" as const, label: "Coach Tools", href: "/coach-tools", fullAccessOnly: true, external: false },
+    { id: "coach-tools" as const, label: "Post Generator", href: "/coach-tools", fullAccessOnly: true, external: false },
     { id: "external-resources" as const, label: "External Resources", href: "/external-resources", fullAccessOnly: true, external: false },
     { id: "metabolic-reset-events" as const, label: "Metabolic Reset Events", href: "/metabolic-reset-events", fullAccessOnly: false, external: false },
   ]
