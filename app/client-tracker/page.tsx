@@ -1581,7 +1581,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
 
       {/* Client Support Tool Modal */}
       <Dialog open={showTroubleshootModal} onOpenChange={setShowTroubleshootModal}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-[hsl(var(--optavia-green))]" />

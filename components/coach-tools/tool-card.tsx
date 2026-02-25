@@ -146,7 +146,7 @@ export function ToolCard({
             id === "social-media-generator" || id === "optavia-reference"
               ? "sm:max-w-[98vw] max-w-7xl w-[98vw]"
             : id === "health-assessment" || id === "client-onboarding" || id === "client-troubleshooting" || id === "client-support"
-              ? "sm:max-w-5xl max-w-5xl" 
+              ? "max-w-[95vw] sm:max-w-5xl" 
               : "sm:max-w-2xl max-w-2xl"
           }`}>
             <DialogHeader>
