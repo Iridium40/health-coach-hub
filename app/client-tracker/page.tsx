@@ -71,7 +71,7 @@ import { Footer } from "@/components/footer"
 import { MilestoneActionModal } from "@/components/milestone-action-modal"
 import { ClientJourneyGuide } from "@/components/client-journey-guide"
 import { ReminderButton } from "@/components/reminders-panel"
-import { GraduationCap, Trophy, Heart, Download, Wrench, MessageCircleQuestion } from "lucide-react"
+import { GraduationCap, Trophy, Heart, Download, MessageCircleQuestion } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { sendCalendarInviteEmail } from "@/lib/email"
 import { isMilestoneDay } from "@/hooks/use-touchpoint-templates"
@@ -794,7 +794,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
               className="bg-[#f88221] hover:bg-[#e07520] text-white h-10"
               title="Support Guide"
             >
-              <Wrench className="h-4 w-4 mr-2" />
+              <Heart className="h-4 w-4 mr-2" />
               Support
             </Button>
 
@@ -1584,7 +1584,7 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
         <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
+              <Heart className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
               Client Support Tool
             </DialogTitle>
             <DialogDescription>
