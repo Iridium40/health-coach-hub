@@ -16,7 +16,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useUserData } from "@/contexts/user-data-context"
-import { Copy, Check, ExternalLink, Sparkles, RotateCcw, UserRound, Save } from "lucide-react"
+import { Copy, Check, ExternalLink, Sparkles, RotateCcw, UserRound, Save, Trash2 } from "lucide-react"
 import {
   EMOJI_OPTIONS,
   HASHTAG_OPTIONS,
@@ -136,6 +136,11 @@ interface SocialMediaPromptGeneratorProps {
   layout?: "modal" | "page"
 }
 
+type VoiceSelectValue = VoiceSuggestionId | "none"
+type NicheSelectValue = NicheSuggestionId | "none"
+type EmojiSelectValue = EmojiPreferenceId | "none"
+type HashtagSelectValue = HashtagPreferenceId | "none"
+
 export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaPromptGeneratorProps) {
   const { toast } = useToast()
   const { user, profile, updateProfile } = useUserData()
@@ -162,6 +167,11 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
   const [savingProfile, setSavingProfile] = useState(false)
   const [useSavedProfile, setUseSavedProfile] = useState(true)
   const [profileInitialized, setProfileInitialized] = useState(false)
+  const [postVoice, setPostVoice] = useState<VoiceSelectValue>("none")
+  const [postNicheFocus, setPostNicheFocus] = useState<NicheSelectValue>("none")
+  const [postStoryAnchor, setPostStoryAnchor] = useState("")
+  const [postEmojiStyle, setPostEmojiStyle] = useState<EmojiSelectValue>("none")
+  const [postHashtagStyle, setPostHashtagStyle] = useState<HashtagSelectValue>("none")
 
   // Output state
   const [generatedPrompt, setGeneratedPrompt] = useState("")
@@ -177,6 +187,11 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
 
     const saved = savedPostingPreferences
     if (!saved) {
+      setPostVoice("none")
+      setPostNicheFocus("none")
+      setPostStoryAnchor("")
+      setPostEmojiStyle("none")
+      setPostHashtagStyle("none")
       setProfileInitialized(true)
       return
     }
@@ -187,6 +202,11 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
     setProfileTouches(saved.touches)
     setProfileEmojiPref(saved.emojiPref)
     setProfileHashtagPref(saved.hashtagPref)
+    setPostVoice(saved.voice ?? "none")
+    setPostNicheFocus(saved.niches[0] ?? "none")
+    setPostStoryAnchor(saved.story || "")
+    setPostEmojiStyle(saved.emojiPref ?? "none")
+    setPostHashtagStyle(saved.hashtagPref ?? "none")
     if (saved.touches.length > 0) {
       setPersonalTouches(saved.touches)
     }
@@ -247,10 +267,53 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
     if (payload.touches.length > 0) {
       setPersonalTouches(payload.touches)
     }
+    setPostVoice(payload.voice ?? "none")
+    setPostNicheFocus(payload.niches[0] ?? "none")
+    setPostStoryAnchor(payload.story || "")
+    setPostEmojiStyle(payload.emojiPref ?? "none")
+    setPostHashtagStyle(payload.hashtagPref ?? "none")
 
     toast({
       title: "Posting profile saved",
       description: "Future prompts will automatically use your saved coach voice and audience preferences.",
+    })
+  }
+
+  const clearCoachProfile = async () => {
+    if (!user) return
+
+    setSavingProfile(true)
+    const { error } = await updateProfile({
+      posting_preferences: null,
+    })
+    setSavingProfile(false)
+
+    if (error) {
+      toast({
+        title: "Could not clear profile",
+        description: error.message,
+        variant: "destructive",
+      })
+      return
+    }
+
+    setProfileVoice(null)
+    setProfileNiches([])
+    setProfileStory("")
+    setProfileTouches([])
+    setProfileEmojiPref(null)
+    setProfileHashtagPref(null)
+    setPostVoice("none")
+    setPostNicheFocus("none")
+    setPostStoryAnchor("")
+    setPostEmojiStyle("none")
+    setPostHashtagStyle("none")
+    setPersonalTouches([])
+    setUseSavedProfile(false)
+
+    toast({
+      title: "Profile defaults cleared",
+      description: "Saved coach posting defaults were removed.",
     })
   }
 
@@ -289,6 +352,20 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
     const hashtagPreferenceLabel = profileHashtagPref
       ? HASHTAG_OPTIONS.find((option) => option.id === profileHashtagPref)?.label
       : null
+    const postVoiceChoice = postVoice !== "none"
+      ? VOICE_SUGGESTIONS.find((voice) => voice.id === postVoice)
+      : null
+    const postNicheChoice = postNicheFocus !== "none"
+      ? NICHE_SUGGESTIONS.find((niche) => niche.id === postNicheFocus)
+      : null
+    const postEmojiChoice = postEmojiStyle !== "none"
+      ? EMOJI_OPTIONS.find((option) => option.id === postEmojiStyle)
+      : null
+    const postHashtagChoice = postHashtagStyle !== "none"
+      ? HASHTAG_OPTIONS.find((option) => option.id === postHashtagStyle)
+      : null
+    const coachDisplayName = profile?.full_name || "Coach"
+    const coachRank = profile?.coach_rank || "Coach"
 
     // Build the prompt
     let prompt = `You are an expert social media copywriter for health and wellness coaches. Create 3 different versions of a social media post with the following specifications:
@@ -298,7 +375,9 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
 **PLATFORM:** ${platformLabel}
 **POST TYPE:** ${postTypeLabel}
 **LENGTH:** ${lengthLabel}
-**CALL TO ACTION:** ${ctaLabel}`
+**CALL TO ACTION:** ${ctaLabel}
+**COACH NAME:** ${coachDisplayName}
+**COACH RANK:** ${coachRank}`
 
     if (useSavedProfile) {
       prompt += `
@@ -311,6 +390,18 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
 - Personal life details to reference naturally: ${selectedProfileTouches.length > 0 ? selectedProfileTouches.join(", ") : "Only if contextually relevant"}
 - Emoji preference: ${emojiPreferenceLabel || "Balanced"}
 - Hashtag preference: ${hashtagPreferenceLabel || "Auto"}
+`
+    }
+
+    if (postVoiceChoice || postNicheChoice || postStoryAnchor.trim() || postEmojiChoice || postHashtagChoice) {
+      prompt += `
+
+**THIS POST OVERRIDES:**
+- Voice for this post: ${postVoiceChoice ? `${postVoiceChoice.label} (${postVoiceChoice.emoji})` : "None"}
+- Audience focus for this post: ${postNicheChoice ? `${postNicheChoice.label} (${postNicheChoice.emoji})` : "General audience"}
+- Story anchor for this post: ${postStoryAnchor.trim() || "Use standard profile context"}
+- Emoji style for this post: ${postEmojiChoice?.label || "No override"}
+- Hashtag style for this post: ${postHashtagChoice?.label || "No override"}
 `
     }
 
@@ -332,15 +423,21 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
 
 **IMPORTANT GUIDELINES:**
 - Write as a real person sharing their genuine experience, NOT as a salesperson
+- Write in first-person voice ("I", "me", "my") unless explicitly asked otherwise
+- Do not refer to the coach in third person by name in the caption body
 - Use conversational, relatable language (not corporate or overly polished)
 - Include emotional hooks that make people stop scrolling
 - Make it feel authentic and personal, not generic
 - Do NOT mention specific product names or make income claims
 - Focus on lifestyle transformation, not just weight loss
+- Default to first-person voice ("I", "my", "me") when the coach is posting about themselves.
+- Do not refer to the coach by their own name in the caption body unless explicitly requested.
 - Include relevant emojis naturally (not excessively)
-${useSavedProfile && profileEmojiPref ? emojiGuidance[profileEmojiPref] : ""}
+${postEmojiStyle !== "none" ? emojiGuidance[postEmojiStyle] : useSavedProfile && profileEmojiPref ? emojiGuidance[profileEmojiPref] : ""}
 ${platform === "instagram" || platform === "both"
-  ? useSavedProfile && profileHashtagPref
+  ? postHashtagStyle !== "none"
+    ? hashtagGuidance[postHashtagStyle]
+    : useSavedProfile && profileHashtagPref
     ? hashtagGuidance[profileHashtagPref]
     : "- Suggest 5-10 relevant hashtags for Instagram"
   : ""}
@@ -404,6 +501,11 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
     setCta("engage")
     setLength("medium")
     setPersonalTouches(profileTouches.length > 0 ? profileTouches : [])
+    setPostVoice(profileVoice ?? "none")
+    setPostNicheFocus(profileNiches[0] ?? "none")
+    setPostStoryAnchor(profileStory || "")
+    setPostEmojiStyle(profileEmojiPref ?? "none")
+    setPostHashtagStyle(profileHashtagPref ?? "none")
     setCustomContext("")
     setSpecificDetail("")
     setGeneratedPrompt("")
@@ -430,7 +532,18 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
               <Button
                 variant={useSavedProfile ? "default" : "outline"}
                 size="sm"
-                onClick={() => setUseSavedProfile((prev) => !prev)}
+                onClick={() => {
+                  const next = !useSavedProfile
+                  setUseSavedProfile(next)
+                  if (next) {
+                    setPostVoice(profileVoice ?? "none")
+                    setPostNicheFocus(profileNiches[0] ?? "none")
+                    setPostStoryAnchor(profileStory || "")
+                    setPostEmojiStyle(profileEmojiPref ?? "none")
+                    setPostHashtagStyle(profileHashtagPref ?? "none")
+                    setPersonalTouches(profileTouches)
+                  }
+                }}
                 className={useSavedProfile ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" : ""}
               >
                 {useSavedProfile ? "Using Saved Profile" : "Use Saved Profile"}
@@ -564,7 +677,18 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={clearCoachProfile}
+                      disabled={savingProfile}
+                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                      Clear defaults
+                    </Button>
                     <Button
                       type="button"
                       size="sm"
@@ -708,6 +832,94 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
                   <SelectContent>
                     {LENGTH_OPTIONS.map(option => (
                       <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold">Per-post coach context</CardTitle>
+            <CardDescription className="text-xs">
+              Pre-filled from saved defaults. Adjust for this post only.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Voice style</Label>
+                <Select value={postVoice} onValueChange={(value) => setPostVoice(value as VoiceSelectValue)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="No override" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No override</SelectItem>
+                    {VOICE_SUGGESTIONS.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.emoji} {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Audience focus</Label>
+                <Select value={postNicheFocus} onValueChange={(value) => setPostNicheFocus(value as NicheSelectValue)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="General audience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">General audience</SelectItem>
+                    {NICHE_SUGGESTIONS.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.emoji} {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Story anchor for this post</Label>
+              <Input
+                value={postStoryAnchor}
+                onChange={(e) => setPostStoryAnchor(e.target.value)}
+                placeholder="Optional one-liner to weave into this post"
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Emoji style</Label>
+                <Select value={postEmojiStyle} onValueChange={(value) => setPostEmojiStyle(value as EmojiSelectValue)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="No override" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No override</SelectItem>
+                    {EMOJI_OPTIONS.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Hashtag style</Label>
+                <Select value={postHashtagStyle} onValueChange={(value) => setPostHashtagStyle(value as HashtagSelectValue)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="No override" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No override</SelectItem>
+                    {HASHTAG_OPTIONS.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
                         {option.label}
                       </SelectItem>
                     ))}
