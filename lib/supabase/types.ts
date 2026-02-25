@@ -1,3 +1,5 @@
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
 export interface Database {
   public: {
     Tables: {
@@ -12,6 +14,7 @@ export interface Database {
           parent_optavia_id: string | null
           coach_name: string | null
           signup_access_code: string | null
+          posting_preferences: Json | null
           created_at: string
           updated_at: string
         }
@@ -25,6 +28,7 @@ export interface Database {
           parent_optavia_id?: string | null
           coach_name?: string | null
           signup_access_code?: string | null
+          posting_preferences?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -38,6 +42,7 @@ export interface Database {
           parent_optavia_id?: string | null
           coach_name?: string | null
           signup_access_code?: string | null
+          posting_preferences?: Json | null
           created_at?: string
           updated_at?: string
         }

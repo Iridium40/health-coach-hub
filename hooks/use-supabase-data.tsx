@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js"
 import { getEarnedBadges } from "@/lib/badges"
 import { sendBadgeEmail } from "@/lib/email"
 import { badgeConfig } from "@/lib/badge-config"
+import type { CoachPostingPreferences } from "@/lib/social-media-posting-profile"
 
 export interface UserProfile {
   id: string
@@ -26,6 +27,7 @@ export interface UserProfile {
   zoom_link: string | null
   zoom_meeting_id: string | null
   zoom_passcode: string | null
+  posting_preferences: CoachPostingPreferences | null
   created_at: string
   updated_at: string
 }

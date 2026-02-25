@@ -1,12 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -15,7 +14,22 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Copy, Check, ExternalLink, Sparkles, RotateCcw, Lightbulb } from "lucide-react"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { useUserData } from "@/contexts/user-data-context"
+import { Copy, Check, ExternalLink, Sparkles, RotateCcw, UserRound, Save } from "lucide-react"
+import {
+  EMOJI_OPTIONS,
+  HASHTAG_OPTIONS,
+  NICHE_SUGGESTIONS,
+  TOUCH_OPTIONS,
+  VOICE_SUGGESTIONS,
+  type CoachPostingPreferences,
+  type EmojiPreferenceId,
+  type HashtagPreferenceId,
+  type NicheSuggestionId,
+  type TouchOptionId,
+  type VoiceSuggestionId,
+} from "@/lib/social-media-posting-profile"
 
 // ============================================================================
 // CONFIGURATION OPTIONS
@@ -81,20 +95,38 @@ const LENGTH_OPTIONS = [
   { value: "long", label: "Long", description: "Full story format" },
 ]
 
-const PERSONAL_TOUCH_OPTIONS = [
-  { value: "kids", label: "👶 Mention Kids" },
-  { value: "spouse", label: "💑 Mention Spouse/Partner" },
-  { value: "pet", label: "🐕 Mention Pet" },
-  { value: "work", label: "💼 Mention Day Job" },
-  { value: "busy_mom", label: "🏃‍♀️ Busy Mom Life" },
-  { value: "working_parent", label: "👔 Working Parent" },
-  { value: "empty_nester", label: "🏠 Empty Nester" },
-  { value: "grandparent", label: "👴 Grandparent" },
-  { value: "fitness", label: "🏋️ Fitness Journey" },
-  { value: "foodie", label: "🍳 Love of Cooking" },
-  { value: "travel", label: "✈️ Travel/Adventure" },
-  { value: "faith", label: "🙏 Faith-Based" },
-]
+const PERSONAL_TOUCH_OPTIONS = TOUCH_OPTIONS.map((option) => ({
+  value: option.id,
+  label: `${option.emoji} ${option.label}`,
+}))
+
+const hashtagGuidance: Record<HashtagPreferenceId, string> = {
+  auto: "- Choose the best hashtag count and selection for the platform and topic.",
+  minimal: "- Include 3-5 focused hashtags only.",
+  full: "- Include a complete hashtag set (15-30) for reach.",
+  none: "- Do not include hashtags.",
+}
+
+const emojiGuidance: Record<EmojiPreferenceId, string> = {
+  minimal: "- Use 1-2 emojis total and keep them subtle.",
+  moderate: "- Use emojis naturally throughout the post.",
+  heavy: "- Use an emoji-rich style while keeping readability high.",
+}
+
+function parsePostingPreferences(raw: unknown): CoachPostingPreferences | null {
+  if (!raw || typeof raw !== "object") return null
+
+  const value = raw as Partial<CoachPostingPreferences>
+  return {
+    voice: (value.voice ?? null) as VoiceSuggestionId | null,
+    niches: Array.isArray(value.niches) ? (value.niches as NicheSuggestionId[]) : [],
+    story: typeof value.story === "string" ? value.story : "",
+    touches: Array.isArray(value.touches) ? (value.touches as TouchOptionId[]) : [],
+    emojiPref: (value.emojiPref ?? null) as EmojiPreferenceId | null,
+    hashtagPref: (value.hashtagPref ?? null) as HashtagPreferenceId | null,
+    updated_at: typeof value.updated_at === "string" ? value.updated_at : "",
+  }
+}
 
 // ============================================================================
 // MAIN COMPONENT
@@ -106,8 +138,9 @@ interface SocialMediaPromptGeneratorProps {
 
 export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaPromptGeneratorProps) {
   const { toast } = useToast()
+  const { user, profile, updateProfile } = useUserData()
   const isPageLayout = layout === "page"
-  
+
   // Form state
   const [mood, setMood] = useState("")
   const [topic, setTopic] = useState("")
@@ -118,18 +151,107 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
   const [personalTouches, setPersonalTouches] = useState<string[]>([])
   const [customContext, setCustomContext] = useState("")
   const [specificDetail, setSpecificDetail] = useState("")
-  
+
+  // Saved coach posting profile state
+  const [profileVoice, setProfileVoice] = useState<VoiceSuggestionId | null>(null)
+  const [profileNiches, setProfileNiches] = useState<NicheSuggestionId[]>([])
+  const [profileStory, setProfileStory] = useState("")
+  const [profileTouches, setProfileTouches] = useState<TouchOptionId[]>([])
+  const [profileEmojiPref, setProfileEmojiPref] = useState<EmojiPreferenceId | null>(null)
+  const [profileHashtagPref, setProfileHashtagPref] = useState<HashtagPreferenceId | null>(null)
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [useSavedProfile, setUseSavedProfile] = useState(true)
+  const [profileInitialized, setProfileInitialized] = useState(false)
+
   // Output state
   const [generatedPrompt, setGeneratedPrompt] = useState("")
   const [copied, setCopied] = useState(false)
 
+  const savedPostingPreferences = useMemo(
+    () => parsePostingPreferences(profile?.posting_preferences),
+    [profile?.posting_preferences]
+  )
+
+  useEffect(() => {
+    if (profileInitialized) return
+
+    const saved = savedPostingPreferences
+    if (!saved) {
+      setProfileInitialized(true)
+      return
+    }
+
+    setProfileVoice(saved.voice)
+    setProfileNiches(saved.niches)
+    setProfileStory(saved.story)
+    setProfileTouches(saved.touches)
+    setProfileEmojiPref(saved.emojiPref)
+    setProfileHashtagPref(saved.hashtagPref)
+    if (saved.touches.length > 0) {
+      setPersonalTouches(saved.touches)
+    }
+    setProfileInitialized(true)
+  }, [profileInitialized, savedPostingPreferences])
+
   // Toggle personal touch
   const togglePersonalTouch = (value: string) => {
-    setPersonalTouches(prev => 
-      prev.includes(value) 
+    setPersonalTouches((prev) =>
+      prev.includes(value)
         ? prev.filter(v => v !== value)
         : [...prev, value]
     )
+  }
+
+  const toggleProfileNiche = (value: NicheSuggestionId) => {
+    setProfileNiches((prev) => {
+      if (prev.includes(value)) return prev.filter((item) => item !== value)
+      if (prev.length >= 3) return prev
+      return [...prev, value]
+    })
+  }
+
+  const toggleProfileTouch = (value: TouchOptionId) => {
+    setProfileTouches((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    )
+  }
+
+  const saveCoachProfile = async () => {
+    if (!user) return
+
+    setSavingProfile(true)
+    const payload: CoachPostingPreferences = {
+      voice: profileVoice,
+      niches: profileNiches,
+      story: profileStory.trim(),
+      touches: profileTouches,
+      emojiPref: profileEmojiPref,
+      hashtagPref: profileHashtagPref,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = await updateProfile({
+      posting_preferences: payload,
+    })
+    setSavingProfile(false)
+
+    if (error) {
+      toast({
+        title: "Could not save profile",
+        description: error.message,
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (payload.touches.length > 0) {
+      setPersonalTouches(payload.touches)
+    }
+
+    toast({
+      title: "Posting profile saved",
+      description: "Future prompts will automatically use your saved coach voice and audience preferences.",
+    })
   }
 
   // Generate the ChatGPT prompt
@@ -154,6 +276,20 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
       PERSONAL_TOUCH_OPTIONS.find(p => p.value === pt)?.label || pt
     )
 
+    const selectedVoice = VOICE_SUGGESTIONS.find((voice) => voice.id === profileVoice)
+    const selectedNiches = profileNiches
+      .map((nicheId) => NICHE_SUGGESTIONS.find((niche) => niche.id === nicheId)?.label || nicheId)
+      .filter(Boolean)
+    const selectedProfileTouches = profileTouches
+      .map((touchId) => TOUCH_OPTIONS.find((touch) => touch.id === touchId)?.label || touchId)
+      .filter(Boolean)
+    const emojiPreferenceLabel = profileEmojiPref
+      ? EMOJI_OPTIONS.find((option) => option.id === profileEmojiPref)?.label
+      : null
+    const hashtagPreferenceLabel = profileHashtagPref
+      ? HASHTAG_OPTIONS.find((option) => option.id === profileHashtagPref)?.label
+      : null
+
     // Build the prompt
     let prompt = `You are an expert social media copywriter for health and wellness coaches. Create 3 different versions of a social media post with the following specifications:
 
@@ -163,6 +299,20 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
 **POST TYPE:** ${postTypeLabel}
 **LENGTH:** ${lengthLabel}
 **CALL TO ACTION:** ${ctaLabel}`
+
+    if (useSavedProfile) {
+      prompt += `
+
+**COACH PROFILE (APPLY AS WRITING DNA):**
+- Coach name: ${profile?.full_name || "Coach"}
+- Voice style: ${selectedVoice ? `${selectedVoice.label} (${selectedVoice.emoji})` : "Use conversational and authentic coach voice"}
+- Ideal audience niches: ${selectedNiches.length > 0 ? selectedNiches.join(", ") : "General wellness audience"}
+- One-line story anchor: ${profileStory.trim() || "No custom story provided"}
+- Personal life details to reference naturally: ${selectedProfileTouches.length > 0 ? selectedProfileTouches.join(", ") : "Only if contextually relevant"}
+- Emoji preference: ${emojiPreferenceLabel || "Balanced"}
+- Hashtag preference: ${hashtagPreferenceLabel || "Auto"}
+`
+    }
 
     if (personalTouchLabels.length > 0) {
       prompt += `\n**PERSONAL ELEMENTS TO WEAVE IN:** ${personalTouchLabels.join(", ")}`
@@ -188,7 +338,12 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
 - Do NOT mention specific product names or make income claims
 - Focus on lifestyle transformation, not just weight loss
 - Include relevant emojis naturally (not excessively)
-${platform === "instagram" || platform === "both" ? "- Suggest 5-10 relevant hashtags for Instagram" : ""}
+${useSavedProfile && profileEmojiPref ? emojiGuidance[profileEmojiPref] : ""}
+${platform === "instagram" || platform === "both"
+  ? useSavedProfile && profileHashtagPref
+    ? hashtagGuidance[profileHashtagPref]
+    : "- Suggest 5-10 relevant hashtags for Instagram"
+  : ""}
 ${postType === "carousel" ? "- Include slide-by-slide breakdown for carousel" : ""}
 ${postType === "reel" ? "- Include a hook for the first 3 seconds and a simple video concept" : ""}
 
@@ -248,7 +403,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
     setPostType("feed")
     setCta("engage")
     setLength("medium")
-    setPersonalTouches([])
+    setPersonalTouches(profileTouches.length > 0 ? profileTouches : [])
     setCustomContext("")
     setSpecificDetail("")
     setGeneratedPrompt("")
@@ -260,6 +415,173 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
       <div className={`grid grid-cols-1 lg:grid-cols-2 ${isPageLayout ? "gap-6 lg:gap-8" : "gap-4 lg:gap-6"}`}>
       {/* LEFT: Form Inputs */}
       <div className="space-y-3 lg:space-y-4">
+        <Card className="border-[hsl(var(--optavia-green))/30]">
+          <CardHeader className="pb-2">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <UserRound className="h-4 w-4 text-[hsl(var(--optavia-green))]" />
+                  Coach Posting Profile
+                </CardTitle>
+                <CardDescription className="text-xs mt-1">
+                  Save your voice, niche, and style once. The generator can reuse it every time.
+                </CardDescription>
+              </div>
+              <Button
+                variant={useSavedProfile ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseSavedProfile((prev) => !prev)}
+                className={useSavedProfile ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" : ""}
+              >
+                {useSavedProfile ? "Using Saved Profile" : "Use Saved Profile"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Accordion type="single" collapsible defaultValue={isPageLayout ? "profile" : undefined}>
+              <AccordionItem value="profile">
+                <AccordionTrigger className="py-2 text-xs text-gray-600 hover:no-underline">
+                  Edit saved profile preferences
+                </AccordionTrigger>
+                <AccordionContent className="space-y-4 pt-1">
+                  <div>
+                    <Label className="text-xs font-semibold mb-2 block">Voice</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {VOICE_SUGGESTIONS.map((option) => {
+                        const selected = profileVoice === option.id
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => setProfileVoice(option.id)}
+                            className={`rounded-md border px-2.5 py-2 text-left text-xs transition-colors ${
+                              selected
+                                ? "border-[hsl(var(--optavia-green))] bg-green-50 text-[hsl(var(--optavia-green-dark))]"
+                                : "border-gray-200 hover:bg-gray-50"
+                            }`}
+                          >
+                            <div className="font-medium">{option.emoji} {option.label}</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold mb-2 block">Audience niches (up to 3)</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {NICHE_SUGGESTIONS.map((option) => {
+                        const selected = profileNiches.includes(option.id)
+                        const disabled = !selected && profileNiches.length >= 3
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => toggleProfileNiche(option.id)}
+                            className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                              selected
+                                ? "border-[hsl(var(--optavia-green))] bg-green-50 text-[hsl(var(--optavia-green-dark))]"
+                                : "border-gray-200 hover:bg-gray-50"
+                            } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                          >
+                            {option.emoji} {option.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold mb-1.5 block">Story anchor (one line)</Label>
+                    <Input
+                      value={profileStory}
+                      onChange={(e) => setProfileStory(e.target.value)}
+                      placeholder="e.g., Lost 60 lbs after baby #3"
+                      className="h-9 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold mb-2 block">Personal touches</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {TOUCH_OPTIONS.map((option) => {
+                        const selected = profileTouches.includes(option.id)
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => toggleProfileTouch(option.id)}
+                            className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                              selected
+                                ? "border-[hsl(var(--optavia-green))] bg-green-50 text-[hsl(var(--optavia-green-dark))]"
+                                : "border-gray-200 hover:bg-gray-50"
+                            }`}
+                          >
+                            {option.emoji} {option.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold mb-1.5 block">Emoji style</Label>
+                      <Select
+                        value={profileEmojiPref ?? undefined}
+                        onValueChange={(value) => setProfileEmojiPref(value as EmojiPreferenceId)}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Select emoji style" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EMOJI_OPTIONS.map((option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold mb-1.5 block">Hashtag style</Label>
+                      <Select
+                        value={profileHashtagPref ?? undefined}
+                        onValueChange={(value) => setProfileHashtagPref(value as HashtagPreferenceId)}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Select hashtag style" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {HASHTAG_OPTIONS.map((option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={saveCoachProfile}
+                      disabled={savingProfile}
+                      className="bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+                    >
+                      <Save className="h-3.5 w-3.5 mr-1.5" />
+                      {savingProfile ? "Saving..." : "Save profile defaults"}
+                    </Button>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </CardContent>
+        </Card>
+
         {/* Mood Selection */}
         <Card>
           <CardHeader className="pb-2 lg:pb-3">

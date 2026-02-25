@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   parent_optavia_id TEXT,
   coach_name TEXT,
   signup_access_code TEXT,
+  posting_preferences JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
