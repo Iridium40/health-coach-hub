@@ -128,7 +128,7 @@ export default function ClientTrackerPage() {
     completed: { label: "Completed", icon: "✅", color: "#10b981", bg: "#ecfdf5" },
   }
 
-  // Handle client status change — auto-creates a coach tracker entry for coach stages
+  // Handle client status change — only coach launched clients become coaches
   const handleClientStatusChange = async (clientId: string, newStatus: ClientStatus) => {
     const client = clients.find(c => c.id === clientId)
     if (!client) return
@@ -136,15 +136,15 @@ export default function ClientTrackerPage() {
     const success = await updateStatus(clientId, newStatus)
     if (!success) return
 
-    // Auto-create a downline coach entry when a client transitions to a coach stage
-    if (newStatus === "future_coach" || newStatus === "coach_launched") {
+    // Auto-create a downline coach entry only when a client is marked as coach launched
+    if (newStatus === "coach_launched") {
       const alreadyInCoachTracker = downlineCoaches.some(
         c => c.label.toLowerCase() === client.label.toLowerCase()
       )
       if (!alreadyInCoachTracker) {
         const coachResult = await addDownlineCoach({
           label: client.label,
-          stage: newStatus === "coach_launched" ? "new_coach" : "new_coach",
+          stage: "new_coach",
           rank: 1,
           launch_date: getLocalDateString(),
         })
