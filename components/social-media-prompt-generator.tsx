@@ -181,6 +181,17 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
     () => parsePostingPreferences(profile?.posting_preferences),
     [profile?.posting_preferences]
   )
+  const hasSavedProfileDefaults = useMemo(() => {
+    if (!savedPostingPreferences) return false
+    return Boolean(
+      savedPostingPreferences.voice ||
+      savedPostingPreferences.niches.length > 0 ||
+      savedPostingPreferences.story.trim() ||
+      savedPostingPreferences.touches.length > 0 ||
+      savedPostingPreferences.emojiPref ||
+      savedPostingPreferences.hashtagPref
+    )
+  }, [savedPostingPreferences])
 
   useEffect(() => {
     if (profileInitialized) return
@@ -267,6 +278,7 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
     if (payload.touches.length > 0) {
       setPersonalTouches(payload.touches)
     }
+    setUseSavedProfile(true)
     setPostVoice(payload.voice ?? "none")
     setPostNicheFocus(payload.niches[0] ?? "none")
     setPostStoryAnchor(payload.story || "")
@@ -544,13 +556,31 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
                     setPersonalTouches(profileTouches)
                   }
                 }}
+                disabled={!hasSavedProfileDefaults}
                 className={useSavedProfile ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" : ""}
               >
-                {useSavedProfile ? "Using Saved Profile" : "Use Saved Profile"}
+                {!hasSavedProfileDefaults
+                  ? "Profile Not Set"
+                  : useSavedProfile
+                  ? "Using Saved Profile"
+                  : "Use Saved Profile"}
               </Button>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
+            {!hasSavedProfileDefaults ? (
+              <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                Profile defaults are not set yet. Open this section and save your coach profile so prompts can use your voice automatically.
+              </div>
+            ) : useSavedProfile ? (
+              <div className="mb-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
+                Post Generator is currently using your saved coach profile defaults.
+              </div>
+            ) : (
+              <div className="mb-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                Saved profile found, but it is currently turned off for prompt generation.
+              </div>
+            )}
             <Accordion type="single" collapsible>
               <AccordionItem value="profile">
                 <AccordionTrigger className="py-2 text-xs text-gray-600 hover:no-underline">
