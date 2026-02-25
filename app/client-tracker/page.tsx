@@ -79,7 +79,7 @@ import { useUserData } from "@/contexts/user-data-context"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { StatsCardsSkeleton, ClientListSkeleton } from "@/components/ui/skeleton-loaders"
 import { ClientCard } from "@/components/client-tracker/client-card"
-import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
+import { ClientSupportTool } from "@/components/coach-tools/client-support-tool"
 import { RecruitmentNavigator } from "@/components/recruitment-navigator"
 import type { CalendarEvent } from "@/lib/calendar-utils"
 
@@ -1579,20 +1579,20 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
         </DialogContent>
       </Dialog>
 
-      {/* Client Troubleshooting Guide Modal */}
+      {/* Client Support Tool Modal */}
       <Dialog open={showTroubleshootModal} onOpenChange={setShowTroubleshootModal}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-[hsl(var(--optavia-green))]" />
-              Client Troubleshooting Guide
+              Client Support Tool
             </DialogTitle>
             <DialogDescription>
-              Identify and resolve common client challenges.
+              Troubleshoot and support clients with guided coaching tools.
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto -mx-6 px-6 pb-2">
-            <ClientTroubleshootingDialog />
+            <ClientSupportTool />
           </div>
         </DialogContent>
       </Dialog>
