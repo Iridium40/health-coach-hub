@@ -176,12 +176,18 @@ function CreateReminderModal({ isOpen, onClose, editingReminder, prefillEntity }
           <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-2">
             {(prefillEntity?.entityType || editingReminder?.entity_type) === "client" ? (
               <User className="h-5 w-5 text-green-600" />
+            ) : (prefillEntity?.entityType || editingReminder?.entity_type) === "coach_client" ? (
+              <User className="h-5 w-5 text-purple-600" />
             ) : (
               <Target className="h-5 w-5 text-blue-600" />
             )}
             <div>
               <p className="text-xs text-gray-500">
-                {(prefillEntity?.entityType || editingReminder?.entity_type) === "client" ? "Client" : "Prospect"}
+                {(prefillEntity?.entityType || editingReminder?.entity_type) === "client"
+                  ? "Client"
+                  : (prefillEntity?.entityType || editingReminder?.entity_type) === "coach_client"
+                  ? "Coach Client"
+                  : "Prospect"}
               </p>
               <p className="font-medium text-gray-800">
                 {prefillEntity?.entityName || editingReminder?.entity_name}
@@ -422,9 +428,16 @@ function ReminderCard({
               <Badge className={
                 reminder.entity_type === "client" 
                   ? "bg-green-100 text-green-700" 
+                  : reminder.entity_type === "coach_client"
+                  ? "bg-purple-100 text-purple-700"
                   : "bg-blue-100 text-blue-700"
               }>
-                {reminder.entity_type === "client" ? "👤" : "🎯"} {reminder.entity_name}
+                {reminder.entity_type === "client"
+                  ? "👤"
+                  : reminder.entity_type === "coach_client"
+                  ? "🧑‍🤝‍🧑"
+                  : "🎯"}{" "}
+                {reminder.entity_name}
               </Badge>
             )}
           </div>

@@ -1,9 +1,11 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -17,9 +19,13 @@ import {
   Edit2,
   Award,
   Trash2,
+  Plus,
+  Clock,
   Calendar,
   X,
 } from "lucide-react"
+import { ReminderButton } from "@/components/reminders-panel"
+import { type CoachClient } from "@/hooks/use-coach-clients"
 import {
   type Coach,
   type CoachStage,
@@ -31,6 +37,7 @@ import {
 
 interface CoachCardProps {
   coach: Coach
+  coachClients: CoachClient[]
   onEdit: (coach: Coach) => void
   onDelete: (coach: Coach) => void
   onRank: (coach: Coach) => void
@@ -38,6 +45,15 @@ interface CoachCardProps {
   onSchedule: (coach: Coach) => void
   onCompleteSchedule: (coach: Coach) => void
   onClearSchedule: (coach: Coach) => void
+  onAddCoachClient: (
+    coachId: string,
+    payload: { label: string; notes?: string; is_potential_coach?: boolean }
+  ) => Promise<boolean>
+  onUpdateCoachClient: (
+    coachClientId: string,
+    updates: { label?: string; notes?: string | null; is_potential_coach?: boolean }
+  ) => Promise<boolean>
+  onDeleteCoachClient: (coachClientId: string) => Promise<boolean>
 }
 
 const STAGE_OPTIONS: { value: CoachStage; label: string; icon: string }[] = [
@@ -49,6 +65,7 @@ const STAGE_OPTIONS: { value: CoachStage; label: string; icon: string }[] = [
 
 export const CoachCard = memo(function CoachCard({
   coach,
+  coachClients,
   onEdit,
   onDelete,
   onRank,
@@ -56,13 +73,48 @@ export const CoachCard = memo(function CoachCard({
   onSchedule,
   onCompleteSchedule,
   onClearSchedule,
+  onAddCoachClient,
+  onUpdateCoachClient,
+  onDeleteCoachClient,
 }: CoachCardProps) {
   const stage = stageConfig[coach.stage]
   const days = daysSinceLaunch(coach.launch_date)
   const weeks = weekNumber(coach.launch_date)
   const rankTitle = getRankTitle(coach.rank)
+  const [showAddClientForm, setShowAddClientForm] = useState(false)
+  const [newCoachClientLabel, setNewCoachClientLabel] = useState("")
+  const [newCoachClientNotes, setNewCoachClientNotes] = useState("")
+  const [newCoachClientPotential, setNewCoachClientPotential] = useState(false)
+  const [savingNewCoachClient, setSavingNewCoachClient] = useState(false)
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({})
 
   const launchDateFormatted = new Date(coach.launch_date + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  const potentialCount = coachClients.filter((entry) => entry.is_potential_coach).length
+
+  const getNoteDraft = (coachClient: CoachClient) => {
+    return noteDrafts[coachClient.id] ?? coachClient.notes ?? ""
+  }
+
+  const handleAddCoachClient = async () => {
+    if (!newCoachClientLabel.trim() || savingNewCoachClient) return
+    setSavingNewCoachClient(true)
+    const success = await onAddCoachClient(coach.id, {
+      label: newCoachClientLabel.trim(),
+      notes: newCoachClientNotes.trim() || undefined,
+      is_potential_coach: newCoachClientPotential,
+    })
+    setSavingNewCoachClient(false)
+    if (!success) return
+
+    setNewCoachClientLabel("")
+    setNewCoachClientNotes("")
+    setNewCoachClientPotential(false)
+    setShowAddClientForm(false)
+  }
+
+  const handleSaveNotes = async (coachClient: CoachClient) => {
+    await onUpdateCoachClient(coachClient.id, { notes: getNoteDraft(coachClient).trim() || null })
+  }
 
   return (
     <Card className="transition-shadow hover:shadow-md">
@@ -181,6 +233,131 @@ export const CoachCard = memo(function CoachCard({
             <CalendarPlus className="h-4 w-4 mr-1" />
             <span className="text-xs sm:text-sm">Schedule</span>
           </Button>
+        </div>
+
+        {/* Coach's Clients */}
+        <div className="mt-3 pt-3 border-t space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-800">Coach's Clients</span>
+              <Badge className="bg-blue-100 text-blue-700">{coachClients.length}</Badge>
+              <Badge className="bg-purple-100 text-purple-700">{potentialCount} Potential</Badge>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddClientForm((prev) => !prev)}
+            >
+              <Plus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Add Client</span>
+            </Button>
+          </div>
+
+          {showAddClientForm && (
+            <div className="rounded-lg border bg-gray-50 p-3 space-y-2">
+              <Input
+                value={newCoachClientLabel}
+                onChange={(e) => setNewCoachClientLabel(e.target.value)}
+                placeholder="Client nickname/label"
+                maxLength={50}
+              />
+              <Textarea
+                value={newCoachClientNotes}
+                onChange={(e) => setNewCoachClientNotes(e.target.value)}
+                placeholder="Notes about this potential coach..."
+                rows={2}
+              />
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={newCoachClientPotential}
+                  onChange={(e) => setNewCoachClientPotential(e.target.checked)}
+                />
+                Mark as potential future coach
+              </label>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowAddClientForm(false)
+                    setNewCoachClientLabel("")
+                    setNewCoachClientNotes("")
+                    setNewCoachClientPotential(false)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleAddCoachClient}
+                  disabled={!newCoachClientLabel.trim() || savingNewCoachClient}
+                >
+                  {savingNewCoachClient ? "Saving..." : "Save Client"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {coachClients.length === 0 ? (
+            <p className="text-sm text-gray-500">No clients tracked under this coach yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {coachClients.map((coachClient) => (
+                <div key={coachClient.id} className="rounded-lg border bg-white p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-gray-900">{coachClient.label}</span>
+                      {coachClient.is_potential_coach ? (
+                        <Badge className="bg-purple-100 text-purple-700">Future Coach Candidate</Badge>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-600">Client</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onUpdateCoachClient(coachClient.id, { is_potential_coach: !coachClient.is_potential_coach })}
+                      >
+                        {coachClient.is_potential_coach ? "Unmark Potential" : "Mark Potential"}
+                      </Button>
+                      <ReminderButton
+                        entityType="coach_client"
+                        entityId={coachClient.id}
+                        entityName={coachClient.label}
+                        variant="outline"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onDeleteCoachClient(coachClient.id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        title="Remove client"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <Clock className="h-3.5 w-3.5" />
+                    Added {new Date(coachClient.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </div>
+                  <Textarea
+                    value={getNoteDraft(coachClient)}
+                    onChange={(e) => setNoteDrafts((prev) => ({ ...prev, [coachClient.id]: e.target.value }))}
+                    placeholder="Notes..."
+                    rows={2}
+                  />
+                  <div className="flex justify-end">
+                    <Button variant="outline" size="sm" onClick={() => handleSaveNotes(coachClient)}>
+                      Save Notes
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Secondary Actions: Stage Dropdown + Edit + Rank + Remove */}

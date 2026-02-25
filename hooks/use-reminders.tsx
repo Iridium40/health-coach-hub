@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { getLocalDateString } from "@/lib/dateHelpers"
 
 export type ReminderPriority = 'normal' | 'high' | 'urgent'
-export type EntityType = 'prospect' | 'client' | null
+export type EntityType = 'prospect' | 'client' | 'coach_client' | null
 
 export interface Reminder {
   id: string

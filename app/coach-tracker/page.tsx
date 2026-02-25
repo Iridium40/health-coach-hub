@@ -12,6 +12,7 @@ import {
 } from "@/hooks/use-coaches"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useToast } from "@/hooks/use-toast"
+import { useCoachClients } from "@/hooks/use-coach-clients"
 import { getLocalDateString } from "@/lib/dateHelpers"
 import { useUserData } from "@/contexts/user-data-context"
 import { Card, CardContent } from "@/components/ui/card"
@@ -102,6 +103,12 @@ export default function CoachTrackerPage() {
   } = useCoaches()
   const { toast } = useToast()
   const { user, profile } = useUserData()
+  const {
+    getByCoachId,
+    addCoachClient,
+    updateCoachClient,
+    deleteCoachClient,
+  } = useCoachClients()
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false)
@@ -272,6 +279,62 @@ export default function CoachTrackerPage() {
         variant: "destructive",
       })
     }
+  }
+
+  const handleAddCoachClient = async (
+    coachId: string,
+    payload: { label: string; notes?: string; is_potential_coach?: boolean }
+  ): Promise<boolean> => {
+    const result = await addCoachClient({
+      coach_id: coachId,
+      label: payload.label,
+      notes: payload.notes,
+      is_potential_coach: payload.is_potential_coach,
+    })
+
+    if (!result) {
+      toast({
+        title: "Error",
+        description: "Failed to add coach client. Please try again.",
+        variant: "destructive",
+      })
+      return false
+    }
+
+    toast({
+      title: "Coach Client Added",
+      description: `${payload.label.trim()} has been added under this coach.`,
+    })
+    return true
+  }
+
+  const handleUpdateCoachClient = async (
+    coachClientId: string,
+    updates: { label?: string; notes?: string | null; is_potential_coach?: boolean }
+  ): Promise<boolean> => {
+    const success = await updateCoachClient(coachClientId, updates)
+    if (!success) {
+      toast({
+        title: "Error",
+        description: "Failed to update coach client.",
+        variant: "destructive",
+      })
+      return false
+    }
+    return true
+  }
+
+  const handleDeleteCoachClient = async (coachClientId: string): Promise<boolean> => {
+    const success = await deleteCoachClient(coachClientId)
+    if (!success) {
+      toast({
+        title: "Error",
+        description: "Failed to remove coach client.",
+        variant: "destructive",
+      })
+      return false
+    }
+    return true
   }
 
 
@@ -732,6 +795,7 @@ export default function CoachTrackerPage() {
                 <CoachCard
                   key={coach.id}
                   coach={coach}
+                  coachClients={getByCoachId(coach.id)}
                   onEdit={openEditModal}
                   onDelete={(c) => { setSelectedCoach(c); setShowDeleteConfirm(true) }}
                   onRank={(c) => { setSelectedCoach(c); setShowRankModal(true) }}
@@ -739,6 +803,9 @@ export default function CoachTrackerPage() {
                   onSchedule={openScheduleModal}
                   onCompleteSchedule={handleCompleteSchedule}
                   onClearSchedule={handleClearSchedule}
+                  onAddCoachClient={handleAddCoachClient}
+                  onUpdateCoachClient={handleUpdateCoachClient}
+                  onDeleteCoachClient={handleDeleteCoachClient}
                 />
               ))}
             </div>
