@@ -147,6 +147,8 @@ export default function ClientTrackerPage() {
           stage: "new_coach",
           rank: 1,
           launch_date: getLocalDateString(),
+          source: "client_status_change",
+          client_status: newStatus,
         })
         if (coachResult) {
           toast({

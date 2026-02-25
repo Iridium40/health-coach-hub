@@ -32,6 +32,8 @@ export interface NewCoach {
   clients_count?: number
   prospects_count?: number
   notes?: string
+  source?: 'manual' | 'client_status_change'
+  client_status?: 'active' | 'goal_achieved' | 'future_coach' | 'coach_launched' | 'paused' | 'completed'
 }
 
 export interface UpdateCoach {
@@ -179,6 +181,11 @@ export function useCoaches() {
   // Add coach
   const addCoach = useCallback(async (newCoach: NewCoach): Promise<Coach | null> => {
     if (!user) return null
+
+    // Safety gate: status-driven auto-adds are only valid for coach_launched.
+    if (newCoach.source === 'client_status_change' && newCoach.client_status !== 'coach_launched') {
+      return null
+    }
 
     const coachData = {
       user_id: user.id,
