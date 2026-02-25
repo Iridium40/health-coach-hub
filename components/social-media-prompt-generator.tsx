@@ -551,7 +551,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <Accordion type="single" collapsible defaultValue={isPageLayout ? "profile" : undefined}>
+            <Accordion type="single" collapsible>
               <AccordionItem value="profile">
                 <AccordionTrigger className="py-2 text-xs text-gray-600 hover:no-underline">
                   Edit saved profile preferences
