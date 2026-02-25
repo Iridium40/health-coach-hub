@@ -183,7 +183,7 @@ export function DashboardSearch({
         <SearchWithHistory
           value={query}
           onChange={setQuery}
-          placeholder="Search training, resources, dashboard buttons, and client resources..."
+          placeholder="Search accross the entier site..."
           suggestions={suggestions}
           storageKey="dashboard-unified-search"
         />
