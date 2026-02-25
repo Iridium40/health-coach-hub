@@ -781,7 +781,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
           </CardHeader>
           <CardContent className="pt-0">
             <Select value={topic} onValueChange={setTopic}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a topic..." />
               </SelectTrigger>
               <SelectContent>
