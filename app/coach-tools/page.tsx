@@ -1,22 +1,10 @@
 "use client"
 
-import { Suspense } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Hero } from "@/components/hero"
-import { ExternalResourcesTab } from "@/components/external-resources-tab"
 import { Announcements } from "@/components/announcements"
-
-function CoachToolsLoading() {
-  return (
-    <div className="text-center py-12">
-      <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-48 mx-auto mb-4" />
-        <div className="h-4 bg-gray-200 rounded w-96 mx-auto" />
-      </div>
-    </div>
-  )
-}
+import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
 
 export default function CoachToolsPage() {
   return (
@@ -26,9 +14,15 @@ export default function CoachToolsPage() {
         <Hero />
         <Announcements />
         <div className="container mx-auto px-4 py-4 sm:py-8 bg-white">
-          <Suspense fallback={<CoachToolsLoading />}>
-            <ExternalResourcesTab mode="coach-tools" />
-          </Suspense>
+          <div className="text-center py-2 sm:py-4 mb-6">
+            <h1 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark mb-2">
+              Social Media Post Generator
+            </h1>
+            <p className="text-optavia-gray text-sm sm:text-base max-w-2xl mx-auto">
+              Build high-quality prompts quickly so you can create engaging social posts from your phone.
+            </p>
+          </div>
+          <SocialMediaPromptGenerator layout="page" />
         </div>
       </main>
       <Footer />

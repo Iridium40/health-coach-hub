@@ -100,8 +100,13 @@ const PERSONAL_TOUCH_OPTIONS = [
 // MAIN COMPONENT
 // ============================================================================
 
-export function SocialMediaPromptGenerator() {
+interface SocialMediaPromptGeneratorProps {
+  layout?: "modal" | "page"
+}
+
+export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaPromptGeneratorProps) {
   const { toast } = useToast()
+  const isPageLayout = layout === "page"
   
   // Form state
   const [mood, setMood] = useState("")
@@ -251,7 +256,8 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+    <div className={isPageLayout ? "max-w-6xl mx-auto" : ""}>
+      <div className={`grid grid-cols-1 lg:grid-cols-2 ${isPageLayout ? "gap-6 lg:gap-8" : "gap-4 lg:gap-6"}`}>
       {/* LEFT: Form Inputs */}
       <div className="space-y-3 lg:space-y-4">
         {/* Mood Selection */}
@@ -433,7 +439,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
           <Button
             onClick={generatePrompt}
             disabled={!mood || !topic}
-            className="flex-1 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+            className={`flex-1 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white ${isPageLayout ? "h-10" : ""}`}
           >
             <Sparkles className="h-4 w-4 mr-2" />
             Generate Prompt
@@ -445,7 +451,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
       </div>
 
       {/* RIGHT: Generated Prompt Output */}
-      <div className="lg:sticky lg:top-4 h-fit space-y-3">
+      <div className={`h-fit space-y-3 ${isPageLayout ? "lg:sticky lg:top-20" : "lg:sticky lg:top-4"}`}>
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between gap-2">
@@ -479,7 +485,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
           <CardContent className="pt-0">
             {generatedPrompt ? (
               <>
-                <div className="bg-gray-50 rounded-lg p-3 max-h-[250px] lg:max-h-[400px] overflow-y-auto">
+                <div className={`bg-gray-50 rounded-lg p-3 overflow-y-auto ${isPageLayout ? "max-h-[320px] lg:max-h-[560px]" : "max-h-[250px] lg:max-h-[400px]"}`}>
                   <pre className="whitespace-pre-wrap text-xs lg:text-sm text-gray-700 font-mono">
                     {generatedPrompt}
                   </pre>
@@ -550,6 +556,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
             </ul>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   )
