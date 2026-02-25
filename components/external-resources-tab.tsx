@@ -35,14 +35,6 @@ interface Resource {
 // Coach Tools definitions
 const COACH_TOOLS = [
   {
-    id: "client-support",
-    title: "Client Support Tool",
-    description: "One place for troubleshooting, hydration, exercise guidance, condiments, and metabolic education.",
-    icon: Wrench,
-    component: ClientSupportTool,
-    expandMode: "dialog" as const,
-  },
-  {
     id: "social-media-generator",
     title: "Social Media Post Generator",
     description: "Build prompts for ChatGPT to generate 3 unique social media post ideas instantly.",
