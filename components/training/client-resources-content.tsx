@@ -126,7 +126,7 @@ interface Section {
   scripts?: Script[]
 }
 
-interface Lesson {
+export interface Lesson {
   id: string
   title: string
   type: string
@@ -139,7 +139,7 @@ interface Lesson {
   }
 }
 
-const lessons: Lesson[] = [
+export const lessons: Lesson[] = [
   {
     id: "3.3.1",
     title: "Digital Guides",

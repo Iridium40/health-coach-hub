@@ -23,6 +23,8 @@ import { useClients } from "@/hooks/use-clients"
 import { useTrainingResources } from "@/hooks/use-training-resources"
 import { useRankCalculator, type RankType, RANK_REQUIREMENTS } from "@/hooks/use-rank-calculator"
 import { useBookmarks } from "@/hooks/use-bookmarks"
+import { DashboardSearch } from "@/components/dashboard/dashboard-search"
+import { clientResourceSearchData } from "@/lib/client-resources-data"
 import type { ZoomCall } from "@/lib/types"
 import { expandRecurringEvents, getEventsForDate, type ExpandedZoomCall } from "@/lib/expand-recurring-events"
 import { getOnboardingProgress } from "@/lib/onboarding-utils"
@@ -76,27 +78,125 @@ const OPTAVIAReferenceGuide = dynamic(
 )
 
 // Coach Tools definitions
-const COACH_TOOLS: { id: string; title: string; icon: LucideIcon; component: React.ComponentType }[] = [
-  { id: "client-troubleshooting", title: "Client Troubleshooting Guide", icon: Wrench, component: ClientTroubleshootingDialog },
-  { id: "water-calculator", title: "Water Intake Calculator", icon: Droplets, component: WaterCalculator },
-  { id: "exercise-guide", title: "Exercise & Motion Guide", icon: Dumbbell, component: ExerciseGuide },
-  { id: "metabolic-health", title: "Metabolic Health Education", icon: Activity, component: MetabolicHealthInfo },
-  { id: "social-media-generator", title: "Social Media Post Generator", icon: Share2, component: SocialMediaPromptGenerator },
-  { id: "optavia-reference", title: "Condiments Quick Reference Guide", icon: BookOpen, component: OPTAVIAReferenceGuide },
+const COACH_TOOLS: {
+  id: string
+  title: string
+  description: string
+  tags: string[]
+  icon: LucideIcon
+  component: React.ComponentType
+}[] = [
+  {
+    id: "client-troubleshooting",
+    title: "Client Troubleshooting Guide",
+    description: "Identify common client challenges and get coaching responses.",
+    tags: ["client support", "coaching", "troubleshooting"],
+    icon: Wrench,
+    component: ClientTroubleshootingDialog,
+  },
+  {
+    id: "water-calculator",
+    title: "Water Intake Calculator",
+    description: "Calculate recommended daily hydration targets for clients.",
+    tags: ["hydration", "calculator", "wellness"],
+    icon: Droplets,
+    component: WaterCalculator,
+  },
+  {
+    id: "exercise-guide",
+    title: "Exercise & Motion Guide",
+    description: "Movement guidance for clients at different journey stages.",
+    tags: ["exercise", "movement", "client support"],
+    icon: Dumbbell,
+    component: ExerciseGuide,
+  },
+  {
+    id: "metabolic-health",
+    title: "Metabolic Health Education",
+    description: "Educational content to explain metabolic health concepts.",
+    tags: ["metabolic health", "education", "client support"],
+    icon: Activity,
+    component: MetabolicHealthInfo,
+  },
+  {
+    id: "social-media-generator",
+    title: "Social Media Post Generator",
+    description: "Generate social-ready coaching posts and prompts.",
+    tags: ["social media", "content", "business building"],
+    icon: Share2,
+    component: SocialMediaPromptGenerator,
+  },
+  {
+    id: "optavia-reference",
+    title: "Condiments Quick Reference Guide",
+    description: "Quick guide for condiment choices and usage.",
+    tags: ["condiments", "nutrition", "reference"],
+    icon: BookOpen,
+    component: OPTAVIAReferenceGuide,
+  },
 ]
 
 // External Resources definitions
-const EXTERNAL_RESOURCES: { id: string; title: string; url: string }[] = [
-  { id: "optavia-strong-fb", title: "Optavia Strong Facebook Group", url: "https://www.facebook.com/groups/810104670912639" },
-  { id: "healthy-edge-team", title: "Healthy Edge 3.0 Team Page", url: "https://www.facebook.com/groups/2156291101444241" },
-  { id: "healthy-edge-client", title: "Healthy Edge 3.0 Client Page", url: "https://www.facebook.com/groups/778947831962215" },
-  { id: "optavia-connect", title: "OPTAVIA Connect", url: "https://optaviaconnect.com/login" },
-  { id: "optavia-blog", title: "OPTAVIA Blog", url: "https://www.optaviablog.com" },
-  { id: "habits-of-health", title: "Habits of Health", url: "https://www.habitsofhealth.com/" },
+const EXTERNAL_RESOURCES: {
+  id: string
+  title: string
+  description: string
+  tags: string[]
+  category: string
+  url: string
+}[] = [
+  {
+    id: "optavia-strong-fb",
+    title: "Optavia Strong Facebook Group",
+    description: "Community group for coach support and collaboration.",
+    tags: ["community", "facebook", "coach support"],
+    category: "Community",
+    url: "https://www.facebook.com/groups/810104670912639",
+  },
+  {
+    id: "healthy-edge-team",
+    title: "Healthy Edge 3.0 Team Page",
+    description: "Team page for announcements, updates, and shared wins.",
+    tags: ["team", "facebook", "community"],
+    category: "Community",
+    url: "https://www.facebook.com/groups/2156291101444241",
+  },
+  {
+    id: "healthy-edge-client",
+    title: "Healthy Edge 3.0 Client Page",
+    description: "Client-facing community page for encouragement and support.",
+    tags: ["client", "facebook", "community"],
+    category: "Community",
+    url: "https://www.facebook.com/groups/778947831962215",
+  },
+  {
+    id: "optavia-connect",
+    title: "OPTAVIA Connect",
+    description: "Official OPTAVIA portal for orders and account management.",
+    tags: ["optavia", "portal", "orders"],
+    category: "Platform",
+    url: "https://optaviaconnect.com/login",
+  },
+  {
+    id: "optavia-blog",
+    title: "OPTAVIA Blog",
+    description: "Official content and updates from OPTAVIA.",
+    tags: ["blog", "articles", "education"],
+    category: "Education",
+    url: "https://www.optaviablog.com",
+  },
+  {
+    id: "habits-of-health",
+    title: "Habits of Health",
+    description: "Habit-focused health education and resources.",
+    tags: ["habits", "health", "education"],
+    category: "Education",
+    url: "https://www.habitsofhealth.com/",
+  },
 ]
 
 export function DashboardOverview() {
-  const { user, profile, badges, recipes, favoriteRecipes } = useUserData()
+  const { user, profile, badges, recipes, favoriteRecipes, modules } = useUserData()
   const supabase = createClient()
 
   // CRM hooks
@@ -353,6 +453,31 @@ export function DashboardOverview() {
       {/* Coach Tip of the Day */}
       <div className="mt-6">
         <CoachTip />
+      </div>
+
+      {/* Unified Search */}
+      <div className="mt-6">
+        <DashboardSearch
+          modules={modules}
+          trainingResources={trainingResources}
+          externalResources={EXTERNAL_RESOURCES.map((resource) => ({
+            id: resource.id,
+            title: resource.title,
+            description: resource.description,
+            tags: resource.tags,
+            category: resource.category,
+            href: resource.url,
+          }))}
+          coachTools={COACH_TOOLS.map((tool) => ({
+            id: tool.id,
+            title: tool.title,
+            description: tool.description,
+            tags: tool.tags,
+            category: "Coach Tool",
+          }))}
+          clientResources={clientResourceSearchData}
+          onOpenTool={(toolId) => setOpenToolId(toolId)}
+        />
       </div>
 
       {/* Today's Focus */}
