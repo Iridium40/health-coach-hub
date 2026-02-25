@@ -147,8 +147,8 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
   const isPageLayout = layout === "page"
 
   // Form state
-  const [mood, setMood] = useState("")
-  const [topic, setTopic] = useState("")
+  const [mood, setMood] = useState("inspiring")
+  const [topic, setTopic] = useState("transformation")
   const [platform, setPlatform] = useState("both")
   const [postType, setPostType] = useState("feed")
   const [cta, setCta] = useState("engage")
@@ -331,15 +331,6 @@ export function SocialMediaPromptGenerator({ layout = "modal" }: SocialMediaProm
 
   // Generate the ChatGPT prompt
   const generatePrompt = () => {
-    if (!mood || !topic) {
-      toast({
-        title: "Missing required fields",
-        description: "Please select a mood and topic",
-        variant: "destructive",
-      })
-      return
-    }
-
     const moodLabel = MOOD_OPTIONS.find(m => m.value === mood)?.label || mood
     const topicLabel = TOPIC_OPTIONS.find(t => t.value === topic)?.label || topic
     const platformLabel = PLATFORM_OPTIONS.find(p => p.value === platform)?.label || platform
@@ -506,8 +497,8 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
 
   // Reset form
   const resetForm = () => {
-    setMood("")
-    setTopic("")
+    setMood("inspiring")
+    setTopic("transformation")
     setPlatform("both")
     setPostType("feed")
     setCta("engage")
@@ -740,7 +731,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
         <Card>
           <CardHeader className="pb-2 lg:pb-3">
             <CardTitle className="text-sm font-semibold">
-              1. What&apos;s the mood/tone? <span className="text-red-500">*</span>
+              1. What&apos;s the mood/tone?
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
@@ -785,7 +776,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
         <Card>
           <CardHeader className="pb-2 lg:pb-3">
             <CardTitle className="text-sm font-semibold">
-              2. What's the topic? <span className="text-red-500">*</span>
+              2. What's the topic?
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
@@ -804,215 +795,208 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
           </CardContent>
         </Card>
 
-        {/* Platform, Post Type, CTA, Length - Responsive Grid */}
+        {/* Optional: Specific detail */}
         <Card>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Platform</Label>
-                <Select value={platform} onValueChange={setPlatform}>
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PLATFORM_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Post Type</Label>
-                <Select value={postType} onValueChange={setPostType}>
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {POST_TYPE_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Call to Action</Label>
-                <Select value={cta} onValueChange={setCta}>
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CTA_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Length</Label>
-                <Select value={length} onValueChange={setLength}>
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LENGTH_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <Label className="text-xs font-semibold mb-1.5 block text-gray-600">
+              Specific detail to include (optional)
+            </Label>
+            <Input
+              value={specificDetail}
+              onChange={(e) => setSpecificDetail(e.target.value)}
+              placeholder="e.g., 'I just hit 50 lbs lost' or 'posting on a Monday morning'"
+              className="h-9 text-sm"
+            />
           </CardContent>
         </Card>
 
+        {/* Collapsed: Everything else */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Per-post coach context</CardTitle>
-            <CardDescription className="text-xs">
-              Pre-filled from saved defaults. Adjust for this post only.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Voice style</Label>
-                <Select value={postVoice} onValueChange={(value) => setPostVoice(value as VoiceSelectValue)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="No override" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No override</SelectItem>
-                    {VOICE_SUGGESTIONS.map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.emoji} {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Audience focus</Label>
-                <Select value={postNicheFocus} onValueChange={(value) => setPostNicheFocus(value as NicheSelectValue)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="General audience" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">General audience</SelectItem>
-                    {NICHE_SUGGESTIONS.map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.emoji} {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Story anchor for this post</Label>
-              <Input
-                value={postStoryAnchor}
-                onChange={(e) => setPostStoryAnchor(e.target.value)}
-                placeholder="Optional one-liner to weave into this post"
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Emoji style</Label>
-                <Select value={postEmojiStyle} onValueChange={(value) => setPostEmojiStyle(value as EmojiSelectValue)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="No override" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No override</SelectItem>
-                    {EMOJI_OPTIONS.map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Hashtag style</Label>
-                <Select value={postHashtagStyle} onValueChange={(value) => setPostHashtagStyle(value as HashtagSelectValue)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="No override" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No override</SelectItem>
-                    {HASHTAG_OPTIONS.map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <CardContent className="pt-2">
+            <Accordion type="single" collapsible>
+              <AccordionItem value="more-options">
+                <AccordionTrigger className="py-2 text-sm font-semibold hover:no-underline">
+                  More options (platform, length, touches, overrides)
+                </AccordionTrigger>
+                <AccordionContent className="space-y-5 pt-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Platform</Label>
+                      <Select value={platform} onValueChange={setPlatform}>
+                        <SelectTrigger className="h-9 w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PLATFORM_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Post Type</Label>
+                      <Select value={postType} onValueChange={setPostType}>
+                        <SelectTrigger className="h-9 w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {POST_TYPE_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Call to Action</Label>
+                      <Select value={cta} onValueChange={setCta}>
+                        <SelectTrigger className="h-9 w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CTA_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Length</Label>
+                      <Select value={length} onValueChange={setLength}>
+                        <SelectTrigger className="h-9 w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {LENGTH_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-        {/* Personal Touches */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">
-              Personal touches (optional)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className={`flex flex-wrap ${isPageLayout ? "gap-2" : "gap-1.5"}`}>
-              {PERSONAL_TOUCH_OPTIONS.map(option => (
-                <button
-                  key={option.value}
-                  onClick={() => togglePersonalTouch(option.value)}
-                  className={`${isPageLayout ? "px-3 py-1.5 text-sm min-h-9" : "px-2 py-1 text-xs"} rounded-full transition-all whitespace-nowrap ${
-                    personalTouches.includes(option.value)
-                      ? "bg-[hsl(var(--optavia-green))] text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                  <div>
+                    <Label className="text-xs font-semibold mb-1.5 block text-gray-600">
+                      Additional context (optional)
+                    </Label>
+                    <Textarea
+                      value={customContext}
+                      onChange={(e) => setCustomContext(e.target.value)}
+                      placeholder="e.g., 'I'm doing a 5-day challenge this week'"
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </div>
 
-        {/* Custom Details */}
-        <Card>
-          <CardContent className="pt-4 space-y-3">
-            <div>
-              <Label className="text-xs font-semibold mb-1.5 block text-gray-600">
-                Specific detail to include (optional)
-              </Label>
-              <Input
-                value={specificDetail}
-                onChange={(e) => setSpecificDetail(e.target.value)}
-                placeholder="e.g., 'I just hit 50 lbs lost'"
-                className="h-9 text-sm"
-              />
-            </div>
-            
-            <div>
-              <Label className="text-xs font-semibold mb-1.5 block text-gray-600">
-                Any other context? (optional)
-              </Label>
-              <Textarea
-                value={customContext}
-                onChange={(e) => setCustomContext(e.target.value)}
-                placeholder="e.g., 'I'm posting this on a Monday morning'"
-                rows={2}
-                className="text-sm"
-              />
-            </div>
+                  <div>
+                    <Label className="text-xs font-semibold mb-2 block text-gray-600">Personal touches</Label>
+                    <div className={`flex flex-wrap ${isPageLayout ? "gap-2" : "gap-1.5"}`}>
+                      {PERSONAL_TOUCH_OPTIONS.map(option => (
+                        <button
+                          key={option.value}
+                          onClick={() => togglePersonalTouch(option.value)}
+                          className={`${isPageLayout ? "px-3 py-1.5 text-sm min-h-9" : "px-2 py-1 text-xs"} rounded-full transition-all whitespace-nowrap ${
+                            personalTouches.includes(option.value)
+                              ? "bg-[hsl(var(--optavia-green))] text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-100 pt-4">
+                    <p className="text-xs font-semibold text-gray-500 mb-3">Per-post overrides</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Voice style</Label>
+                        <Select value={postVoice} onValueChange={(value) => setPostVoice(value as VoiceSelectValue)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="No override" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No override</SelectItem>
+                            {VOICE_SUGGESTIONS.map((option) => (
+                              <SelectItem key={option.id} value={option.id}>
+                                {option.emoji} {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Audience focus</Label>
+                        <Select value={postNicheFocus} onValueChange={(value) => setPostNicheFocus(value as NicheSelectValue)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="General audience" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">General audience</SelectItem>
+                            {NICHE_SUGGESTIONS.map((option) => (
+                              <SelectItem key={option.id} value={option.id}>
+                                {option.emoji} {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Story anchor for this post</Label>
+                      <Input
+                        value={postStoryAnchor}
+                        onChange={(e) => setPostStoryAnchor(e.target.value)}
+                        placeholder="Optional one-liner to weave into this post"
+                        className="h-9 text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                      <div>
+                        <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Emoji style</Label>
+                        <Select value={postEmojiStyle} onValueChange={(value) => setPostEmojiStyle(value as EmojiSelectValue)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="No override" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No override</SelectItem>
+                            {EMOJI_OPTIONS.map((option) => (
+                              <SelectItem key={option.id} value={option.id}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold mb-1.5 block text-gray-600">Hashtag style</Label>
+                        <Select value={postHashtagStyle} onValueChange={(value) => setPostHashtagStyle(value as HashtagSelectValue)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="No override" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No override</SelectItem>
+                            {HASHTAG_OPTIONS.map((option) => (
+                              <SelectItem key={option.id} value={option.id}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </CardContent>
         </Card>
 
@@ -1020,7 +1004,6 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
         <div className="flex gap-2">
           <Button
             onClick={generatePrompt}
-            disabled={!mood || !topic}
             className={`flex-1 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white ${isPageLayout ? "h-10" : ""}`}
           >
             <Sparkles className="h-4 w-4 mr-2" />
@@ -1108,7 +1091,7 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
               <div className="bg-gray-50 rounded-lg p-6 text-center">
                 <div className="text-3xl mb-2">✏️</div>
                 <p className="text-sm text-gray-500">
-                  Select mood & topic, then click "Generate Prompt"
+                  Review defaults (optional), then click "Generate Prompt"
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
                   Get 3 unique post ideas
