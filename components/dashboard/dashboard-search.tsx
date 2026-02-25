@@ -42,8 +42,27 @@ const SOURCE_LABELS: Record<DashboardSearchItem["sourceType"], string> = {
   client_resource: "Client Resources",
 }
 
-const toViewerHref = (url: string, title: string) => {
+const DIRECT_OPEN_HOSTS = [
+  "vimeo.com",
+  "www.vimeo.com",
+  "youtube.com",
+  "www.youtube.com",
+  "youtu.be",
+]
+
+const toViewerHref = (url: string, title: string, options?: { preferDirect?: boolean }) => {
   if (!url.startsWith("http")) return url
+  if (options?.preferDirect) return url
+
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    if (DIRECT_OPEN_HOSTS.includes(host)) {
+      return url
+    }
+  } catch {
+    return url
+  }
+
   return `/viewer?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`
 }
 
@@ -74,7 +93,8 @@ export function DashboardSearch({
   const searchIndex = useMemo(() => {
     const trainingItems = mapTrainingToSearchItems(modules, trainingResources).map((item) => ({
       ...item,
-      href: item.href ? toViewerHref(item.href, item.title) : item.href,
+      // Training content often includes providers that block iframe embeds.
+      href: item.href ? toViewerHref(item.href, item.title, { preferDirect: true }) : item.href,
     }))
 
     const externalResourceItems = mapMetadataItemsToSearchItems(
