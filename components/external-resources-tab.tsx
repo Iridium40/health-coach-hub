@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Pin, X, ExternalLink, Users, Wrench, Share2, Search } from "lucide-react"
+import { Pin, X, ExternalLink, Users, Wrench, Share2, Search, BookOpen } from "lucide-react"
 import { SearchWithHistory } from "@/components/search-with-history"
 import { ToolCard } from "@/components/coach-tools/tool-card"
 import { ClientSupportTool } from "@/components/coach-tools/client-support-tool"
