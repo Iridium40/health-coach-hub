@@ -85,11 +85,21 @@ const COACH_TOOLS = [
   },
 ]
 
-export function ExternalResourcesTab() {
+export type ExternalResourcesMode = "all" | "coach-tools" | "external-resources"
+
+interface ExternalResourcesTabProps {
+  mode?: ExternalResourcesMode
+}
+
+export function ExternalResourcesTab({ mode = "all" }: ExternalResourcesTabProps) {
   const { user, profile } = useUserData()
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get("category")
-  const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam || "All")
+  const isCoachToolsMode = mode === "coach-tools"
+  const isExternalResourcesMode = mode === "external-resources"
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    isCoachToolsMode ? "Coach Tools" : (categoryParam || "All")
+  )
   const [dbResources, setDbResources] = useState<DBExternalResource[]>([])
   const [loadingResources, setLoadingResources] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -127,10 +137,11 @@ export function ExternalResourcesTab() {
 
   // Sync selectedCategory with URL parameter when it changes
   useEffect(() => {
+    if (isCoachToolsMode) return
     if (categoryParam && categoryParam !== selectedCategory) {
       setSelectedCategory(categoryParam)
     }
-  }, [categoryParam])
+  }, [categoryParam, selectedCategory, isCoachToolsMode])
 
   // Convert database resources to the Resource format (preserving sort_order)
   // All resources now come from the database and can be managed via admin panel
@@ -170,34 +181,38 @@ export function ExternalResourcesTab() {
   }, [pinnedToolIds])
 
   // Resource categories - includes all database categories plus Coach Tools
-  const categories = [
-    "All",
-    "Coach Tools",
-    // Getting Started & Business
-    "Getting Started",
-    "Tax & Finance",
-    "Business Development",
-    // Client Journey
-    "Journey Kickoff",
-    "Client Text Templates",
-    "Client Support",
-    "Client Support Videos",
-    // Nutrition & Health
-    "Nutrition Guides",
-    // Social & Marketing
-    "Social Media Strategy",
-    // Mindset & Growth
-    "Troubleshooting",
-    "Coaching Real Talk",
-    // Legacy categories
-    "OPTAVIA Portals",
-    "Social Media",
-    "Communities",
-    "Training",
-  ]
+  const categories = useMemo(() => {
+    if (isCoachToolsMode) return ["Coach Tools"]
+    const base = [
+      "All",
+      // Getting Started & Business
+      "Getting Started",
+      "Tax & Finance",
+      "Business Development",
+      // Client Journey
+      "Journey Kickoff",
+      "Client Text Templates",
+      "Client Support",
+      "Client Support Videos",
+      // Nutrition & Health
+      "Nutrition Guides",
+      // Social & Marketing
+      "Social Media Strategy",
+      // Mindset & Growth
+      "Troubleshooting",
+      "Coaching Real Talk",
+      // Legacy categories
+      "OPTAVIA Portals",
+      "Social Media",
+      "Communities",
+      "Training",
+    ]
+    return isExternalResourcesMode ? base : ["All", "Coach Tools", ...base.slice(1)]
+  }, [isCoachToolsMode, isExternalResourcesMode])
 
   // Memoize filtered resources with search
   const filteredResources = useMemo(() => {
+    if (isCoachToolsMode) return []
     if (selectedCategory === "Coach Tools") return []
     const filtered = resources.filter((resource) => {
       // Apply search filter
@@ -228,13 +243,14 @@ export function ExternalResourcesTab() {
 
   // Filter coach tools by search query
   const filteredCoachTools = useMemo(() => {
+    if (isExternalResourcesMode) return []
     if (!searchQuery) return COACH_TOOLS
     const query = searchQuery.toLowerCase()
     return COACH_TOOLS.filter(tool => 
       tool.title.toLowerCase().includes(query) ||
       tool.description.toLowerCase().includes(query)
     )
-  }, [searchQuery])
+  }, [searchQuery, isExternalResourcesMode])
 
   // Generate search suggestions from resource titles, descriptions, and tool names
   const searchSuggestions = useMemo(() => {
@@ -274,17 +290,21 @@ export function ExternalResourcesTab() {
   }, [])
 
   // Check if we should show coach tools
-  const showCoachTools = selectedCategory === "All" || selectedCategory === "Coach Tools"
+  const showCoachTools = !isExternalResourcesMode && (selectedCategory === "All" || selectedCategory === "Coach Tools")
 
   return (
     <div>
       {/* Title and Description */}
       <div className="text-center py-4 sm:py-8 mb-6">
         <h2 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark mb-3 sm:mb-4">
-          Resources
+          {isCoachToolsMode ? "Coach Tools" : isExternalResourcesMode ? "External Resources" : "Resources"}
         </h2>
         <p className="text-optavia-gray text-base sm:text-lg max-w-2xl mx-auto px-4">
-          Access external resources, tools, and communities to support your coaching journey and help your clients succeed.
+          {isCoachToolsMode
+            ? "Access coaching tools to support your clients and coaching workflow."
+            : isExternalResourcesMode
+            ? "Access external resources and communities to support your coaching journey."
+            : "Access external resources, tools, and communities to support your coaching journey and help your clients succeed."}
         </p>
       </div>
 
@@ -294,7 +314,7 @@ export function ExternalResourcesTab() {
           <SearchWithHistory
             value={searchQuery}
             onChange={handleSearchChange}
-            placeholder="Search resources and tools..."
+            placeholder={isCoachToolsMode ? "Search coach tools..." : isExternalResourcesMode ? "Search external resources..." : "Search resources and tools..."}
             suggestions={searchSuggestions}
             storageKey="resources"
           />
@@ -442,7 +462,7 @@ export function ExternalResourcesTab() {
         </div>
       )}
 
-      {filteredResources.length === 0 && !searchQuery && selectedCategory !== "All" && selectedCategory !== "Coach Tools" && (
+      {filteredResources.length === 0 && !searchQuery && selectedCategory !== "All" && selectedCategory !== "Coach Tools" && !isCoachToolsMode && (
         <div className="text-center py-12 text-optavia-gray">No resources found in this category.</div>
       )}
     </div>

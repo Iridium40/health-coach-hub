@@ -24,8 +24,8 @@ interface HeaderProps {
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
   onInviteClick?: () => void
-  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team"
-  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team") => void
+  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "external-resources" | "coach-tools" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team"
+  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "external-resources" | "coach-tools" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team") => void
 }
 
 export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab, onTabChange }: HeaderProps) {
@@ -49,7 +49,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   }
 
   // Determine active tab from pathname if not provided
-  type TabType = "dashboard" | "training" | "metabolic-reset-events" | "resources" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team"
+  type TabType = "dashboard" | "training" | "metabolic-reset-events" | "resources" | "external-resources" | "coach-tools" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team"
   const getActiveTab = (): TabType => {
     if (activeTab) return activeTab
     if (pathname?.startsWith("/dashboard") || pathname === "/") return "dashboard"
@@ -57,6 +57,8 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
     if (pathname?.startsWith("/team-padlets")) return "team-padlets"
     if (pathname?.startsWith("/coaching-quick-links")) return "coaching-quicklinks"
     if (pathname?.startsWith("/metabolic-reset-events")) return "metabolic-reset-events"
+    if (pathname?.startsWith("/coach-tools")) return "coach-tools"
+    if (pathname?.startsWith("/external-resources")) return "external-resources"
     if (pathname?.startsWith("/resources")) return "resources"
     if (pathname?.startsWith("/recipes")) return "recipes"
     if (pathname?.startsWith("/calendar")) return "calendar"
@@ -66,14 +68,15 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   const currentActiveTab = getActiveTab()
 
   // Full nav items - filtered based on org_id
-  // Order: Calendar, Coaching Resource Library, Coaching Quicklinks, Meal Planning & Recipes, Outside Tools & Resources, Metabolic Reset Events (My Business is separate dropdown at end)
+  // Order: Calendar, Coaching Resource Library, Coaching Quicklinks, Meal Planning & Recipes, Coach Tools, External Resources, Metabolic Reset Events (My Business is separate dropdown at end)
   const allNavItems = [
     { id: "calendar" as const, label: "Calendar", href: "/calendar", fullAccessOnly: true, external: false },
     { id: "team-padlets" as const, label: "Team Padlets", href: "/team-padlets", fullAccessOnly: true, external: false },
     { id: "training" as const, label: "Coaching Resource Library", href: "/training", fullAccessOnly: false, external: false },
     { id: "coaching-quicklinks" as const, label: "Coaching Quicklinks", href: "/coaching-quick-links", fullAccessOnly: true, external: false },
     { id: "recipes" as const, label: "Meal Planning & Recipes", href: "/recipes", fullAccessOnly: true, external: false },
-    { id: "resources" as const, label: "Outside Tools & Resources", href: "/resources", fullAccessOnly: true, external: false },
+    { id: "coach-tools" as const, label: "Coach Tools", href: "/coach-tools", fullAccessOnly: true, external: false },
+    { id: "external-resources" as const, label: "External Resources", href: "/external-resources", fullAccessOnly: true, external: false },
     { id: "metabolic-reset-events" as const, label: "Metabolic Reset Events", href: "/metabolic-reset-events", fullAccessOnly: false, external: false },
   ]
   

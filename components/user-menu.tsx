@@ -184,7 +184,7 @@ export function UserMenu({ onSettingsClick, onAnnouncementsClick, onReportsClick
                   className="text-optavia-dark hover:bg-gray-100 cursor-pointer"
                 >
                   <Link2 className="mr-2 h-4 w-4" />
-                  <span>Outside Tools & Resources</span>
+                  <span>External Resources</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onSelect={handleReportsClick}
