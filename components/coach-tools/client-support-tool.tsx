@@ -102,11 +102,11 @@ export function ClientSupportTool() {
           >
           <TabsTrigger value="troubleshooting" className="text-xs sm:text-sm min-h-10 px-3 whitespace-nowrap flex-shrink-0">
             <Wrench className="h-3.5 w-3.5 mr-1" />
-            Troubleshoot
+            Fix
           </TabsTrigger>
           <TabsTrigger value="water" className="text-xs sm:text-sm min-h-10 px-3 whitespace-nowrap flex-shrink-0">
             <Droplets className="h-3.5 w-3.5 mr-1" />
-            Hydration
+            Water
           </TabsTrigger>
           <TabsTrigger value="exercise" className="text-xs sm:text-sm min-h-10 px-3 whitespace-nowrap flex-shrink-0">
             <Dumbbell className="h-3.5 w-3.5 mr-1" />
@@ -114,11 +114,11 @@ export function ClientSupportTool() {
           </TabsTrigger>
           <TabsTrigger value="condiments" className="text-xs sm:text-sm min-h-10 px-3 whitespace-nowrap flex-shrink-0">
             <BookOpen className="h-3.5 w-3.5 mr-1" />
-            Condiments
+            Food
           </TabsTrigger>
           <TabsTrigger value="metabolic" className="text-xs sm:text-sm min-h-10 px-3 whitespace-nowrap flex-shrink-0">
             <Activity className="h-3.5 w-3.5 mr-1" />
-            Metabolic
+            Health
           </TabsTrigger>
           </TabsList>
         </div>
