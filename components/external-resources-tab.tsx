@@ -17,7 +17,6 @@ import {
 import { Pin, X, ExternalLink, Users, Wrench, Share2, Search, BookOpen } from "lucide-react"
 import { SearchWithHistory } from "@/components/search-with-history"
 import { ToolCard } from "@/components/coach-tools/tool-card"
-import { ClientSupportTool } from "@/components/coach-tools/client-support-tool"
 import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
 import { createClient } from "@/lib/supabase/client"
 import type { ExternalResource as DBExternalResource } from "@/lib/types"
