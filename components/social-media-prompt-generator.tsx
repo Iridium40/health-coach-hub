@@ -268,19 +268,37 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+            <div
+              className={`grid gap-2 ${
+                isPageLayout
+                  ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                  : "grid-cols-2 sm:grid-cols-4 md:grid-cols-7"
+              }`}
+            >
               {MOOD_OPTIONS.map(option => (
                 <button
                   key={option.value}
                   onClick={() => setMood(option.value)}
-                  className={`p-2.5 rounded-lg border-2 text-left transition-all min-w-0 min-h-[56px] flex flex-col justify-center ${
+                  className={`p-2.5 rounded-lg border-2 text-left transition-all min-w-0 flex flex-col justify-center ${
+                    isPageLayout ? "min-h-[68px]" : "min-h-[56px]"
+                  } ${
                     mood === option.value
                       ? "border-[hsl(var(--optavia-green))] bg-green-50"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <span className="font-medium text-sm block truncate">{option.label}</span>
-                  <p className="text-xs text-gray-500 mt-0.5 hidden sm:block truncate">{option.description}</p>
+                  <span className={`font-medium text-sm block ${isPageLayout ? "leading-snug whitespace-normal" : "truncate"}`}>
+                    {option.label}
+                  </span>
+                  <p
+                    className={`text-xs text-gray-500 mt-0.5 ${
+                      isPageLayout
+                        ? "hidden lg:block whitespace-normal leading-snug"
+                        : "hidden sm:block truncate"
+                    }`}
+                  >
+                    {option.description}
+                  </p>
                 </button>
               ))}
             </div>
@@ -386,15 +404,15 @@ ${platform === "instagram" || platform === "both" ? "4. Hashtag suggestions" : "
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="flex flex-wrap gap-1.5">
+            <div className={`flex flex-wrap ${isPageLayout ? "gap-2" : "gap-1.5"}`}>
               {PERSONAL_TOUCH_OPTIONS.map(option => (
                 <button
                   key={option.value}
                   onClick={() => togglePersonalTouch(option.value)}
-                  className={`px-2 py-1 rounded-full text-xs transition-all ${
+                  className={`${isPageLayout ? "px-3 py-1.5 text-sm min-h-9" : "px-2 py-1 text-xs"} rounded-full transition-all whitespace-nowrap ${
                     personalTouches.includes(option.value)
                       ? "bg-[hsl(var(--optavia-green))] text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   {option.label}
