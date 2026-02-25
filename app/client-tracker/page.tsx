@@ -792,10 +792,10 @@ ${phase.milestone ? `\n🎉 MILESTONE: ${phase.label} - Celebrate this achieveme
             <Button
               onClick={() => setShowTroubleshootModal(true)}
               className="bg-[#f88221] hover:bg-[#e07520] text-white h-10"
-              title="Troubleshooting Guide"
+              title="Support Guide"
             >
               <Wrench className="h-4 w-4 mr-2" />
-              Troubleshooting
+              Support
             </Button>
 
             <Button

@@ -14,15 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Pin, X, ExternalLink, Droplets, Dumbbell, Activity, Users, Wrench, Share2, BookOpen, Search } from "lucide-react"
+import { Pin, X, ExternalLink, Users, Wrench, Share2, Search } from "lucide-react"
 import { SearchWithHistory } from "@/components/search-with-history"
 import { ToolCard } from "@/components/coach-tools/tool-card"
-import { WaterCalculator } from "@/components/coach-tools/water-calculator"
-import { ExerciseGuide } from "@/components/coach-tools/exercise-guide"
-import { MetabolicHealthInfo } from "@/components/coach-tools/metabolic-health-info"
-import { ClientTroubleshootingDialog } from "@/components/coach-tools/client-troubleshooting-dialog"
+import { ClientSupportTool } from "@/components/coach-tools/client-support-tool"
 import { SocialMediaPromptGenerator } from "@/components/social-media-prompt-generator"
-import { OPTAVIAReferenceGuide } from "@/components/coach-tools/optavia-reference-guide"
 import { createClient } from "@/lib/supabase/client"
 import type { ExternalResource as DBExternalResource } from "@/lib/types"
 
@@ -39,11 +35,11 @@ interface Resource {
 // Coach Tools definitions
 const COACH_TOOLS = [
   {
-    id: "client-troubleshooting",
-    title: "Client Troubleshooting Guide",
-    description: "Quick solutions and scripts for common client issues and challenges.",
+    id: "client-support",
+    title: "Client Support Tool",
+    description: "One place for troubleshooting, hydration, exercise guidance, condiments, and metabolic education.",
     icon: Wrench,
-    component: ClientTroubleshootingDialog,
+    component: ClientSupportTool,
     expandMode: "dialog" as const,
   },
   {
@@ -53,35 +49,6 @@ const COACH_TOOLS = [
     icon: Share2,
     component: SocialMediaPromptGenerator,
     expandMode: "dialog" as const,
-  },
-  {
-    id: "optavia-reference",
-    title: "Condiments Quick Reference Guide",
-    description: "Comprehensive guide to healthy fats, salad dressings, condiments, and portion sizes for the 5 & 1 Plan.",
-    icon: BookOpen,
-    component: OPTAVIAReferenceGuide,
-    expandMode: "dialog" as const,
-  },
-  {
-    id: "water-calculator",
-    title: "Water Intake Calculator",
-    description: "Calculate personalized daily water intake goals for your clients based on weight and activity level.",
-    icon: Droplets,
-    component: WaterCalculator,
-  },
-  {
-    id: "exercise-guide",
-    title: "Exercise & Motion Guide",
-    description: "Weekly workout plans, OPTAVIA ACTIVE products, and motion tips for all fitness levels.",
-    icon: Dumbbell,
-    component: ExerciseGuide,
-  },
-  {
-    id: "metabolic-health",
-    title: "Metabolic Health Education",
-    description: "Key information about metabolic health, talking points, and how OPTAVIA supports wellness.",
-    icon: Activity,
-    component: MetabolicHealthInfo,
   },
 ]
 

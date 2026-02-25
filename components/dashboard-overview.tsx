@@ -68,6 +68,10 @@ const ClientTroubleshootingDialog = dynamic(
   () => import("@/components/coach-tools/client-troubleshooting-dialog").then((m) => m.ClientTroubleshootingDialog),
   { ssr: false }
 )
+const ClientSupportTool = dynamic(
+  () => import("@/components/coach-tools/client-support-tool").then((m) => m.ClientSupportTool),
+  { ssr: false }
+)
 const SocialMediaPromptGenerator = dynamic(
   () => import("@/components/social-media-prompt-generator").then((m) => m.SocialMediaPromptGenerator),
   { ssr: false }
@@ -87,36 +91,12 @@ const COACH_TOOLS: {
   component: React.ComponentType
 }[] = [
   {
-    id: "client-troubleshooting",
-    title: "Client Troubleshooting Guide",
-    description: "Identify common client challenges and get coaching responses.",
+    id: "client-support",
+    title: "Client Support Tool",
+    description: "Troubleshooting, hydration, exercise, condiments, and metabolic support in one place.",
     tags: ["client support", "coaching", "troubleshooting"],
     icon: Wrench,
-    component: ClientTroubleshootingDialog,
-  },
-  {
-    id: "water-calculator",
-    title: "Water Intake Calculator",
-    description: "Calculate recommended daily hydration targets for clients.",
-    tags: ["hydration", "calculator", "wellness"],
-    icon: Droplets,
-    component: WaterCalculator,
-  },
-  {
-    id: "exercise-guide",
-    title: "Exercise & Motion Guide",
-    description: "Movement guidance for clients at different journey stages.",
-    tags: ["exercise", "movement", "client support"],
-    icon: Dumbbell,
-    component: ExerciseGuide,
-  },
-  {
-    id: "metabolic-health",
-    title: "Metabolic Health Education",
-    description: "Educational content to explain metabolic health concepts.",
-    tags: ["metabolic health", "education", "client support"],
-    icon: Activity,
-    component: MetabolicHealthInfo,
+    component: ClientSupportTool,
   },
   {
     id: "social-media-generator",
@@ -125,14 +105,6 @@ const COACH_TOOLS: {
     tags: ["social media", "content", "business building"],
     icon: Share2,
     component: SocialMediaPromptGenerator,
-  },
-  {
-    id: "optavia-reference",
-    title: "Condiments Quick Reference Guide",
-    description: "Quick guide for condiment choices and usage.",
-    tags: ["condiments", "nutrition", "reference"],
-    icon: BookOpen,
-    component: OPTAVIAReferenceGuide,
   },
 ]
 
