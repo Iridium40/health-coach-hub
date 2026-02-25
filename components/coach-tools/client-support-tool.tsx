@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Wrench, Droplets, Dumbbell, BookOpen, Activity } from "lucide-react"
@@ -37,6 +38,14 @@ const TAB_META = {
   },
 } as const
 
+const QUICK_TAB_ITEMS: Array<{ key: keyof typeof TAB_META; short: string }> = [
+  { key: "troubleshooting", short: "Fix" },
+  { key: "water", short: "Water" },
+  { key: "exercise", short: "Motion" },
+  { key: "condiments", short: "Food" },
+  { key: "metabolic", short: "Health" },
+]
+
 function SupportSection({
   tabKey,
   children,
@@ -64,8 +73,10 @@ function SupportSection({
 }
 
 export function ClientSupportTool() {
+  const [activeTab, setActiveTab] = useState<keyof typeof TAB_META>("troubleshooting")
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-16 md:pb-0">
       <Card className="border border-gray-200 shadow-sm bg-white">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg text-optavia-dark flex items-center gap-2">
@@ -83,7 +94,7 @@ export function ClientSupportTool() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="troubleshooting" className="w-full">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as keyof typeof TAB_META)} className="w-full">
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 pb-2">
           <TabsList
             className="w-full md:grid md:grid-cols-5 h-auto bg-gray-100 p-1 border border-gray-200 rounded-lg
@@ -142,6 +153,32 @@ export function ClientSupportTool() {
           </SupportSection>
         </TabsContent>
       </Tabs>
+
+      {/* Mobile quick-jump bar for one-handed tab switching */}
+      <div className="md:hidden sticky bottom-0 z-20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border border-gray-200 rounded-lg p-1 shadow-sm">
+        <div className="grid grid-cols-5 gap-1">
+          {QUICK_TAB_ITEMS.map((item) => {
+            const Icon = TAB_META[item.key].icon
+            const isActive = activeTab === item.key
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setActiveTab(item.key)}
+                className={`min-h-10 rounded-md border text-[10px] font-medium flex flex-col items-center justify-center gap-0.5 transition-colors ${
+                  isActive
+                    ? "bg-[hsl(var(--optavia-green-light))] border-[hsl(var(--optavia-green))] text-[hsl(var(--optavia-green-dark))]"
+                    : "bg-white border-gray-200 text-gray-600"
+                }`}
+                aria-label={`Go to ${TAB_META[item.key].title}`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span>{item.short}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
