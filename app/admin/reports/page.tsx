@@ -122,16 +122,16 @@ export default function AdminReportsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header activeTab="training" />
+      <Header activeTab="dashboard" />
       <main className="flex-1 bg-white">
         <div className="container mx-auto px-4 py-8 max-w-6xl">
           <Button
             variant="ghost"
-            onClick={() => router.push("/training")}
+            onClick={() => router.push("/")}
             className="mb-6 gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Training
+            Back to Dashboard
           </Button>
 
           <h1 className="font-heading font-bold text-2xl sm:text-3xl text-optavia-dark mb-6">
