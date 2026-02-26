@@ -14,22 +14,23 @@ BEGIN
     ALTER TABLE public.profiles
     ADD CONSTRAINT profiles_coach_rank_check CHECK (
         coach_rank IN (
-            'Coach',      -- Entry-level
+            'Coach',      -- New Coach
             'SC',         -- Senior Coach
-            'MG',         -- Manager
+            'Manager',    -- Manager
             'AD',         -- Associate Director
-            'DR',         -- Director
+            'Director',   -- Director
             'ED',         -- Executive Director
+            'ND',         -- National Director
+            'GD',         -- Global Director
+            'PD',         -- Presidential Director
             'IED',        -- Integrated Executive Director
-            'FIBC',       -- Fully Integrated Business Coach
-            'IGD',        -- Integrated Global Director
-            'FIBL',       -- Fully Integrated Business Leader
             'IND',        -- Integrated National Director
+            'IGD',        -- Integrated Global Director
             'IPD'         -- Integrated Presidential Director
         )
     );
 END $$;
 
 -- Update comment for documentation
-COMMENT ON COLUMN public.profiles.coach_rank IS 'OPTAVIA Coach Rank: Coach, SC, MG, AD, DR, ED, IED, FIBC, IGD, FIBL, IND, or IPD';
+COMMENT ON COLUMN public.profiles.coach_rank IS 'OPTAVIA Coach Rank: Coach, SC, Manager, AD, Director, ED, ND, GD, PD, IED, IND, IGD, or IPD';
 

@@ -1014,12 +1014,12 @@ export default function CoachTrackerPage() {
                   {getRankTitle(selectedCoach.rank)}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  Rank {selectedCoach.rank} of 15
+                  Rank {selectedCoach.rank} of {OPTAVIA_RANKS.length}
                 </div>
                 <div className="h-2 bg-white rounded-full overflow-hidden mt-2.5">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-green-500 to-green-700 transition-all duration-400"
-                    style={{ width: `${(selectedCoach.rank / 15) * 100}%` }}
+                    style={{ width: `${(selectedCoach.rank / OPTAVIA_RANKS.length) * 100}%` }}
                   />
                 </div>
               </div>

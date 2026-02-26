@@ -11,36 +11,28 @@ export type CoachRank =
   | "AD"
   | "Director"
   | "ED"
-  | "IED"
-  | "FIBC"
-  | "RD"
-  | "IRD"
   | "ND"
-  | "IND"
   | "GD"
-  | "IGD"
-  | "FIBL"
   | "PD"
+  | "IED"
+  | "IND"
+  | "IGD"
   | "IPD"
 
 export const COACH_RANK_OPTIONS: Array<{ value: CoachRank; label: string }> = [
-  { value: "Coach", label: "Coach" },
-  { value: "SC", label: "Senior Coach (SC)" },
+  { value: "Coach", label: "New Coach" },
+  { value: "SC", label: "Senior Coach" },
   { value: "Manager", label: "Manager" },
-  { value: "AD", label: "Associate Director (AD)" },
+  { value: "AD", label: "Associate Director" },
   { value: "Director", label: "Director" },
-  { value: "ED", label: "Executive Director (ED)" },
-  { value: "IED", label: "Integrated Executive Director (IED)" },
-  { value: "FIBC", label: "Fully Integrated Business Coach (FIBC)" },
-  { value: "RD", label: "Regional Director (RD)" },
-  { value: "IRD", label: "Integrated Regional Director (IRD)" },
-  { value: "ND", label: "National Director (ND)" },
-  { value: "IND", label: "Integrated National Director (IND)" },
-  { value: "GD", label: "Global Director (GD)" },
-  { value: "IGD", label: "Integrated Global Director (IGD)" },
-  { value: "FIBL", label: "Fully Integrated Business Leader (FIBL)" },
-  { value: "PD", label: "Presidential Director (PD)" },
-  { value: "IPD", label: "Integrated Presidential Director (IPD)" },
+  { value: "ED", label: "Executive Director" },
+  { value: "ND", label: "National Director" },
+  { value: "GD", label: "Global Director" },
+  { value: "PD", label: "Presidential Director" },
+  { value: "IED", label: "Integrated Executive Director" },
+  { value: "IND", label: "Integrated National Director" },
+  { value: "IGD", label: "Integrated Global Director" },
+  { value: "IPD", label: "Integrated Presidential Director" },
 ]
 
 /**
@@ -55,5 +47,5 @@ export function getRankDisplayName(rank: CoachRank): string {
  * Check if a rank is an "Integrated" rank
  */
 export function isIntegratedRank(rank: CoachRank): boolean {
-  return ["IED", "FIBC", "IRD", "IND", "IGD", "FIBL", "IPD"].includes(rank)
+  return ["IED", "IND", "IGD", "IPD"].includes(rank)
 }
