@@ -84,12 +84,14 @@ export default function AdminReportsPage() {
         .eq("status", "active")
 
       // Get total HA scheduled (today and in the future)
+      // Exclude converted/coach prospects to match dashboard logic
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const { count: totalHAScheduled } = await supabase
         .from("prospects")
         .select("*", { count: "exact", head: true })
         .gte("ha_scheduled_at", today.toISOString())
+        .not("status", "in", '("converted","coach")')
 
       // Get HA scheduled for today only
       const tomorrow = new Date(today)
@@ -99,6 +101,7 @@ export default function AdminReportsPage() {
         .select("*", { count: "exact", head: true })
         .gte("ha_scheduled_at", today.toISOString())
         .lt("ha_scheduled_at", tomorrow.toISOString())
+        .not("status", "in", '("converted","coach")')
 
       setStats({
         totalUsers: totalUsers || 0,
