@@ -78,6 +78,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
     { id: "coach-tools" as const, label: "Post Generator", href: "/coach-tools", fullAccessOnly: true, external: false },
     { id: "external-resources" as const, label: "External Resources", href: "/external-resources", fullAccessOnly: true, external: false },
     { id: "metabolic-reset-events" as const, label: "Metabolic Reset Events", href: "/metabolic-reset-events", fullAccessOnly: false, external: false },
+    { id: "facebook-challenge-groups" as const, label: "Facebook Challenge Groups", href: "https://docs.google.com/document/d/1d8-Cz9EAhKaFDyRoJypmfroy6Cfc_T2Ci9XQZU_n_xo/edit?tab=t.0", fullAccessOnly: true, external: true },
   ]
   
   // Filter nav items based on org access
