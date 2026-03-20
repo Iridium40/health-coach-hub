@@ -24,8 +24,8 @@ interface HeaderProps {
   onAnnouncementsClick?: () => void
   onReportsClick?: () => void
   onInviteClick?: () => void
-  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "external-resources" | "coach-tools" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team"
-  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "external-resources" | "coach-tools" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team") => void
+  activeTab?: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "external-resources" | "coach-tools" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team" | "facebook-challenge-groups"
+  onTabChange?: (tab: "dashboard" | "training" | "metabolic-reset-events" | "resources" | "external-resources" | "coach-tools" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team" | "facebook-challenge-groups") => void
 }
 
 export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onReportsClick, onInviteClick, activeTab, onTabChange }: HeaderProps) {
@@ -49,7 +49,7 @@ export function Header({ onSettingsClick, onHomeClick, onAnnouncementsClick, onR
   }
 
   // Determine active tab from pathname if not provided
-  type TabType = "dashboard" | "training" | "metabolic-reset-events" | "resources" | "external-resources" | "coach-tools" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team"
+  type TabType = "dashboard" | "training" | "metabolic-reset-events" | "resources" | "external-resources" | "coach-tools" | "recipes" | "calendar" | "coaching-quicklinks" | "team-padlets" | "admin" | "my-business" | "favorites" | "notifications" | "team" | "facebook-challenge-groups"
   const getActiveTab = (): TabType => {
     if (activeTab) return activeTab
     if (pathname?.startsWith("/dashboard") || pathname === "/") return "dashboard"
