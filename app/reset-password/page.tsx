@@ -53,13 +53,12 @@ export default function ResetPasswordPage() {
       if (session) {
         setReady(true)
       } else {
-        // Give the auth state change listener a moment to fire
         setTimeout(() => {
           setReady((current) => {
             if (!current) setSessionError(true)
             return current
           })
-        }, 3000)
+        }, 5000)
       }
     }
     checkSession()
