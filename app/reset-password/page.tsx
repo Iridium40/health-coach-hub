@@ -48,26 +48,34 @@ export default function ResetPasswordPage() {
     const initSession = async () => {
       const url = new URL(window.location.href)
       const code = url.searchParams.get("code")
+      const callbackErr = url.searchParams.get("err")
       const hasHash = window.location.hash.includes("access_token") || window.location.hash.includes("type=recovery")
       const details: string[] = []
 
+      if (callbackErr) details.push(`callback: ${callbackErr}`)
+
       // 1. Try client-side PKCE code exchange (forwarded from auth callback)
       if (code) {
-        details.push("code param found")
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (!error) {
-          resolved = true
-          setReady(true)
-          url.searchParams.delete("code")
-          window.history.replaceState({}, "", url.toString())
-          return
+        details.push("code found, trying client exchange")
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          if (!error) {
+            resolved = true
+            setReady(true)
+            url.searchParams.delete("code")
+            url.searchParams.delete("err")
+            window.history.replaceState({}, "", url.toString())
+            return
+          }
+          details.push(`client exchange: ${error.message}`)
+        } catch (e) {
+          details.push(`client exchange threw: ${e instanceof Error ? e.message : "unknown"}`)
         }
-        details.push(`code exchange: ${error.message}`)
       }
 
       // 2. Check URL hash for implicit flow tokens
       if (hasHash) {
-        details.push("hash tokens found, waiting for auth listener")
+        details.push("hash tokens found")
         await new Promise(r => setTimeout(r, 2000))
         if (resolved) return
       }
@@ -80,9 +88,9 @@ export default function ResetPasswordPage() {
         return
       }
       if (!code && !hasHash) details.push("no code or hash in URL")
-      details.push("no session found")
+      details.push("no session")
 
-      // 4. Wait briefly for auth state listener, then show error
+      // 4. Wait briefly for auth state listener, then show error with re-send form
       setTimeout(() => {
         if (!resolved) {
           setDebugInfo(details.join(" → "))

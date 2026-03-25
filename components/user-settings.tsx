@@ -152,50 +152,24 @@ export function UserSettings({ onClose, embedded = false }: UserSettingsProps) {
   const handleSaveProfile = async () => {
     if (!user) return
 
-    const userRole = profile?.user_role?.toLowerCase()
-    const userIsCoach = userRole !== "admin" && userRole !== "system_admin"
+    const { error } = await updateProfile({
+      full_name: fullName,
+      phone_number: phoneNumber || null,
+      optavia_id: optaviaId || null,
+    })
 
-    // Coaches can update their name and phone; admins can update all fields
-    if (userIsCoach) {
-      const { error } = await updateProfile({
-        full_name: fullName,
-        phone_number: phoneNumber || null,
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
       })
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        })
-      } else {
-        await refreshData()
-        toast({
-          title: "Success",
-          description: "Profile updated successfully",
-        })
-      }
     } else {
-      // Admins can update all fields
-      const { error } = await updateProfile({
-        full_name: fullName,
-        phone_number: phoneNumber || null,
-        optavia_id: optaviaId || null,
+      await refreshData()
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
       })
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        })
-      } else {
-        await refreshData()
-        toast({
-          title: "Success",
-          description: "Profile updated successfully",
-        })
-      }
     }
   }
 
@@ -213,9 +187,6 @@ export function UserSettings({ onClose, embedded = false }: UserSettingsProps) {
     }
     return "U"
   }
-
-  const settingsRole = profile?.user_role?.toLowerCase()
-  const isCoach = settingsRole !== "admin" && settingsRole !== "system_admin"
 
   return (
     <div className={embedded ? "" : "container mx-auto px-4 py-8 max-w-4xl"}>
@@ -327,17 +298,8 @@ export function UserSettings({ onClose, embedded = false }: UserSettingsProps) {
                 value={optaviaId}
                 onChange={(e) => setOptaviaId(e.target.value)}
                 placeholder="https://www.optavia.com/us/en/coach/yourname"
-                disabled={isCoach}
-                readOnly={isCoach}
-                className={`${
-                  isCoach 
-                    ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-70" 
-                    : "bg-white border-gray-300"
-                } text-optavia-dark`}
+                className="bg-white border-gray-300 text-optavia-dark"
               />
-              {isCoach && (
-                <p className="text-xs text-optavia-gray">Contact an admin to update your Optavia Coach Website Link</p>
-              )}
             </div>
 
             <Button 
