@@ -29,17 +29,12 @@ export default function ResetPasswordPage() {
   const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword
   const passwordLongEnough = password.length >= 6
 
-  // Listen for the PASSWORD_RECOVERY event from Supabase
-  // This fires when the user arrives via the reset link (both PKCE and implicit flows)
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "PASSWORD_RECOVERY") {
-          // User arrived from the reset password email link - show the form
           setReady(true)
         } else if (event === "SIGNED_IN" && session) {
-          // Also handle case where session is established (PKCE flow)
-          // Check if we came from a recovery flow by checking URL hash
           if (window.location.hash.includes("type=recovery")) {
             setReady(true)
           }
@@ -47,21 +42,36 @@ export default function ResetPasswordPage() {
       }
     )
 
-    // Also check if user already has a session (e.g., from auth callback route)
-    const checkSession = async () => {
+    const initSession = async () => {
+      // If redirected here with a PKCE code, exchange it client-side
+      const url = new URL(window.location.href)
+      const code = url.searchParams.get("code")
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!error) {
+          setReady(true)
+          url.searchParams.delete("code")
+          window.history.replaceState({}, "", url.toString())
+          return
+        }
+      }
+
+      // Check for existing session (e.g., arrived via auth callback)
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         setReady(true)
-      } else {
-        setTimeout(() => {
-          setReady((current) => {
-            if (!current) setSessionError(true)
-            return current
-          })
-        }, 120000)
+        return
       }
+
+      // No code and no session — give auth state listener time, then show error
+      setTimeout(() => {
+        setReady((current) => {
+          if (!current) setSessionError(true)
+          return current
+        })
+      }, 10000)
     }
-    checkSession()
+    initSession()
 
     return () => subscription.unsubscribe()
   }, [supabase])
