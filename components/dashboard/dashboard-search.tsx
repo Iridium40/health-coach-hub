@@ -183,7 +183,7 @@ export function DashboardSearch({
         <SearchWithHistory
           value={query}
           onChange={setQuery}
-          placeholder="Search accross the entier site..."
+          placeholder="Search across the entire site..."
           suggestions={suggestions}
           storageKey="dashboard-unified-search"
         />
