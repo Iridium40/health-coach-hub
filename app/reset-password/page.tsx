@@ -58,7 +58,7 @@ export default function ResetPasswordPage() {
             if (!current) setSessionError(true)
             return current
           })
-        }, 5000)
+        }, 120000)
       }
     }
     checkSession()
