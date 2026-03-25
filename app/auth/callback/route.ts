@@ -39,9 +39,13 @@ export async function GET(request: NextRequest) {
       )
       return response
     }
+
+    // Server-side exchange failed — forward code to client for a second attempt
+    const clientUrl = new URL(next, requestUrl.origin)
+    clientUrl.searchParams.set("code", code)
+    return NextResponse.redirect(clientUrl)
   }
 
-  // If code exchange fails, redirect to login with error
   return NextResponse.redirect(
     new URL("/login?error=Verification failed. Please try again or request a new link.", requestUrl.origin)
   )

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast"
 import { createClient, resetClient } from "@/lib/supabase/client"
 import { Footer } from "@/components/footer"
-import { Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react"
+import { Eye, EyeOff, CheckCircle2, XCircle, Mail, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 export default function ResetPasswordPage() {
@@ -25,56 +25,90 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [ready, setReady] = useState(false)
   const [sessionError, setSessionError] = useState(false)
+  const [debugInfo, setDebugInfo] = useState("")
+  const [resendEmail, setResendEmail] = useState("")
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSent, setResendSent] = useState(false)
 
   const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword
   const passwordLongEnough = password.length >= 6
 
   useEffect(() => {
+    let resolved = false
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "PASSWORD_RECOVERY") {
+        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
+          resolved = true
           setReady(true)
-        } else if (event === "SIGNED_IN" && session) {
-          if (window.location.hash.includes("type=recovery")) {
-            setReady(true)
-          }
         }
       }
     )
 
     const initSession = async () => {
-      // If redirected here with a PKCE code, exchange it client-side
       const url = new URL(window.location.href)
       const code = url.searchParams.get("code")
+      const hasHash = window.location.hash.includes("access_token") || window.location.hash.includes("type=recovery")
+      const details: string[] = []
+
+      // 1. Try client-side PKCE code exchange (forwarded from auth callback)
       if (code) {
+        details.push("code param found")
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
+          resolved = true
           setReady(true)
           url.searchParams.delete("code")
           window.history.replaceState({}, "", url.toString())
           return
         }
+        details.push(`code exchange: ${error.message}`)
       }
 
-      // Check for existing session (e.g., arrived via auth callback)
+      // 2. Check URL hash for implicit flow tokens
+      if (hasHash) {
+        details.push("hash tokens found, waiting for auth listener")
+        await new Promise(r => setTimeout(r, 2000))
+        if (resolved) return
+      }
+
+      // 3. Check for existing session
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
+        resolved = true
         setReady(true)
         return
       }
+      if (!code && !hasHash) details.push("no code or hash in URL")
+      details.push("no session found")
 
-      // No code and no session — give auth state listener time, then show error
+      // 4. Wait briefly for auth state listener, then show error
       setTimeout(() => {
-        setReady((current) => {
-          if (!current) setSessionError(true)
-          return current
-        })
-      }, 10000)
+        if (!resolved) {
+          setDebugInfo(details.join(" → "))
+          setSessionError(true)
+        }
+      }, 3000)
     }
     initSession()
 
     return () => subscription.unsubscribe()
   }, [supabase])
+
+  const handleResendReset = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!resendEmail.trim()) return
+    setResendLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(resendEmail.trim(), {
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+    })
+    setResendLoading(false)
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" })
+    } else {
+      setResendSent(true)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -157,7 +191,7 @@ export default function ResetPasswordPage() {
     )
   }
 
-  // Invalid/expired link state
+  // Invalid/expired link state — show inline re-send form
   if (sessionError && !ready) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
@@ -170,28 +204,71 @@ export default function ResetPasswordPage() {
             />
           </div>
           <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 shadow-lg">
-            <CardContent className="pt-8 pb-8 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
-                <XCircle className="h-8 w-8 text-red-500" />
-              </div>
-              <h2 className="text-xl font-heading font-bold text-optavia-dark">
-                Invalid or Expired Link
-              </h2>
-              <p className="text-optavia-gray text-sm">
-                This password reset link is invalid or has expired. Please request a new one.
-              </p>
-              <div className="pt-4 space-y-2">
-                <Link href="/forgot-password">
-                  <Button className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white">
-                    Request New Link
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button variant="outline" className="w-full">
-                    Back to Sign In
-                  </Button>
-                </Link>
-              </div>
+            <CardContent className="pt-8 pb-8 space-y-4">
+              {resendSent ? (
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h2 className="text-xl font-heading font-bold text-optavia-dark">
+                    Check Your Email
+                  </h2>
+                  <p className="text-optavia-gray text-sm">
+                    We&apos;ve sent a new password reset link to <strong>{resendEmail}</strong>.
+                    Please click the link in the email to continue.
+                  </p>
+                  <p className="text-optavia-gray text-xs">
+                    Make sure to click the link in the <strong>same browser</strong> you are using now.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="text-center space-y-2">
+                    <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+                      <XCircle className="h-8 w-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-heading font-bold text-optavia-dark">
+                      Link Expired
+                    </h2>
+                    <p className="text-optavia-gray text-sm">
+                      This reset link couldn&apos;t be verified. Enter your email below to get a new one instantly.
+                    </p>
+                  </div>
+                  <form onSubmit={handleResendReset} className="space-y-3">
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        value={resendEmail}
+                        onChange={(e) => setResendEmail(e.target.value)}
+                        required
+                        disabled={resendLoading}
+                        className="bg-white border-gray-300 text-optavia-dark pl-10"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white"
+                      disabled={resendLoading || !resendEmail.trim()}
+                    >
+                      {resendLoading ? "Sending..." : "Send New Reset Link"}
+                    </Button>
+                  </form>
+                  <div className="text-center pt-1">
+                    <Link
+                      href="/login"
+                      className="text-sm text-[hsl(var(--optavia-green))] hover:underline inline-flex items-center gap-1"
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                      Back to Sign In
+                    </Link>
+                  </div>
+                </>
+              )}
+              {debugInfo && (
+                <p className="text-[10px] text-gray-300 text-center mt-4 break-all">{debugInfo}</p>
+              )}
             </CardContent>
           </Card>
         </div>
