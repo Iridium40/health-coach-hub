@@ -2,6 +2,15 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
+  // Redirect non-www to www so cookies stay on a single domain
+  const host = request.headers.get("host") || ""
+  if (host === "coachingamplifier.com") {
+    const url = request.nextUrl.clone()
+    url.host = "www.coachingamplifier.com"
+    url.port = ""
+    return NextResponse.redirect(url, 301)
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
