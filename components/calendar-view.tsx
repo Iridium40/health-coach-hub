@@ -7,8 +7,15 @@ import { Badge } from "@/components/ui/badge"
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   Video, Clock, Users, UserCircle, ExternalLink, Copy, Check,
-  Grid3X3, List, Share2, MapPin
+  Grid3X3, List, Share2, MapPin, CalendarDays
 } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
@@ -17,7 +24,7 @@ import { AddToCalendar } from "@/components/add-to-calendar"
 import { expandRecurringEvents, type ExpandedZoomCall } from "@/lib/expand-recurring-events"
 import type { ZoomCall } from "@/lib/types"
 
-type ViewMode = "month" | "week"
+type ViewMode = "month" | "week" | "today"
 type EventTypeFilter = "all" | "meetings" | "events"
 
 export function CalendarView() {
@@ -26,7 +33,7 @@ export function CalendarView() {
   const isMobile = useIsMobile()
   const [expandedCalls, setExpandedCalls] = useState<ExpandedZoomCall[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>("week") // Default to week for better mobile UX
+  const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [currentDate, setCurrentDate] = useState(new Date())
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [sharedId, setSharedId] = useState<string | null>(null)
@@ -47,7 +54,11 @@ export function CalendarView() {
     const start = new Date(currentDate)
     const end = new Date(currentDate)
 
-    if (viewMode === "week") {
+    if (viewMode === "today") {
+      // Just today
+      start.setHours(0, 0, 0, 0)
+      end.setHours(23, 59, 59, 999)
+    } else if (viewMode === "week") {
       // 1 week back, 3 weeks forward
       start.setDate(start.getDate() - 7)
       end.setDate(end.getDate() + 21)
@@ -192,8 +203,11 @@ export function CalendarView() {
     const newDate = new Date(currentDate)
     if (viewMode === "month") {
       newDate.setMonth(newDate.getMonth() - 1)
-    } else {
+    } else if (viewMode === "week") {
       newDate.setDate(newDate.getDate() - 7)
+    } else {
+      // Today view - go back one day
+      newDate.setDate(newDate.getDate() - 1)
     }
     setCurrentDate(newDate)
   }
@@ -202,8 +216,11 @@ export function CalendarView() {
     const newDate = new Date(currentDate)
     if (viewMode === "month") {
       newDate.setMonth(newDate.getMonth() + 1)
-    } else {
+    } else if (viewMode === "week") {
       newDate.setDate(newDate.getDate() + 7)
+    } else {
+      // Today view - go forward one day
+      newDate.setDate(newDate.getDate() + 1)
     }
     setCurrentDate(newDate)
   }
@@ -390,32 +407,79 @@ export function CalendarView() {
             </Button>
           </div>
           
-          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+          {/* Desktop: Button group */}
+          <div className="hidden sm:flex rounded-lg border border-gray-300 overflow-hidden">
             <Button
               variant={viewMode === "month" ? "default" : "ghost"}
               size="sm"
               onClick={() => setViewMode("month")}
-              className={`rounded-none text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3 ${viewMode === "month" ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" : ""}`}
+              className={`rounded-none text-sm h-9 px-3 ${viewMode === "month" ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" : ""}`}
             >
-              <Grid3X3 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Month</span>
+              <Grid3X3 className="h-4 w-4 mr-1" />
+              Month
             </Button>
             <Button
               variant={viewMode === "week" ? "default" : "ghost"}
               size="sm"
               onClick={() => setViewMode("week")}
-              className={`rounded-none text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3 ${viewMode === "week" ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" : ""}`}
+              className={`rounded-none text-sm h-9 px-3 ${viewMode === "week" ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" : ""}`}
             >
-              <List className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Week</span>
+              <List className="h-4 w-4 mr-1" />
+              Week
             </Button>
+            <Button
+              variant={viewMode === "today" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => { setViewMode("today"); setCurrentDate(new Date()) }}
+              className={`rounded-none text-sm h-9 px-3 ${viewMode === "today" ? "bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))]" : ""}`}
+            >
+              <CalendarDays className="h-4 w-4 mr-1" />
+              Today
+            </Button>
+          </div>
+
+          {/* Mobile: Dropdown selector */}
+          <div className="sm:hidden">
+            <Select 
+              value={viewMode} 
+              onValueChange={(value: ViewMode) => {
+                setViewMode(value)
+                if (value === "today") setCurrentDate(new Date())
+              }}
+            >
+              <SelectTrigger size="sm" className="h-8 min-w-[90px]">
+                <SelectValue placeholder="View" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">
+                  <div className="flex items-center gap-2">
+                    <Grid3X3 className="h-3.5 w-3.5" />
+                    Month
+                  </div>
+                </SelectItem>
+                <SelectItem value="week">
+                  <div className="flex items-center gap-2">
+                    <List className="h-3.5 w-3.5" />
+                    Week
+                  </div>
+                </SelectItem>
+                <SelectItem value="today">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Today
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         
         <h2 className="font-heading font-bold text-base sm:text-xl text-optavia-dark text-center sm:text-left">
           {viewMode === "month" 
             ? currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
-            : `Week of ${getWeekDays[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+            : viewMode === "week"
+            ? `Week of ${getWeekDays[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+            : currentDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
           }
         </h2>
       </div>
@@ -648,6 +712,128 @@ export function CalendarView() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Today View - Single day with detailed event list */}
+      {viewMode === "today" && (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {/* Today Header */}
+          <div className="bg-[hsl(var(--optavia-green))] text-white py-4 px-4 text-center">
+            <div className="text-sm font-medium uppercase tracking-wide">
+              {currentDate.toLocaleDateString(undefined, { weekday: 'long' })}
+            </div>
+            <div className="text-3xl font-bold mt-1">
+              {currentDate.getDate()}
+            </div>
+            <div className="text-sm opacity-90 mt-1">
+              {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+            </div>
+            {isToday(currentDate) && (
+              <Badge className="bg-white/20 text-white text-xs mt-2">Today</Badge>
+            )}
+          </div>
+
+          {/* Events List */}
+          <div className="p-4">
+            {(() => {
+              const todayEvents = getEventsForDate(currentDate)
+              if (todayEvents.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-500">
+                    <CalendarIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No events scheduled for this day</p>
+                  </div>
+                )
+              }
+              return (
+                <div className="space-y-3">
+                  {todayEvents.map((event, idx) => (
+                    <button
+                      key={`${event.id}-${idx}`}
+                      onClick={() => setSelectedEvent(event)}
+                      className={`w-full text-left p-4 rounded-lg border transition-shadow hover:shadow-md ${
+                        event.status === "live" 
+                          ? "border-red-300 bg-red-50 ring-2 ring-red-200" 
+                          : event.call_type === "coach_only"
+                          ? "border-purple-200 bg-purple-50 hover:bg-purple-100"
+                          : "border-teal-200 bg-teal-50 hover:bg-teal-100"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          {/* Time */}
+                          <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-1">
+                            <Clock className="h-4 w-4" />
+                            {isAllDayEvent(event) ? "All day" : formatTime(event.occurrence_date, event.timezone, event.start_time, event.end_time)}
+                            {event.duration_minutes && !isAllDayEvent(event) && (
+                              <span className="text-xs text-gray-400">({event.duration_minutes} min)</span>
+                            )}
+                          </div>
+                          
+                          {/* Title */}
+                          <div className="text-base font-semibold text-gray-900 mb-2">
+                            {event.title}
+                          </div>
+
+                          {/* Description preview */}
+                          {event.description && (
+                            <p className="text-sm text-gray-500 line-clamp-2 mb-2">
+                              {event.description}
+                            </p>
+                          )}
+                          
+                          {/* Badges */}
+                          <div className="flex flex-wrap gap-2">
+                            {event.status === "live" && (
+                              <Badge className="bg-red-500 text-xs animate-pulse">
+                                LIVE NOW
+                              </Badge>
+                            )}
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${
+                                event.call_type === "coach_only" 
+                                  ? "bg-purple-100 text-purple-700" 
+                                  : "bg-teal-100 text-teal-700"
+                              }`}
+                            >
+                              {event.call_type === "coach_only" ? (
+                                <><UserCircle className="h-3 w-3 mr-1" />Coach Only</>
+                              ) : (
+                                <><Users className="h-3 w-3 mr-1" />With Clients</>
+                              )}
+                            </Badge>
+                            {event.zoom_link && (
+                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                                <Video className="h-3 w-3 mr-1" />
+                                Zoom
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Quick Join for live events */}
+                        {event.status === "live" && event.zoom_link && (
+                          <Button
+                            size="sm"
+                            className="bg-red-500 hover:bg-red-600 text-white flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              window.open(event.zoom_link!, '_blank')
+                            }}
+                          >
+                            <Video className="h-4 w-4 mr-1" />
+                            Join
+                          </Button>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}
