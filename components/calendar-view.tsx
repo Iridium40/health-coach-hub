@@ -733,7 +733,7 @@ export function CalendarView() {
                             )}
                             
                             {/* Action Buttons */}
-                            <div className="flex flex-wrap gap-1 mt-2">
+                            <div className="space-y-1 mt-2">
                               {/* Join Button */}
                               {event.zoom_link && event.status !== "completed" && (
                                 <a
@@ -741,10 +741,12 @@ export function CalendarView() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
-                                  className={`text-[10px] font-medium px-2 py-1 rounded transition-colors ${
+                                  className={`block w-full text-center text-[10px] font-medium px-2 py-1 rounded border transition-colors ${
                                     event.status === "live"
-                                      ? "bg-red-600 text-white animate-pulse"
-                                      : "bg-[#722F37] text-white hover:bg-[#5a252c]"
+                                      ? "bg-red-600 border-red-600 text-white animate-pulse"
+                                      : event.call_type === "coach_only"
+                                      ? "border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+                                      : "border-teal-600 text-teal-600 hover:bg-teal-600 hover:text-white"
                                   }`}
                                 >
                                   {event.status === "live" ? "LIVE" : "Join"}
@@ -758,7 +760,11 @@ export function CalendarView() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
-                                  className="text-[10px] font-medium text-white bg-[#722F37] hover:bg-[#5a252c] px-2 py-1 rounded transition-colors"
+                                  className={`block w-full text-center text-[10px] font-medium px-2 py-1 rounded border transition-colors ${
+                                    event.call_type === "coach_only"
+                                      ? "border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+                                      : "border-teal-600 text-teal-600 hover:bg-teal-600 hover:text-white"
+                                  }`}
                                 >
                                   Recordings
                                 </a>
@@ -771,10 +777,10 @@ export function CalendarView() {
                                     e.stopPropagation()
                                     handleShareWithClients(event)
                                   }}
-                                  className={`text-[10px] font-medium px-2 py-1 rounded transition-colors ${
+                                  className={`block w-full text-center text-[10px] font-medium px-2 py-1 rounded border transition-colors ${
                                     sharedId === event.id
-                                      ? "bg-teal-100 text-teal-700"
-                                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                      ? "border-green-600 text-green-600 bg-green-50"
+                                      : "border-teal-600 text-teal-600 hover:bg-teal-600 hover:text-white"
                                   }`}
                                 >
                                   {sharedId === event.id ? "Copied!" : "Share"}
@@ -825,55 +831,55 @@ export function CalendarView() {
                 )
               }
               return (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {todayEvents.map((event, idx) => (
                     <div
                       key={`${event.id}-${idx}`}
-                      className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                      className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
                     >
                       <div className="flex flex-col sm:flex-row">
-                        {/* Event Image - Left side on desktop, top on mobile */}
+                        {/* Event Image - Left side, fixed width */}
                         {event.image_url && (
-                          <div className="sm:w-64 sm:flex-shrink-0">
+                          <div className="sm:w-56 sm:flex-shrink-0 bg-gray-100">
                             <img 
                               src={event.image_url} 
                               alt={event.title} 
-                              className="w-full h-48 sm:h-full object-cover cursor-pointer"
+                              className="w-full h-56 sm:h-full object-contain cursor-pointer"
                               onClick={() => setSelectedEvent(event)}
                             />
                           </div>
                         )}
                         
                         {/* Event Details - Right side */}
-                        <div className="flex-1 p-4 sm:p-5">
+                        <div className="flex-1 p-5 sm:p-6">
                           {/* Title */}
                           <h3 
-                            className={`text-xl sm:text-2xl font-bold mb-3 cursor-pointer hover:underline ${
-                              event.call_type === "coach_only" ? "text-purple-800" : "text-teal-700"
+                            className={`text-xl sm:text-2xl font-bold mb-4 cursor-pointer hover:underline ${
+                              event.call_type === "coach_only" ? "text-purple-700" : "text-teal-700"
                             }`}
                             onClick={() => setSelectedEvent(event)}
                           >
                             {event.title}
                           </h3>
                           
-                          {/* Event Details Grid */}
-                          <div className="space-y-2 text-sm text-gray-700">
+                          {/* Event Details List */}
+                          <div className="space-y-1 text-sm text-gray-700 mb-5">
                             {/* Time */}
-                            <div className="flex flex-wrap">
-                              <span className="font-semibold text-gray-500 mr-2">Time:</span>
+                            <div>
+                              <span className="font-semibold text-gray-500">Time: </span>
                               <span>{isAllDayEvent(event) ? "All day" : formatAllTimezones(event.occurrence_date)}</span>
                             </div>
                             
                             {/* Call Type */}
                             <div>
-                              <span className="font-semibold text-gray-500 mr-2">Call Type:</span>
+                              <span className="font-semibold text-gray-500">Call Type: </span>
                               <span>{event.call_type === "coach_only" ? "Coach" : "With Clients"}</span>
                             </div>
                             
                             {/* Frequency - for recurring events */}
                             {event.is_recurring && event.recurrence_pattern && (
                               <div>
-                                <span className="font-semibold text-gray-500 mr-2">Frequency:</span>
+                                <span className="font-semibold text-gray-500">Frequency: </span>
                                 <span>{getRecurrenceLabel(event.recurrence_pattern)}</span>
                               </div>
                             )}
@@ -881,32 +887,34 @@ export function CalendarView() {
                             {/* Zoom Room */}
                             {event.zoom_meeting_id && (
                               <div>
-                                <span className="font-semibold text-gray-500 mr-2">Zoom Room:</span>
-                                <span className="font-mono">{event.zoom_meeting_id}</span>
+                                <span className="font-semibold text-gray-500">Zoom Room: </span>
+                                <span>{event.zoom_meeting_id}</span>
                               </div>
                             )}
                             
                             {/* Password */}
                             {event.zoom_passcode && (
                               <div>
-                                <span className="font-semibold text-gray-500 mr-2">PW:</span>
-                                <span className="font-mono">{event.zoom_passcode}</span>
+                                <span className="font-semibold text-gray-500">PW: </span>
+                                <span className="uppercase">{event.zoom_passcode}</span>
                               </div>
                             )}
                           </div>
                           
-                          {/* Action Buttons */}
-                          <div className="flex flex-wrap gap-2 mt-4">
+                          {/* Action Buttons - Stacked vertically, outline style */}
+                          <div className="space-y-2 max-w-xs">
                             {/* Click to Join - for upcoming/live events with zoom link */}
                             {event.zoom_link && event.status !== "completed" && (
                               <a
                                 href={event.zoom_link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-colors ${
+                                className={`block w-full text-center px-4 py-2 rounded-md font-medium border-2 transition-colors ${
                                   event.status === "live"
-                                    ? "bg-red-600 hover:bg-red-700 text-white animate-pulse"
-                                    : "bg-[#722F37] hover:bg-[#5a252c] text-white"
+                                    ? "bg-red-600 border-red-600 text-white animate-pulse"
+                                    : event.call_type === "coach_only"
+                                    ? "border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+                                    : "border-teal-600 text-teal-600 hover:bg-teal-600 hover:text-white"
                                 }`}
                               >
                                 {event.status === "live" ? "Join Now - LIVE" : "Click to Join"}
@@ -919,7 +927,11 @@ export function CalendarView() {
                                 href="https://www.coachingamplifier.com/viewer?url=https%3A%2F%2Fdocs.google.com%2Fdocument%2Fd%2F1ad-MdPRzyrKflK2Y_mHmTBjU0lCVJydJJRsufFIDVko%2Fedit%3Ftab%3Dt.0&title=Trainings%20%26%20Resources"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center px-4 py-2 rounded-md font-medium bg-[#722F37] hover:bg-[#5a252c] text-white transition-colors"
+                                className={`block w-full text-center px-4 py-2 rounded-md font-medium border-2 transition-colors ${
+                                  event.call_type === "coach_only"
+                                    ? "border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+                                    : "border-teal-600 text-teal-600 hover:bg-teal-600 hover:text-white"
+                                }`}
                               >
                                 Recordings
                               </a>
@@ -927,22 +939,16 @@ export function CalendarView() {
                             
                             {/* Share Button - for with_clients events */}
                             {event.call_type === "with_clients" && event.status !== "completed" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
+                              <button
                                 onClick={() => handleShareWithClients(event)}
-                                className={`${
+                                className={`block w-full text-center px-4 py-2 rounded-md font-medium border-2 transition-colors ${
                                   sharedId === event.id 
-                                    ? "bg-teal-50 border-teal-300 text-teal-700" 
-                                    : "border-teal-200 text-teal-600 hover:bg-teal-50"
+                                    ? "border-green-600 text-green-600 bg-green-50" 
+                                    : "border-teal-600 text-teal-600 hover:bg-teal-600 hover:text-white"
                                 }`}
                               >
-                                {sharedId === event.id ? (
-                                  <><Check className="h-4 w-4 mr-1" />Copied!</>
-                                ) : (
-                                  <><Share2 className="h-4 w-4 mr-1" />Share</>
-                                )}
-                              </Button>
+                                {sharedId === event.id ? "Copied! Share with clients" : "Share with Clients"}
+                              </button>
                             )}
                           </div>
                         </div>
