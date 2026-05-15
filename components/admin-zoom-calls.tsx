@@ -248,7 +248,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     }
   }
 
-  // Handle image upload for events
+  // Handle image upload for events (uses service role via API)
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -276,25 +276,22 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setUploadingImage(true)
 
     try {
-      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg"
-      const fileName = `event-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      // Upload via API route (uses service role)
+      const formData = new FormData()
+      formData.append("file", file)
 
-      // Upload to event-images bucket
-      const { error: uploadError } = await supabase.storage
-        .from("event-images")
-        .upload(fileName, file, {
-          cacheControl: "3600",
-          upsert: false,
-        })
+      const response = await fetch("/api/upload-event-image", {
+        method: "POST",
+        body: formData,
+      })
 
-      if (uploadError) throw uploadError
+      const data = await response.json()
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("event-images")
-        .getPublicUrl(fileName)
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to upload image")
+      }
 
-      setImageUrl(publicUrl)
+      setImageUrl(data.url)
 
       toast({
         title: "Success",
@@ -315,17 +312,21 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     }
   }
 
-  // Remove uploaded image
+  // Remove uploaded image (uses service role via API)
   const handleRemoveImage = async () => {
     if (!imageUrl) return
 
     try {
-      // Extract filename from URL
-      const urlParts = imageUrl.split("/")
-      const fileName = urlParts[urlParts.length - 1]
-      if (fileName) {
-        await supabase.storage.from("event-images").remove([fileName])
+      // Delete via API route (uses service role)
+      const response = await fetch(`/api/upload-event-image?url=${encodeURIComponent(imageUrl)}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        console.error("Error removing image:", data.error)
       }
+
       setImageUrl("")
       toast({
         title: "Success",
