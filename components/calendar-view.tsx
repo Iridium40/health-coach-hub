@@ -79,7 +79,7 @@ export function CalendarView() {
 
     const { data, error } = await supabase
       .from("zoom_calls")
-      .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,recurrence_end_date,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_by,created_at,updated_at,event_type,start_time,end_time,end_date")
+      .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,recurrence_end_date,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_by,created_at,updated_at,event_type,start_time,end_time,end_date,image_url")
       .in("status", ["upcoming", "live", "completed"])
       // Include recurring templates regardless of scheduled_at, and non-recurring calls inside the window.
       .or(`is_recurring.eq.true,and(scheduled_at.gte.${startIso},scheduled_at.lte.${endIso})`)
@@ -112,6 +112,36 @@ export function CalendarView() {
       'America/Los_Angeles': 'PT',
     }
     return abbrevMap[timezone] || timezone
+  }
+
+  // Format time in all US timezones for display
+  const formatAllTimezones = (dateString: string): string => {
+    const date = new Date(dateString)
+    const timezones = [
+      { tz: 'America/New_York', abbrev: 'ET' },
+      { tz: 'America/Chicago', abbrev: 'CT' },
+      { tz: 'America/Denver', abbrev: 'MT' },
+      { tz: 'America/Los_Angeles', abbrev: 'PT' },
+    ]
+    return timezones.map(({ tz, abbrev }) => {
+      const time = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: tz
+      })
+      return `${time} ${abbrev}`
+    }).join(' / ')
+  }
+
+  // Get recurrence frequency label
+  const getRecurrenceLabel = (pattern: string | null): string => {
+    if (!pattern) return ''
+    switch (pattern) {
+      case 'weekly': return 'Weekly'
+      case 'biweekly': return 'Bi-weekly'
+      case 'monthly': return 'Monthly'
+      default: return pattern
+    }
   }
 
   // Format time with timezone awareness
@@ -656,20 +686,16 @@ export function CalendarView() {
                   ) : (
                     <div className="space-y-2">
                       {events.map((event, eventIdx) => (
-                        <button
+                        <div
                           key={`${event.id}-${eventIdx}`}
-                          onClick={() => setSelectedEvent(event)}
-                          className={`w-full text-left rounded-lg border transition-shadow hover:shadow-md cursor-pointer overflow-hidden ${
-                            event.status === "live" 
-                              ? "border-red-300 bg-red-50 ring-2 ring-red-200" 
-                              : event.call_type === "coach_only"
-                              ? "border-purple-200 bg-purple-50 hover:bg-purple-100"
-                              : "border-teal-200 bg-teal-50 hover:bg-teal-100"
-                          }`}
+                          className="w-full rounded-lg border bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                         >
                           {/* Event Image Thumbnail */}
                           {event.image_url && (
-                            <div className="w-full h-16">
+                            <div 
+                              className="w-full h-20 cursor-pointer"
+                              onClick={() => setSelectedEvent(event)}
+                            >
                               <img 
                                 src={event.image_url} 
                                 alt={event.title} 
@@ -678,60 +704,85 @@ export function CalendarView() {
                             </div>
                           )}
                           <div className="p-2">
-                          {/* Time */}
-                          <div className="flex items-center gap-1 text-xs font-medium text-gray-600 mb-1">
-                            <Clock className="h-3 w-3" />
-                            {isAllDayEvent(event) ? "All day" : formatTime(event.occurrence_date, event.timezone, event.start_time, event.end_time)}
-                          </div>
-                          
-                          {/* Title */}
-                          <div className="text-sm font-semibold text-gray-900 truncate mb-1">
-                            {event.title}
-                          </div>
-                          
-                          {/* Badges */}
-                          <div className="flex flex-wrap gap-1">
-                            {event.status === "live" && (
-                              <Badge className="bg-red-500 text-[10px] px-1.5 py-0 animate-pulse">
-                                LIVE
-                              </Badge>
-                            )}
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-[10px] px-1.5 py-0 ${
-                                event.call_type === "coach_only" 
-                                  ? "bg-purple-100 text-purple-700" 
-                                  : "bg-teal-100 text-teal-700"
+                            {/* Title */}
+                            <div 
+                              className={`text-sm font-bold mb-1 cursor-pointer hover:underline truncate ${
+                                event.call_type === "coach_only" ? "text-purple-800" : "text-teal-700"
                               }`}
+                              onClick={() => setSelectedEvent(event)}
                             >
-                              {event.call_type === "coach_only" ? (
-                                <><UserCircle className="h-2.5 w-2.5 mr-0.5" />Coach</>
-                              ) : (
-                                <><Users className="h-2.5 w-2.5 mr-0.5" />Clients</>
+                              {event.title}
+                            </div>
+                            
+                            {/* Time */}
+                            <div className="text-[10px] text-gray-600 mb-1">
+                              {isAllDayEvent(event) ? "All day" : formatTime(event.occurrence_date, event.timezone, event.start_time, event.end_time)}
+                            </div>
+                            
+                            {/* Call Type Badge */}
+                            <div className="text-[10px] text-gray-500 mb-1">
+                              {event.call_type === "coach_only" ? "Coach" : "With Clients"}
+                              {event.is_recurring && ` • ${getRecurrenceLabel(event.recurrence_pattern)}`}
+                            </div>
+                            
+                            {/* Zoom Info - compact */}
+                            {event.zoom_meeting_id && (
+                              <div className="text-[10px] text-gray-500">
+                                Zoom: {event.zoom_meeting_id}
+                              </div>
+                            )}
+                            
+                            {/* Action Buttons */}
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {/* Join Button */}
+                              {event.zoom_link && event.status !== "completed" && (
+                                <a
+                                  href={event.zoom_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`text-[10px] font-medium px-2 py-1 rounded transition-colors ${
+                                    event.status === "live"
+                                      ? "bg-red-600 text-white animate-pulse"
+                                      : "bg-[#722F37] text-white hover:bg-[#5a252c]"
+                                  }`}
+                                >
+                                  {event.status === "live" ? "LIVE" : "Join"}
+                                </a>
                               )}
-                            </Badge>
+                              
+                              {/* Recordings Button */}
+                              {event.status === "completed" && (
+                                <a
+                                  href="https://www.coachingamplifier.com/viewer?url=https%3A%2F%2Fdocs.google.com%2Fdocument%2Fd%2F1ad-MdPRzyrKflK2Y_mHmTBjU0lCVJydJJRsufFIDVko%2Fedit%3Ftab%3Dt.0&title=Trainings%20%26%20Resources"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[10px] font-medium text-white bg-[#722F37] hover:bg-[#5a252c] px-2 py-1 rounded transition-colors"
+                                >
+                                  Recordings
+                                </a>
+                              )}
+                              
+                              {/* Share Button - for with_clients events */}
+                              {event.call_type === "with_clients" && event.status !== "completed" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleShareWithClients(event)
+                                  }}
+                                  className={`text-[10px] font-medium px-2 py-1 rounded transition-colors ${
+                                    sharedId === event.id
+                                      ? "bg-teal-100 text-teal-700"
+                                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                  }`}
+                                >
+                                  {sharedId === event.id ? "Copied!" : "Share"}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          
-                          {/* Duration */}
-                          <div className="text-[10px] text-gray-500 mt-1">
-                            {event.duration_minutes} min
-                          </div>
-                          
-                          {/* Recordings Button - show for completed events */}
-                          {event.status === "completed" && (
-                            <a
-                              href="https://www.coachingamplifier.com/viewer?url=https%3A%2F%2Fdocs.google.com%2Fdocument%2Fd%2F1ad-MdPRzyrKflK2Y_mHmTBjU0lCVJydJJRsufFIDVko%2Fedit%3Ftab%3Dt.0&title=Trainings%20%26%20Resources"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-green-700 bg-green-100 hover:bg-green-200 px-2 py-1 rounded transition-colors"
-                            >
-                              <Video className="h-3 w-3" />
-                              Recordings
-                            </a>
-                          )}
-                          </div>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -774,114 +825,129 @@ export function CalendarView() {
                 )
               }
               return (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {todayEvents.map((event, idx) => (
-                    <button
+                    <div
                       key={`${event.id}-${idx}`}
-                      onClick={() => setSelectedEvent(event)}
-                      className={`w-full text-left rounded-lg border transition-shadow hover:shadow-md overflow-hidden ${
-                        event.status === "live" 
-                          ? "border-red-300 bg-red-50 ring-2 ring-red-200" 
-                          : event.call_type === "coach_only"
-                          ? "border-purple-200 bg-purple-50 hover:bg-purple-100"
-                          : "border-teal-200 bg-teal-50 hover:bg-teal-100"
-                      }`}
+                      className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                     >
-                      {/* Event Image Thumbnail */}
-                      {event.image_url && (
-                        <div className="w-full h-24 sm:h-32">
-                          <img 
-                            src={event.image_url} 
-                            alt={event.title} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className={`p-4 ${event.image_url ? 'pt-3' : ''}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          {/* Time */}
-                          <div className="flex items-center gap-2 text-sm font-medium text-gray-600 mb-1">
-                            <Clock className="h-4 w-4" />
-                            {isAllDayEvent(event) ? "All day" : formatTime(event.occurrence_date, event.timezone, event.start_time, event.end_time)}
-                            {event.duration_minutes && !isAllDayEvent(event) && (
-                              <span className="text-xs text-gray-400">({event.duration_minutes} min)</span>
-                            )}
+                      <div className="flex flex-col sm:flex-row">
+                        {/* Event Image - Left side on desktop, top on mobile */}
+                        {event.image_url && (
+                          <div className="sm:w-64 sm:flex-shrink-0">
+                            <img 
+                              src={event.image_url} 
+                              alt={event.title} 
+                              className="w-full h-48 sm:h-full object-cover cursor-pointer"
+                              onClick={() => setSelectedEvent(event)}
+                            />
                           </div>
-                          
-                          {/* Title */}
-                          <div className="text-base font-semibold text-gray-900 mb-2">
-                            {event.title}
-                          </div>
-
-                          {/* Description preview */}
-                          {event.description && (
-                            <p className="text-sm text-gray-500 line-clamp-2 mb-2">
-                              {event.description}
-                            </p>
-                          )}
-                          
-                          {/* Badges */}
-                          <div className="flex flex-wrap gap-2">
-                            {event.status === "live" && (
-                              <Badge className="bg-red-500 text-xs animate-pulse">
-                                LIVE NOW
-                              </Badge>
-                            )}
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${
-                                event.call_type === "coach_only" 
-                                  ? "bg-purple-100 text-purple-700" 
-                                  : "bg-teal-100 text-teal-700"
-                              }`}
-                            >
-                              {event.call_type === "coach_only" ? (
-                                <><UserCircle className="h-3 w-3 mr-1" />Coach Only</>
-                              ) : (
-                                <><Users className="h-3 w-3 mr-1" />With Clients</>
-                              )}
-                            </Badge>
-                            {event.zoom_link && (
-                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
-                                <Video className="h-3 w-3 mr-1" />
-                                Zoom
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Quick Join for live events */}
-                        {event.status === "live" && event.zoom_link && (
-                          <Button
-                            size="sm"
-                            className="bg-red-500 hover:bg-red-600 text-white flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              window.open(event.zoom_link!, '_blank')
-                            }}
-                          >
-                            <Video className="h-4 w-4 mr-1" />
-                            Join
-                          </Button>
                         )}
                         
-                        {/* Recordings Button - show for completed events */}
-                        {event.status === "completed" && (
-                          <a
-                            href="https://www.coachingamplifier.com/viewer?url=https%3A%2F%2Fdocs.google.com%2Fdocument%2Fd%2F1ad-MdPRzyrKflK2Y_mHmTBjU0lCVJydJJRsufFIDVko%2Fedit%3Ftab%3Dt.0&title=Trainings%20%26%20Resources"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-md transition-colors flex-shrink-0"
+                        {/* Event Details - Right side */}
+                        <div className="flex-1 p-4 sm:p-5">
+                          {/* Title */}
+                          <h3 
+                            className={`text-xl sm:text-2xl font-bold mb-3 cursor-pointer hover:underline ${
+                              event.call_type === "coach_only" ? "text-purple-800" : "text-teal-700"
+                            }`}
+                            onClick={() => setSelectedEvent(event)}
                           >
-                            <Video className="h-4 w-4" />
-                            Recordings
-                          </a>
-                        )}
+                            {event.title}
+                          </h3>
+                          
+                          {/* Event Details Grid */}
+                          <div className="space-y-2 text-sm text-gray-700">
+                            {/* Time */}
+                            <div className="flex flex-wrap">
+                              <span className="font-semibold text-gray-500 mr-2">Time:</span>
+                              <span>{isAllDayEvent(event) ? "All day" : formatAllTimezones(event.occurrence_date)}</span>
+                            </div>
+                            
+                            {/* Call Type */}
+                            <div>
+                              <span className="font-semibold text-gray-500 mr-2">Call Type:</span>
+                              <span>{event.call_type === "coach_only" ? "Coach" : "With Clients"}</span>
+                            </div>
+                            
+                            {/* Frequency - for recurring events */}
+                            {event.is_recurring && event.recurrence_pattern && (
+                              <div>
+                                <span className="font-semibold text-gray-500 mr-2">Frequency:</span>
+                                <span>{getRecurrenceLabel(event.recurrence_pattern)}</span>
+                              </div>
+                            )}
+                            
+                            {/* Zoom Room */}
+                            {event.zoom_meeting_id && (
+                              <div>
+                                <span className="font-semibold text-gray-500 mr-2">Zoom Room:</span>
+                                <span className="font-mono">{event.zoom_meeting_id}</span>
+                              </div>
+                            )}
+                            
+                            {/* Password */}
+                            {event.zoom_passcode && (
+                              <div>
+                                <span className="font-semibold text-gray-500 mr-2">PW:</span>
+                                <span className="font-mono">{event.zoom_passcode}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {/* Click to Join - for upcoming/live events with zoom link */}
+                            {event.zoom_link && event.status !== "completed" && (
+                              <a
+                                href={event.zoom_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-colors ${
+                                  event.status === "live"
+                                    ? "bg-red-600 hover:bg-red-700 text-white animate-pulse"
+                                    : "bg-[#722F37] hover:bg-[#5a252c] text-white"
+                                }`}
+                              >
+                                {event.status === "live" ? "Join Now - LIVE" : "Click to Join"}
+                              </a>
+                            )}
+                            
+                            {/* Recordings Button - for completed events */}
+                            {event.status === "completed" && (
+                              <a
+                                href="https://www.coachingamplifier.com/viewer?url=https%3A%2F%2Fdocs.google.com%2Fdocument%2Fd%2F1ad-MdPRzyrKflK2Y_mHmTBjU0lCVJydJJRsufFIDVko%2Fedit%3Ftab%3Dt.0&title=Trainings%20%26%20Resources"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center px-4 py-2 rounded-md font-medium bg-[#722F37] hover:bg-[#5a252c] text-white transition-colors"
+                              >
+                                Recordings
+                              </a>
+                            )}
+                            
+                            {/* Share Button - for with_clients events */}
+                            {event.call_type === "with_clients" && event.status !== "completed" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleShareWithClients(event)}
+                                className={`${
+                                  sharedId === event.id 
+                                    ? "bg-teal-50 border-teal-300 text-teal-700" 
+                                    : "border-teal-200 text-teal-600 hover:bg-teal-50"
+                                }`}
+                              >
+                                {sharedId === event.id ? (
+                                  <><Check className="h-4 w-4 mr-1" />Copied!</>
+                                ) : (
+                                  <><Share2 className="h-4 w-4 mr-1" />Share</>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )
