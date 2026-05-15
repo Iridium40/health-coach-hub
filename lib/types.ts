@@ -75,6 +75,7 @@ export interface ZoomCall {
   end_time?: string | null    // Optional time for events (e.g., "17:00")
   location?: string | null
   is_virtual?: boolean
+  image_url?: string | null   // Event image/graphic URL
 }
 
 export interface ExternalResourceFeatures {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,7 +16,7 @@ import { sendBatchMeetingEmail } from "@/lib/email"
 import { 
   X, Plus, Edit, Trash2, Search, Video, Calendar, Clock, Users, 
   Link as LinkIcon, PlayCircle, Copy, Check, ExternalLink, Mail, Loader2,
-  MapPin, Globe
+  MapPin, Globe, ImageIcon, Upload
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -97,6 +97,9 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
   const [location, setLocation] = useState("")
   const [isVirtual, setIsVirtual] = useState(true)
   const [timezone, setTimezone] = useState("America/New_York") // Default to Eastern
+  const [imageUrl, setImageUrl] = useState("")
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   // US Timezone options
   const US_TIMEZONES = [
@@ -227,6 +230,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setLocation("")
     setIsVirtual(true)
     setTimezone("America/New_York")
+    setImageUrl("")
     setEditingId(null)
     setShowForm(false)
   }
@@ -241,6 +245,96 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     }
     if (profile?.zoom_passcode && !zoomPasscode) {
       setZoomPasscode(profile.zoom_passcode)
+    }
+  }
+
+  // Handle image upload for events
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file (JPG, PNG, GIF, WebP)",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setUploadingImage(true)
+
+    try {
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg"
+      const fileName = `event-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+
+      // Upload to event-images bucket
+      const { error: uploadError } = await supabase.storage
+        .from("event-images")
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("event-images")
+        .getPublicUrl(fileName)
+
+      setImageUrl(publicUrl)
+
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      })
+    } catch (error: any) {
+      console.error("Error uploading image:", error)
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload image",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingImage(false)
+      if (imageInputRef.current) {
+        imageInputRef.current.value = ""
+      }
+    }
+  }
+
+  // Remove uploaded image
+  const handleRemoveImage = async () => {
+    if (!imageUrl) return
+
+    try {
+      // Extract filename from URL
+      const urlParts = imageUrl.split("/")
+      const fileName = urlParts[urlParts.length - 1]
+      if (fileName) {
+        await supabase.storage.from("event-images").remove([fileName])
+      }
+      setImageUrl("")
+      toast({
+        title: "Success",
+        description: "Image removed",
+      })
+    } catch (error: any) {
+      console.error("Error removing image:", error)
+      // Still clear the URL even if delete fails
+      setImageUrl("")
     }
   }
 
@@ -272,6 +366,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setLocation("")
     setIsVirtual(true)
     setTimezone("America/New_York")
+    setImageUrl("")
     setEditingId(null)
     
     // Prefill zoom details from profile if available
@@ -331,6 +426,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setLocation(call.location || "")
     setIsVirtual(call.is_virtual !== false)
     setTimezone(call.timezone || "America/New_York")
+    setImageUrl(call.image_url || "")
     setEditingId(call.id)
     setShowForm(true)
     
@@ -437,6 +533,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
       end_time: eventType === "event" && endTime ? endTime : null,
       location: location || null,
       is_virtual: isVirtual,
+      image_url: imageUrl || null,
     }
 
     let error
@@ -700,6 +797,80 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                     rows={3}
                     className="border-gray-300"
                   />
+                </div>
+
+                {/* Event Image Upload */}
+                <div className="bg-indigo-50 rounded-lg p-4 space-y-4">
+                  <h4 className="font-medium text-optavia-dark text-sm flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-indigo-600" />
+                    Event Image <span className="text-gray-400 font-normal text-xs">(optional)</span>
+                  </h4>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Image Preview */}
+                    <div className="w-full sm:w-48 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                      {imageUrl ? (
+                        <img 
+                          src={imageUrl} 
+                          alt="Event preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <ImageIcon className="h-12 w-12" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Upload Controls */}
+                    <div className="flex-1 space-y-3">
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => imageInputRef.current?.click()}
+                          disabled={uploadingImage}
+                          className="border-indigo-300 text-indigo-700 hover:bg-indigo-100"
+                        >
+                          {uploadingImage ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              {imageUrl ? "Change Image" : "Upload Image"}
+                            </>
+                          )}
+                        </Button>
+                        {imageUrl && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRemoveImage}
+                            disabled={uploadingImage}
+                            className="border-red-300 text-red-600 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-optavia-gray">
+                        Add an image or graphic for this {eventType}. JPG, PNG, GIF or WebP. Max 5MB.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Scheduling */}
@@ -1113,42 +1284,6 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                 </div>
                 )}
 
-                {/* Recording (for completed calls) - only for virtual meetings */}
-                {isVirtual && (
-                <div className="bg-green-50 rounded-lg p-4 space-y-4">
-                  <h4 className="font-medium text-optavia-dark text-sm flex items-center gap-2">
-                    <PlayCircle className="h-4 w-4 text-green-600" />
-                    Vimeo Recording (add after call ends)
-                  </h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="recordingUrl" className="text-optavia-dark">Vimeo URL</Label>
-                      <Input
-                        id="recordingUrl"
-                        value={recordingUrl}
-                        onChange={(e) => setRecordingUrl(e.target.value)}
-                        placeholder="https://vimeo.com/..."
-                        className="border-gray-300"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="recordingPlatform" className="text-optavia-dark">Platform</Label>
-                      <Select value={recordingPlatform} onValueChange={(v) => setRecordingPlatform(v as typeof recordingPlatform)}>
-                        <SelectTrigger className="border-gray-300">
-                          <SelectValue placeholder="Vimeo" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                          <SelectItem value="vimeo">Vimeo</SelectItem>
-                          <SelectItem value="zoom">Zoom</SelectItem>
-                          <SelectItem value="youtube">YouTube</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-                )}
-
                 {/* Email Notification Toggle */}
                 {!editingId && (
                   <div className="bg-purple-50 rounded-lg p-4">
@@ -1396,6 +1531,17 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Event Image */}
+                {call.image_url && (
+                  <div className="w-full max-w-xs">
+                    <img 
+                      src={call.image_url} 
+                      alt={call.title} 
+                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                    />
+                  </div>
+                )}
+
                 {call.description && (
                   <p className="text-sm text-optavia-gray">{call.description}</p>
                 )}
@@ -1438,25 +1584,18 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                   </div>
                 )}
 
-                {/* Recording */}
-                {call.recording_url && (
-                  <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
+                {/* Recordings Link - show for completed events */}
+                {call.status === "completed" && (
+                  <a 
+                    href="https://www.coachingamplifier.com/viewer?url=https%3A%2F%2Fdocs.google.com%2Fdocument%2Fd%2F1ad-MdPRzyrKflK2Y_mHmTBjU0lCVJydJJRsufFIDVko%2Fedit%3Ftab%3Dt.0&title=Trainings%20%26%20Resources"
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                  >
                     <PlayCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span className="text-sm text-green-700 font-medium">Recording Available</span>
-                    {call.recording_platform && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-                        {call.recording_platform}
-                      </Badge>
-                    )}
-                    <a 
-                      href={call.recording_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="ml-auto text-green-600 hover:text-green-800"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </div>
+                    <span className="text-sm text-green-700 font-medium">View Recordings</span>
+                    <ExternalLink className="h-4 w-4 ml-auto text-green-600" />
+                  </a>
                 )}
               </CardContent>
             </Card>

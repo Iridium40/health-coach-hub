@@ -659,7 +659,7 @@ export function CalendarView() {
                         <button
                           key={`${event.id}-${eventIdx}`}
                           onClick={() => setSelectedEvent(event)}
-                          className={`w-full text-left p-2 rounded-lg border transition-shadow hover:shadow-md cursor-pointer ${
+                          className={`w-full text-left rounded-lg border transition-shadow hover:shadow-md cursor-pointer overflow-hidden ${
                             event.status === "live" 
                               ? "border-red-300 bg-red-50 ring-2 ring-red-200" 
                               : event.call_type === "coach_only"
@@ -667,6 +667,17 @@ export function CalendarView() {
                               : "border-teal-200 bg-teal-50 hover:bg-teal-100"
                           }`}
                         >
+                          {/* Event Image Thumbnail */}
+                          {event.image_url && (
+                            <div className="w-full h-16">
+                              <img 
+                                src={event.image_url} 
+                                alt={event.title} 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="p-2">
                           {/* Time */}
                           <div className="flex items-center gap-1 text-xs font-medium text-gray-600 mb-1">
                             <Clock className="h-3 w-3" />
@@ -704,6 +715,21 @@ export function CalendarView() {
                           {/* Duration */}
                           <div className="text-[10px] text-gray-500 mt-1">
                             {event.duration_minutes} min
+                          </div>
+                          
+                          {/* Recordings Button - show for completed events */}
+                          {event.status === "completed" && (
+                            <a
+                              href="https://www.coachingamplifier.com/viewer?url=https%3A%2F%2Fdocs.google.com%2Fdocument%2Fd%2F1ad-MdPRzyrKflK2Y_mHmTBjU0lCVJydJJRsufFIDVko%2Fedit%3Ftab%3Dt.0&title=Trainings%20%26%20Resources"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-green-700 bg-green-100 hover:bg-green-200 px-2 py-1 rounded transition-colors"
+                            >
+                              <Video className="h-3 w-3" />
+                              Recordings
+                            </a>
+                          )}
                           </div>
                         </button>
                       ))}
@@ -753,7 +779,7 @@ export function CalendarView() {
                     <button
                       key={`${event.id}-${idx}`}
                       onClick={() => setSelectedEvent(event)}
-                      className={`w-full text-left p-4 rounded-lg border transition-shadow hover:shadow-md ${
+                      className={`w-full text-left rounded-lg border transition-shadow hover:shadow-md overflow-hidden ${
                         event.status === "live" 
                           ? "border-red-300 bg-red-50 ring-2 ring-red-200" 
                           : event.call_type === "coach_only"
@@ -761,6 +787,17 @@ export function CalendarView() {
                           : "border-teal-200 bg-teal-50 hover:bg-teal-100"
                       }`}
                     >
+                      {/* Event Image Thumbnail */}
+                      {event.image_url && (
+                        <div className="w-full h-24 sm:h-32">
+                          <img 
+                            src={event.image_url} 
+                            alt={event.title} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className={`p-4 ${event.image_url ? 'pt-3' : ''}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           {/* Time */}
@@ -828,6 +865,21 @@ export function CalendarView() {
                             Join
                           </Button>
                         )}
+                        
+                        {/* Recordings Button - show for completed events */}
+                        {event.status === "completed" && (
+                          <a
+                            href="https://www.coachingamplifier.com/viewer?url=https%3A%2F%2Fdocs.google.com%2Fdocument%2Fd%2F1ad-MdPRzyrKflK2Y_mHmTBjU0lCVJydJJRsufFIDVko%2Fedit%3Ftab%3Dt.0&title=Trainings%20%26%20Resources"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-md transition-colors flex-shrink-0"
+                          >
+                            <Video className="h-4 w-4" />
+                            Recordings
+                          </a>
+                        )}
+                      </div>
                       </div>
                     </button>
                   ))}
@@ -877,6 +929,17 @@ export function CalendarView() {
                   ✕
                 </Button>
               </div>
+
+              {/* Event Image */}
+              {selectedEvent.image_url && (
+                <div className="mb-4 -mx-4 sm:-mx-6 -mt-2">
+                  <img 
+                    src={selectedEvent.image_url} 
+                    alt={selectedEvent.title} 
+                    className="w-full h-40 sm:h-48 object-cover"
+                  />
+                </div>
+              )}
 
                 <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2 sm:gap-3 text-optavia-gray text-sm sm:text-base">
@@ -954,18 +1017,18 @@ export function CalendarView() {
                   </div>
                 )}
 
-                {selectedEvent.recording_url && selectedEvent.status === "completed" && (
-                  <Button
-                    variant="outline"
-                    className="w-full border-green-500 text-green-600 hover:bg-green-50 text-sm"
-                    onClick={() => window.open(selectedEvent.recording_url!, '_blank')}
+                {/* Recordings Button - show for completed events */}
+                {selectedEvent.status === "completed" && (
+                  <a
+                    href="https://www.coachingamplifier.com/viewer?url=https%3A%2F%2Fdocs.google.com%2Fdocument%2Fd%2F1ad-MdPRzyrKflK2Y_mHmTBjU0lCVJydJJRsufFIDVko%2Fedit%3Ftab%3Dt.0&title=Trainings%20%26%20Resources"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full border border-green-500 text-green-600 hover:bg-green-50 text-sm font-medium py-2 px-4 rounded-md transition-colors"
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Watch Recording
-                    {selectedEvent.recording_platform && (
-                      <span className="ml-1 text-xs opacity-75">({selectedEvent.recording_platform})</span>
-                    )}
-                  </Button>
+                    <Video className="h-4 w-4" />
+                    View Recordings
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
                 )}
 
                 {/* Add to Calendar */}
