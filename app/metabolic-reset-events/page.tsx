@@ -73,7 +73,7 @@ export default function MetabolicResetEventsPage() {
                   <CalendarPlus className="h-6 w-6 text-purple-600" />
                 </div>
                 <div className="text-left">
-                  <div className="font-semibold text-gray-900">Submit Your Event</div>
+                  <div className="font-semibold text-gray-900">Submit Your Metabolic Event Here</div>
                   <div className="text-sm text-gray-500">Add your Metabolic Reset event to the calendar</div>
                 </div>
               </div>
