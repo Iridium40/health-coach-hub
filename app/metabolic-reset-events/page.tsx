@@ -1,43 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 
-const SHEET_ID = "1kiCmWecGf14xyGoyrIs8-Ft3hrectznOtmwx5EHf5Gk"
-const GID = "2084945952"
-
-// Primary URL requested
-const METABOLIC_RESET_EVENTS_EDIT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?gid=${GID}#gid=${GID}`
-
-// A more compact viewer for small screens (still inside the app)
-const METABOLIC_RESET_EVENTS_MOBILE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?gid=${GID}&rm=minimal#gid=${GID}`
+const METABOLIC_RESET_EVENTS_URL = "https://sites.google.com/view/metabolicresetevents/home"
 
 export default function MetabolicResetEventsPage() {
-  const [iframeSrc, setIframeSrc] = useState(METABOLIC_RESET_EVENTS_EDIT_URL)
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 640px)")
-
-    const update = () => {
-      setIframeSrc(mq.matches ? METABOLIC_RESET_EVENTS_MOBILE_URL : METABOLIC_RESET_EVENTS_EDIT_URL)
-    }
-
-    update()
-
-    // Safari compatibility
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (mq.addEventListener) mq.addEventListener("change", update)
-    else mq.addListener(update)
-
-    return () => {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (mq.removeEventListener) mq.removeEventListener("change", update)
-      else mq.removeListener(update)
-    }
-  }, [])
 
   return (
     <div className="h-[100dvh] flex flex-col bg-white">
@@ -70,7 +40,7 @@ export default function MetabolicResetEventsPage() {
             <div className="h-full w-full sm:border sm:border-gray-200 sm:rounded-lg overflow-hidden bg-white sm:shadow-sm">
               <iframe
                 title="Metabolic Reset Events"
-                src={iframeSrc}
+                src={METABOLIC_RESET_EVENTS_URL}
                 className="w-full h-full"
                 referrerPolicy="no-referrer"
                 scrolling="yes"
