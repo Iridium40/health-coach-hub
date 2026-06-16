@@ -27,6 +27,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { ZoomCall } from "@/lib/types"
+import { generateRecurringInstances, generateFutureInstances } from "@/lib/generate-recurring-instances"
+
+type EditScope = "this" | "future" | "all"
 
 export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
   const { user, profile } = useUserData()
@@ -39,6 +42,11 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState<"all" | "meeting" | "event">("all")
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  
+  // Edit scope dialog state (for recurring events)
+  const [showEditScopeDialog, setShowEditScopeDialog] = useState(false)
+  const [pendingEditCall, setPendingEditCall] = useState<ZoomCall | null>(null)
+  const [editScope, setEditScope] = useState<EditScope>("this")
 
   // Form state
   const [title, setTitle] = useState("")
@@ -163,7 +171,8 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
         variant: "destructive",
       })
     } else {
-      const calls = data || []
+      // Filter out templates (is_template=true) - we only show instances and non-recurring events
+      const calls = (data || []).filter(call => !call.is_template)
       
       // Auto-update status for past events that are still marked as "upcoming"
       const now = new Date()
@@ -382,8 +391,21 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     e?.stopPropagation()
     e?.preventDefault()
     
+    // If this is a recurring instance (has parent_id), show the edit scope dialog
+    if (call.parent_id || (call.is_recurring && call.is_template)) {
+      setPendingEditCall(call)
+      setEditScope("this")
+      setShowEditScopeDialog(true)
+      return
+    }
+    
+    // For non-recurring events, directly open the form
+    loadEditForm(call)
+  }
+  
+  // Actually load the edit form with the call data
+  const loadEditForm = (call: ZoomCall) => {
     // Format the scheduled date for datetime-local input
-    // Handle both ISO string and other date formats
     let formattedScheduledAt = ""
     try {
       const date = new Date(call.scheduled_at)
@@ -431,10 +453,23 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     setEditingId(call.id)
     setShowForm(true)
     
+    // Close the scope dialog if it was open
+    setShowEditScopeDialog(false)
+    setPendingEditCall(null)
+    
     // Scroll to top so user can see the form
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 100)
+  }
+  
+  // Handle edit scope selection for recurring events
+  const handleEditScopeConfirm = () => {
+    if (!pendingEditCall) return
+    
+    // Store the edit scope for use during submission
+    // The editScope state is already set via radio buttons
+    loadEditForm(pendingEditCall)
   }
 
   const handleDelete = async (id: string, e?: React.MouseEvent) => {
@@ -538,15 +573,141 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     }
 
     let error
-    if (editingId) {
+    
+    // Get the current event being edited (if editing)
+    const currentEvent = editingId ? zoomCalls.find(c => c.id === editingId) : null
+    const isEditingRecurringInstance = currentEvent?.parent_id || (currentEvent?.is_recurring && currentEvent?.is_template)
+
+    if (editingId && isEditingRecurringInstance) {
+      // Handle editing a recurring event based on edit scope
+      if (editScope === "this") {
+        // Just update this single instance
+        const { error: updateError } = await supabase
+          .from("zoom_calls")
+          .update(callData)
+          .eq("id", editingId)
+        error = updateError
+      } else if (editScope === "future") {
+        // Update this instance and all future instances
+        const currentDate = new Date(currentEvent!.scheduled_at)
+        const parentId = currentEvent!.parent_id || editingId
+        
+        // Update this instance
+        const { error: updateError } = await supabase
+          .from("zoom_calls")
+          .update(callData)
+          .eq("id", editingId)
+        
+        if (!updateError) {
+          // Update all future instances (scheduled after this one)
+          const { error: futureError } = await supabase
+            .from("zoom_calls")
+            .update({
+              title,
+              description: description || null,
+              call_type: callType,
+              zoom_link: isVirtual ? (zoomLink || null) : null,
+              zoom_meeting_id: isVirtual ? (zoomMeetingId || null) : null,
+              zoom_passcode: isVirtual ? (zoomPasscode || null) : null,
+              location: location || null,
+              is_virtual: isVirtual,
+              image_url: imageUrl || null,
+            })
+            .eq("parent_id", parentId)
+            .gt("scheduled_at", currentDate.toISOString())
+          error = futureError
+        } else {
+          error = updateError
+        }
+      } else if (editScope === "all") {
+        // Update the template and ALL instances
+        const parentId = currentEvent!.parent_id || editingId
+        
+        // First, update the template
+        const templateUpdate = {
+          title,
+          description: description || null,
+          call_type: callType,
+          zoom_link: isVirtual ? (zoomLink || null) : null,
+          zoom_meeting_id: isVirtual ? (zoomMeetingId || null) : null,
+          zoom_passcode: isVirtual ? (zoomPasscode || null) : null,
+          location: location || null,
+          is_virtual: isVirtual,
+          image_url: imageUrl || null,
+          recurrence_pattern: isRecurring ? recurrencePattern : null,
+          recurrence_day: isRecurring ? recurrenceDay : null,
+          recurrence_end_date: isRecurring ? recurrenceEndDate : null,
+        }
+        
+        const { error: templateError } = await supabase
+          .from("zoom_calls")
+          .update(templateUpdate)
+          .eq("id", parentId)
+        
+        if (!templateError) {
+          // Update all instances with the shared fields
+          const { error: instancesError } = await supabase
+            .from("zoom_calls")
+            .update({
+              title,
+              description: description || null,
+              call_type: callType,
+              zoom_link: isVirtual ? (zoomLink || null) : null,
+              zoom_meeting_id: isVirtual ? (zoomMeetingId || null) : null,
+              zoom_passcode: isVirtual ? (zoomPasscode || null) : null,
+              location: location || null,
+              is_virtual: isVirtual,
+              image_url: imageUrl || null,
+            })
+            .eq("parent_id", parentId)
+          error = instancesError
+        } else {
+          error = templateError
+        }
+      }
+    } else if (editingId) {
+      // Regular non-recurring event edit
       const { error: updateError } = await supabase
         .from("zoom_calls")
         .update(callData)
         .eq("id", editingId)
       error = updateError
     } else {
-      const { error: insertError } = await supabase.from("zoom_calls").insert(callData)
-      error = insertError
+      // Creating a new event
+      if (isRecurring && eventType === "meeting") {
+        // Create as a template first
+        const templateData = {
+          ...callData,
+          is_template: true,
+        }
+        
+        const { data: templateResult, error: templateError } = await supabase
+          .from("zoom_calls")
+          .insert(templateData)
+          .select()
+          .single()
+        
+        if (templateError) {
+          error = templateError
+        } else if (templateResult) {
+          // Generate and insert all instances
+          const instances = generateRecurringInstances(
+            { ...callData, created_by: user.id } as ZoomCall,
+            templateResult.id
+          )
+          
+          if (instances.length > 0) {
+            const { error: instancesError } = await supabase
+              .from("zoom_calls")
+              .insert(instances)
+            error = instancesError
+          }
+        }
+      } else {
+        // Non-recurring event - just insert normally
+        const { error: insertError } = await supabase.from("zoom_calls").insert(callData)
+        error = insertError
+      }
     }
 
     if (error) {
@@ -565,6 +726,9 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
       description: editingId ? "Meeting updated" : "Meeting created",
     })
     trackChange()
+    
+    // Reset edit scope
+    setEditScope("this")
 
     // Send email notifications if enabled and this is a new meeting (not editing)
     if (sendEmailNotification && !editingId && status === "upcoming") {
@@ -1615,6 +1779,102 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
         onSaveAndLeave={saveAndLeave}
         onCancelLeave={cancelLeave}
       />
+
+      {/* Edit Scope Dialog for Recurring Events */}
+      {showEditScopeDialog && pendingEditCall && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setShowEditScopeDialog(false)
+            setPendingEditCall(null)
+          }}
+        >
+          <Card 
+            className="w-full max-w-md bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader>
+              <CardTitle className="text-optavia-dark">Edit Recurring Event</CardTitle>
+              <CardDescription>
+                This is part of a recurring series. Which events would you like to edit?
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="editScope"
+                    value="this"
+                    checked={editScope === "this"}
+                    onChange={() => setEditScope("this")}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <div className="font-medium text-optavia-dark">This event only</div>
+                    <div className="text-sm text-optavia-gray">
+                      Only edit this specific occurrence
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="editScope"
+                    value="future"
+                    checked={editScope === "future"}
+                    onChange={() => setEditScope("future")}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <div className="font-medium text-optavia-dark">This and future events</div>
+                    <div className="text-sm text-optavia-gray">
+                      Edit this occurrence and all events after it
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="editScope"
+                    value="all"
+                    checked={editScope === "all"}
+                    onChange={() => setEditScope("all")}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <div className="font-medium text-optavia-dark">All events in the series</div>
+                    <div className="text-sm text-optavia-gray">
+                      Edit every occurrence in this recurring series
+                    </div>
+                  </div>
+                </label>
+              </div>
+              
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowEditScopeDialog(false)
+                    setPendingEditCall(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))]/90"
+                  onClick={handleEditScopeConfirm}
+                >
+                  Continue
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

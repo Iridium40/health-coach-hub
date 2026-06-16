@@ -76,6 +76,10 @@ export interface ZoomCall {
   location?: string | null
   is_virtual?: boolean
   image_url?: string | null   // Event image/graphic URL
+  // Instance-based recurring event fields
+  parent_id?: string | null   // References template for recurring instances
+  is_template?: boolean       // True for recurring templates, false for instances
+  occurrence_index?: number | null  // Which occurrence in the series (1-based)
 }
 
 export interface ExternalResourceFeatures {

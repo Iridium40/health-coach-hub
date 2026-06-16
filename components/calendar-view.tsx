@@ -91,16 +91,49 @@ export function CalendarView() {
 
     const { data, error } = await supabase
       .from("zoom_calls")
-      .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,recurrence_end_date,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_by,created_at,updated_at,event_type,start_time,end_time,end_date,image_url")
+      .select("id,title,description,call_type,scheduled_at,duration_minutes,timezone,is_recurring,recurrence_pattern,recurrence_day,recurrence_end_date,zoom_link,zoom_meeting_id,zoom_passcode,recording_url,recording_platform,recording_available_at,status,created_by,created_at,updated_at,event_type,start_time,end_time,end_date,image_url,parent_id,is_template,occurrence_index")
       .in("status", ["upcoming", "live", "completed"])
-      // Include recurring templates regardless of scheduled_at, and non-recurring calls inside the window.
-      .or(`is_recurring.eq.true,and(scheduled_at.gte.${startIso},scheduled_at.lte.${endIso})`)
+      // Include:
+      // 1. Legacy recurring templates (is_recurring=true and no parent_id, not is_template)
+      // 2. Instance-based recurring events (has parent_id) within the date window
+      // 3. Non-recurring events within the date window
+      // Exclude: templates marked as is_template (they're just for storage)
+      .or(`and(is_recurring.eq.true,is_template.is.null),and(is_recurring.eq.true,is_template.eq.false),parent_id.not.is.null,and(is_recurring.eq.false,scheduled_at.gte.${startIso},scheduled_at.lte.${endIso}),and(is_recurring.is.null,scheduled_at.gte.${startIso},scheduled_at.lte.${endIso})`)
       .order("scheduled_at", { ascending: true })
 
     if (!error && data) {
-      // Expand recurring events into individual occurrences
-      const expanded = expandRecurringEvents(data, { rangeStart: start, rangeEnd: end })
-      setExpandedCalls(expanded)
+      // Separate legacy recurring templates from instance-based events
+      const legacyRecurringTemplates = data.filter(
+        call => call.is_recurring && !call.parent_id && !call.is_template
+      )
+      const instanceBasedEvents = data.filter(
+        call => call.parent_id || (!call.is_recurring) || call.is_template === false
+      )
+      
+      // Expand legacy recurring templates
+      const expandedLegacy = expandRecurringEvents(legacyRecurringTemplates, { rangeStart: start, rangeEnd: end })
+      
+      // Convert instance-based events to ExpandedZoomCall format
+      const expandedInstances: ExpandedZoomCall[] = instanceBasedEvents
+        .filter(call => !call.is_template) // Exclude templates from display
+        .filter(call => {
+          // Filter by date range
+          const eventDate = new Date(call.scheduled_at)
+          return eventDate >= start && eventDate <= end
+        })
+        .map(call => ({
+          ...call,
+          occurrence_date: call.scheduled_at,
+          is_occurrence: !!call.parent_id,
+          parent_id: call.parent_id || call.id,
+        }))
+      
+      // Combine and sort
+      const allExpanded = [...expandedLegacy, ...expandedInstances].sort(
+        (a, b) => new Date(a.occurrence_date).getTime() - new Date(b.occurrence_date).getTime()
+      )
+      
+      setExpandedCalls(allExpanded)
     }
     setLoading(false)
   }
