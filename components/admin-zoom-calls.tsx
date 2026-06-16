@@ -47,6 +47,11 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
   const [showEditScopeDialog, setShowEditScopeDialog] = useState(false)
   const [pendingEditCall, setPendingEditCall] = useState<ZoomCall | null>(null)
   const [editScope, setEditScope] = useState<EditScope>("this")
+  
+  // Delete scope dialog state (for recurring events)
+  const [showDeleteScopeDialog, setShowDeleteScopeDialog] = useState(false)
+  const [pendingDeleteCall, setPendingDeleteCall] = useState<ZoomCall | null>(null)
+  const [deleteScope, setDeleteScope] = useState<EditScope>("this")
 
   // Form state
   const [title, setTitle] = useState("")
@@ -476,9 +481,75 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     e?.stopPropagation()
     e?.preventDefault()
     
+    // Find the call to check if it's recurring
+    const call = zoomCalls.find(c => c.id === id)
+    
+    if (call && (call.is_recurring || call.parent_id)) {
+      // Show delete scope dialog for recurring events
+      setPendingDeleteCall(call)
+      setDeleteScope("this")
+      setShowDeleteScopeDialog(true)
+      return
+    }
+    
+    // For non-recurring events, just confirm and delete
     if (!confirm("Are you sure you want to delete this meeting/event?")) return
-
-    const { error } = await supabase.from("zoom_calls").delete().eq("id", id)
+    await performDelete(id)
+  }
+  
+  // Actually perform the delete based on scope
+  const performDelete = async (id: string, scope?: EditScope) => {
+    const call = zoomCalls.find(c => c.id === id)
+    const isLegacyRecurring = call?.is_recurring && !call?.parent_id && !call?.is_template
+    
+    let error
+    
+    if (scope && call && (call.is_recurring || call.parent_id)) {
+      if (isLegacyRecurring) {
+        // For legacy recurring events, any delete removes the whole series
+        const { error: deleteError } = await supabase.from("zoom_calls").delete().eq("id", id)
+        error = deleteError
+        
+        if (!error && scope !== "all") {
+          toast({
+            title: "Note",
+            description: "For this recurring series, all occurrences were deleted.",
+          })
+        }
+      } else if (scope === "this") {
+        // Delete just this instance
+        const { error: deleteError } = await supabase.from("zoom_calls").delete().eq("id", id)
+        error = deleteError
+      } else if (scope === "future") {
+        // Delete this instance and all future instances
+        const currentDate = new Date(call.scheduled_at)
+        const parentId = call.parent_id || id
+        
+        // Delete this instance
+        const { error: deleteThisError } = await supabase.from("zoom_calls").delete().eq("id", id)
+        
+        if (!deleteThisError) {
+          // Delete all future instances
+          const { error: deleteFutureError } = await supabase
+            .from("zoom_calls")
+            .delete()
+            .eq("parent_id", parentId)
+            .gt("scheduled_at", currentDate.toISOString())
+          error = deleteFutureError
+        } else {
+          error = deleteThisError
+        }
+      } else if (scope === "all") {
+        // Delete the template (which cascades to delete all instances)
+        const parentId = call.parent_id || id
+        const { error: deleteError } = await supabase.from("zoom_calls").delete().eq("id", parentId)
+        error = deleteError
+      }
+    } else {
+      // Simple delete for non-recurring events
+      const { error: deleteError } = await supabase.from("zoom_calls").delete().eq("id", id)
+      error = deleteError
+    }
 
     if (error) {
       toast({
@@ -494,6 +565,10 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
       trackChange()
       loadZoomCalls()
     }
+    
+    // Close the dialog
+    setShowDeleteScopeDialog(false)
+    setPendingDeleteCall(null)
   }
 
   const handleCopyLink = async (link: string, id: string) => {
@@ -1886,6 +1961,103 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                   onClick={handleEditScopeConfirm}
                 >
                   Continue
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Scope Dialog for Recurring Events */}
+      {showDeleteScopeDialog && pendingDeleteCall && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setShowDeleteScopeDialog(false)
+            setPendingDeleteCall(null)
+          }}
+        >
+          <Card 
+            className="w-full max-w-md bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader>
+              <CardTitle className="text-red-600">Delete Recurring Event</CardTitle>
+              <CardDescription>
+                This is part of a recurring series. Which events would you like to delete?
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="deleteScope"
+                    value="this"
+                    checked={deleteScope === "this"}
+                    onChange={() => setDeleteScope("this")}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <div className="font-medium text-optavia-dark">This event only</div>
+                    <div className="text-sm text-optavia-gray">
+                      Only delete this specific occurrence
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="deleteScope"
+                    value="future"
+                    checked={deleteScope === "future"}
+                    onChange={() => setDeleteScope("future")}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <div className="font-medium text-optavia-dark">This and future events</div>
+                    <div className="text-sm text-optavia-gray">
+                      Delete this occurrence and all events after it
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="deleteScope"
+                    value="all"
+                    checked={deleteScope === "all"}
+                    onChange={() => setDeleteScope("all")}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <div className="font-medium text-optavia-dark">All events in the series</div>
+                    <div className="text-sm text-optavia-gray">
+                      Delete every occurrence in this recurring series
+                    </div>
+                  </div>
+                </label>
+              </div>
+              
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowDeleteScopeDialog(false)
+                    setPendingDeleteCall(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => performDelete(pendingDeleteCall.id, deleteScope)}
+                >
+                  Delete
                 </Button>
               </div>
             </CardContent>
