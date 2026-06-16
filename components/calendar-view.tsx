@@ -38,6 +38,7 @@ export function CalendarView() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [sharedId, setSharedId] = useState<string | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<ExpandedZoomCall | null>(null)
+  const [expandedDay, setExpandedDay] = useState<{ date: Date; events: ExpandedZoomCall[] } | null>(null)
   const [eventTypeFilter, setEventTypeFilter] = useState<EventTypeFilter>("all")
   const supabase = createClient()
 
@@ -624,9 +625,15 @@ export function CalendarView() {
                       </button>
                     ))}
                     {events.length > maxEventsToShow && (
-                      <div className="text-[10px] sm:text-xs text-optavia-gray">
-                        +{events.length - maxEventsToShow}
-                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setExpandedDay({ date: dayInfo.date, events })
+                        }}
+                        className="text-[10px] sm:text-xs text-optavia-gray hover:text-[hsl(var(--optavia-green))] hover:underline cursor-pointer font-medium"
+                      >
+                        +{events.length - maxEventsToShow} more
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1138,6 +1145,91 @@ export function CalendarView() {
                     </p>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Expanded Day Modal - shows all events for a day when +X more is clicked */}
+      {expandedDay && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50"
+          onClick={() => setExpandedDay(null)}
+        >
+          <Card 
+            className="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardContent className="p-0">
+              <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-optavia-dark">
+                    {expandedDay.date.toLocaleDateString(undefined, {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </h3>
+                  <p className="text-sm text-optavia-gray">
+                    {expandedDay.events.length} event{expandedDay.events.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setExpandedDay(null)} className="h-8 w-8 p-0">
+                  ✕
+                </Button>
+              </div>
+              <div className="overflow-y-auto max-h-[60vh] p-4 space-y-2">
+                {expandedDay.events.map((event, idx) => (
+                  <button
+                    key={`${event.id}-expanded-${idx}`}
+                    onClick={() => {
+                      setExpandedDay(null)
+                      setSelectedEvent(event)
+                    }}
+                    className={`w-full text-left p-3 rounded-lg border hover:shadow-md transition-shadow ${
+                      event.call_type === "coach_only" 
+                        ? "border-purple-200 hover:border-purple-300 bg-purple-50/50" 
+                        : "border-teal-200 hover:border-teal-300 bg-teal-50/50"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                        event.status === "live" ? "bg-red-500 animate-pulse" :
+                        event.status === "upcoming" ? "bg-blue-500" : "bg-green-500"
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <div className={`font-semibold truncate ${
+                          event.call_type === "coach_only" ? "text-purple-800" : "text-teal-700"
+                        }`}>
+                          {event.title}
+                        </div>
+                        <div className="text-sm text-optavia-gray mt-0.5">
+                          {isAllDayEvent(event) 
+                            ? "All day" 
+                            : formatTime(event.occurrence_date, event.timezone, event.start_time, event.end_time)
+                          }
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          {event.status === "live" && (
+                            <Badge className="bg-red-500 text-[10px] py-0 px-1.5">Live</Badge>
+                          )}
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-[10px] py-0 px-1.5 ${
+                              event.call_type === "coach_only" 
+                                ? "bg-purple-100 text-purple-700" 
+                                : "bg-teal-100 text-teal-700"
+                            }`}
+                          >
+                            {event.call_type === "coach_only" ? "Coach Only" : "With Clients"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    </div>
+                  </button>
+                ))}
               </div>
             </CardContent>
           </Card>
