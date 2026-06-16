@@ -40,7 +40,18 @@ export function CalendarView() {
   const [selectedEvent, setSelectedEvent] = useState<ExpandedZoomCall | null>(null)
   const [expandedDay, setExpandedDay] = useState<{ date: Date; events: ExpandedZoomCall[] } | null>(null)
   const [eventTypeFilter, setEventTypeFilter] = useState<EventTypeFilter>("all")
+  const [initialViewSet, setInitialViewSet] = useState(false)
   const supabase = createClient()
+
+  // Set default view to "today" on mobile devices
+  useEffect(() => {
+    if (!initialViewSet && isMobile !== undefined) {
+      if (isMobile) {
+        setViewMode("today")
+      }
+      setInitialViewSet(true)
+    }
+  }, [isMobile, initialViewSet])
 
   useEffect(() => {
     if (!user) {
