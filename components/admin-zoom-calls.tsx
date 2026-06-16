@@ -391,8 +391,8 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     e?.stopPropagation()
     e?.preventDefault()
     
-    // If this is a recurring instance (has parent_id), show the edit scope dialog
-    if (call.parent_id || (call.is_recurring && call.is_template)) {
+    // If this is a recurring event (legacy or instance-based), show the edit scope dialog
+    if (call.is_recurring || call.parent_id) {
       setPendingEditCall(call)
       setEditScope("this")
       setShowEditScopeDialog(true)
@@ -576,11 +576,28 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     
     // Get the current event being edited (if editing)
     const currentEvent = editingId ? zoomCalls.find(c => c.id === editingId) : null
-    const isEditingRecurringInstance = currentEvent?.parent_id || (currentEvent?.is_recurring && currentEvent?.is_template)
+    const isEditingRecurring = currentEvent?.is_recurring || currentEvent?.parent_id
+    const isLegacyRecurring = currentEvent?.is_recurring && !currentEvent?.parent_id && !currentEvent?.is_template
 
-    if (editingId && isEditingRecurringInstance) {
+    if (editingId && isEditingRecurring) {
       // Handle editing a recurring event based on edit scope
-      if (editScope === "this") {
+      
+      if (isLegacyRecurring) {
+        // For legacy recurring events (no instances), update the template directly
+        // All options effectively do the same thing since occurrences are computed dynamically
+        const { error: updateError } = await supabase
+          .from("zoom_calls")
+          .update(callData)
+          .eq("id", editingId)
+        error = updateError
+        
+        if (!error && editScope !== "all") {
+          toast({
+            title: "Note",
+            description: "For this recurring series, all occurrences will be updated. To edit individual occurrences, create a new recurring event.",
+          })
+        }
+      } else if (editScope === "this") {
         // Just update this single instance
         const { error: updateError } = await supabase
           .from("zoom_calls")
