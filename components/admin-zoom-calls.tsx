@@ -2007,22 +2007,22 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                 </label>
               </div>
               
-              <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4">
+              <div className="flex flex-col gap-3 pt-4">
+                <Button
+                  className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))]/90 text-white"
+                  onClick={handleEditScopeConfirm}
+                >
+                  Continue
+                </Button>
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="w-full"
                   onClick={() => {
                     setShowEditScopeDialog(false)
                     setPendingEditCall(null)
                   }}
                 >
                   Cancel
-                </Button>
-                <Button
-                  className="flex-1 bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green))]/90"
-                  onClick={handleEditScopeConfirm}
-                >
-                  Continue
                 </Button>
               </div>
             </CardContent>
@@ -2103,23 +2103,22 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                 </label>
               </div>
               
-              <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4">
+              <div className="flex flex-col gap-3 pt-4">
+                <Button
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => performDelete(pendingDeleteCall.id, deleteScope)}
+                >
+                  Delete
+                </Button>
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="w-full"
                   onClick={() => {
                     setShowDeleteScopeDialog(false)
                     setPendingDeleteCall(null)
                   }}
                 >
                   Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="flex-1"
-                  onClick={() => performDelete(pendingDeleteCall.id, deleteScope)}
-                >
-                  Delete
                 </Button>
               </div>
             </CardContent>
