@@ -201,9 +201,17 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
       })
       
       // Auto-update status for past events that are still marked as "upcoming"
+      // For recurring events, check recurrence_end_date, not scheduled_at
       const pastUpcoming = (data || []).filter(call => {
         if (call.status !== "upcoming") return false
-        // For events with end_date, use that; otherwise use scheduled_at
+        
+        // For recurring events, check recurrence_end_date
+        if (call.is_recurring && call.recurrence_end_date) {
+          const recurrenceEnd = new Date(call.recurrence_end_date + "T23:59:59")
+          return recurrenceEnd < now
+        }
+        
+        // For non-recurring events with end_date, use that; otherwise use scheduled_at
         const eventEndDate = call.end_date 
           ? new Date(call.end_date + "T23:59:59") 
           : new Date(call.scheduled_at)
@@ -212,6 +220,14 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
           eventEndDate.setMinutes(eventEndDate.getMinutes() + call.duration_minutes)
         }
         return eventEndDate < now
+      })
+      
+      // Also fix any recurring events incorrectly marked as completed but still have future occurrences
+      const incorrectlyCompleted = (data || []).filter(call => {
+        if (call.status !== "completed") return false
+        if (!call.is_recurring || !call.recurrence_end_date) return false
+        const recurrenceEnd = new Date(call.recurrence_end_date + "T23:59:59")
+        return recurrenceEnd >= now
       })
       
       // Update past events to "completed" status
@@ -226,6 +242,22 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
         calls.forEach(call => {
           if (ids.includes(call.id)) {
             call.status = "completed"
+          }
+        })
+      }
+      
+      // Fix incorrectly completed recurring events back to upcoming
+      if (incorrectlyCompleted.length > 0) {
+        const ids = incorrectlyCompleted.map(c => c.id)
+        await supabase
+          .from("zoom_calls")
+          .update({ status: "upcoming" })
+          .in("id", ids)
+        
+        // Update local state
+        calls.forEach(call => {
+          if (ids.includes(call.id)) {
+            call.status = "upcoming"
           }
         })
       }
