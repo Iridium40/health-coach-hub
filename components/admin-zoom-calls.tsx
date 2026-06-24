@@ -167,7 +167,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
     const { data, error } = await supabase
       .from("zoom_calls")
       .select("*")
-      .order("scheduled_at", { ascending: false })
+      .order("scheduled_at", { ascending: true })
 
     if (error) {
       toast({
@@ -176,12 +176,32 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
         variant: "destructive",
       })
     } else {
-      // Filter out templates (is_template=true) - we only show instances and non-recurring events
-      const calls = (data || []).filter(call => !call.is_template)
+      const now = new Date()
+      const todayStart = new Date(now)
+      todayStart.setHours(0, 0, 0, 0)
+      
+      // Filter for admin view:
+      // 1. Only show parent/template events (not instances with parent_id)
+      // 2. Only show present and future events (scheduled today or later, or recurring with future end date)
+      const calls = (data || []).filter(call => {
+        // Exclude instances - only show parents/templates and standalone events
+        if (call.parent_id) return false
+        
+        // For recurring events, check if recurrence_end_date is in the future
+        if (call.is_recurring && call.recurrence_end_date) {
+          const endDate = new Date(call.recurrence_end_date)
+          return endDate >= todayStart
+        }
+        
+        // For non-recurring events, check scheduled_at or end_date
+        const eventDate = call.end_date 
+          ? new Date(call.end_date) 
+          : new Date(call.scheduled_at)
+        return eventDate >= todayStart
+      })
       
       // Auto-update status for past events that are still marked as "upcoming"
-      const now = new Date()
-      const pastUpcoming = calls.filter(call => {
+      const pastUpcoming = (data || []).filter(call => {
         if (call.status !== "upcoming") return false
         // For events with end_date, use that; otherwise use scheduled_at
         const eventEndDate = call.end_date 
