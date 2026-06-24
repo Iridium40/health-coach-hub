@@ -2007,7 +2007,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                 </label>
               </div>
               
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4">
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -2103,7 +2103,7 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                 </label>
               </div>
               
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4">
                 <Button
                   variant="outline"
                   className="flex-1"
