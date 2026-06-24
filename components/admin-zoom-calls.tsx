@@ -1726,8 +1726,18 @@ export function AdminZoomCalls({ onClose }: { onClose?: () => void }) {
                       {getStatusBadge(call.status)}
                       {getCallTypeBadge(call.call_type)}
                       {call.is_recurring && (
-                        <Badge variant="outline" className="text-gray-500">
-                          {call.recurrence_pattern} - {call.recurrence_day}
+                        <Badge variant="outline" className="text-purple-600 border-purple-300 bg-purple-50">
+                          🔄 {call.recurrence_pattern} on {call.recurrence_day}s
+                          {call.recurrence_end_date && (
+                            <span className="ml-1 text-xs opacity-75">
+                              (until {new Date(call.recurrence_end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })})
+                            </span>
+                          )}
+                        </Badge>
+                      )}
+                      {call.is_template && (
+                        <Badge variant="outline" className="text-blue-600 border-blue-300 bg-blue-50">
+                          Template
                         </Badge>
                       )}
                     </div>
