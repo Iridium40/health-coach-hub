@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
@@ -25,6 +26,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin, inviteKey }: SignupForm
   const [loading, setLoading] = useState(false)
   const [validatingInvite, setValidatingInvite] = useState(!!inviteKey)
   const [inviteValid, setInviteValid] = useState<boolean | null>(null)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const { signUp } = useAuth()
   const { toast } = useToast()
   const supabase = createClient()
@@ -102,6 +104,16 @@ export function SignupForm({ onSuccess, onSwitchToLogin, inviteKey }: SignupForm
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate terms agreement
+    if (!agreedToTerms) {
+      toast({
+        title: "Terms Required",
+        description: "You must agree to the Terms and Conditions to create an account",
+        variant: "destructive",
+      })
+      return
+    }
 
     // Validate invite if present
     if (inviteKey) {
@@ -278,26 +290,34 @@ export function SignupForm({ onSuccess, onSwitchToLogin, inviteKey }: SignupForm
               className="bg-white border-gray-300 text-optavia-dark"
             />
           </div>
-          <div className="space-y-3 pt-2 border-t">
-            <p className="text-sm text-optavia-gray text-center">
-              By clicking "Sign Up", you agree that you have read and agree to the{" "}
-              <Link href="/terms" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline">
-                Terms and Conditions
-              </Link>
-              {", "}
-              <Link href="/privacy" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline">
-                Privacy Policy
-              </Link>
-              {", and "}
-              <Link href="/cookies" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline">
-                Cookie Usage Policy
-              </Link>
-              . You also acknowledge that your information will be stored and that you can request deletion of your account and data
-              at any time. Data deletion will result in permanent loss of access to the Service.
-            </p>
+          <div className="space-y-3 pt-4 border-t">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="terms"
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                disabled={loading}
+                className="mt-1"
+              />
+              <label htmlFor="terms" className="text-sm text-optavia-gray leading-relaxed cursor-pointer">
+                I have read and agree to the{" "}
+                <Link href="/terms" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline font-medium">
+                  Terms and Conditions
+                </Link>
+                {" "}(including the Intellectual Property and Software License provisions),{" "}
+                <Link href="/privacy" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline font-medium">
+                  Privacy Policy
+                </Link>
+                {", and "}
+                <Link href="/cookies" target="_blank" className="text-[hsl(var(--optavia-green))] hover:underline font-medium">
+                  Cookie Usage Policy
+                </Link>
+                . I acknowledge that Coaching Amplifier is proprietary software owned by Smith Health and Wellness LLC.
+              </label>
+            </div>
           </div>
 
-          <Button type="submit" className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" disabled={loading}>
+          <Button type="submit" className="w-full bg-[hsl(var(--optavia-green))] hover:bg-[hsl(var(--optavia-green-dark))] text-white" disabled={loading || !agreedToTerms}>
             {loading ? "Creating account..." : "Sign Up"}
           </Button>
           {onSwitchToLogin && (

@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronRight, FileText, DollarSign, Scale, Heart, Brain, Shield, AlertTriangle, ArrowLeft } from "lucide-react"
+import { ChevronRight, FileText, DollarSign, Scale, Heart, Brain, Shield, AlertTriangle, ArrowLeft, Lock, Ban, Copyright } from "lucide-react"
 
 export default function TermsOfServicePage() {
   return (
@@ -283,6 +283,163 @@ export default function TermsOfServicePage() {
               </CardContent>
             </Card>
 
+            {/* Intellectual Property Ownership */}
+            <Card className="border-l-4 border-l-indigo-400">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-optavia-dark">
+                  <Copyright className="h-5 w-5 text-indigo-600" />
+                  Intellectual Property Ownership
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="prose prose-sm max-w-none text-optavia-gray">
+                <p>
+                  All content, features, functionality, software, source code, designs, text, graphics, 
+                  logos, icons, images, audio, video, data compilations, and other materials available 
+                  on or through Coaching Amplifier (collectively, the "Content") are the exclusive 
+                  property of <strong>Smith Health and Wellness LLC</strong> and are protected by 
+                  United States and international copyright, trademark, patent, trade secret, and 
+                  other intellectual property or proprietary rights laws.
+                </p>
+                <p>
+                  The Coaching Amplifier name, logo, and all related names, logos, product and service 
+                  names, designs, and slogans are trademarks of Smith Health and Wellness LLC. You may 
+                  not use such marks without the prior written permission of Smith Health and Wellness LLC.
+                </p>
+                <p className="font-semibold text-indigo-800 bg-indigo-50 p-3 rounded-lg">
+                  Coaching Amplifier is proprietary software. It is NOT open source and no rights 
+                  are granted to copy, modify, distribute, or create derivative works.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Software License */}
+            <Card className="border-l-4 border-l-cyan-400">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-optavia-dark">
+                  <Lock className="h-5 w-5 text-cyan-600" />
+                  Software License Agreement
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="prose prose-sm max-w-none text-optavia-gray">
+                <p>
+                  Subject to your compliance with these Terms of Service, Smith Health and Wellness LLC 
+                  grants you a <strong>limited, non-exclusive, non-transferable, non-sublicensable, 
+                  revocable license</strong> to access and use Coaching Amplifier solely for your 
+                  personal, non-commercial health coaching business purposes.
+                </p>
+                <p>
+                  This license does not include any right to:
+                </p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>Modify, adapt, translate, or create derivative works of the software</li>
+                  <li>Reverse engineer, decompile, disassemble, or attempt to derive the source code</li>
+                  <li>Rent, lease, lend, sell, sublicense, or transfer the software to any third party</li>
+                  <li>Remove, alter, or obscure any proprietary notices</li>
+                  <li>Use the software for any commercial purpose other than your own coaching business</li>
+                </ul>
+                <p className="font-semibold text-cyan-800 bg-cyan-50 p-3 rounded-lg">
+                  This license is automatically revoked if you violate any of these restrictions. 
+                  Upon termination, you must cease all use of the Service.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Prohibited Uses */}
+            <Card className="border-l-4 border-l-rose-400">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-optavia-dark">
+                  <Ban className="h-5 w-5 text-rose-600" />
+                  Prohibited Uses
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="prose prose-sm max-w-none text-optavia-gray">
+                <p>
+                  In addition to the restrictions above, you expressly agree NOT to:
+                </p>
+                <div className="bg-rose-50 p-4 rounded-lg border border-rose-200 my-4">
+                  <ul className="text-rose-700 list-disc list-inside space-y-2 mb-0">
+                    <li>Copy, reproduce, or duplicate any portion of the software, content, or features</li>
+                    <li>Use automated systems, bots, scrapers, or data mining tools to extract content</li>
+                    <li>Share your login credentials or allow others to access your account</li>
+                    <li>Use the platform to build, assist, or inform the development of a competing product or service</li>
+                    <li>Benchmark or conduct competitive analysis for commercial purposes</li>
+                    <li>Photograph, screenshot, or record the interface for purposes of replication</li>
+                    <li>Disclose proprietary features, methods, or business logic to competitors</li>
+                    <li>Circumvent any access controls or security measures</li>
+                  </ul>
+                </div>
+                <p className="font-semibold text-rose-800">
+                  Violation of these prohibitions may result in immediate account termination without 
+                  refund and may subject you to legal action for damages and injunctive relief.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Confidentiality */}
+            <Card className="border-l-4 border-l-violet-400">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-optavia-dark">
+                  <Shield className="h-5 w-5 text-violet-600" />
+                  Confidentiality & Trade Secrets
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="prose prose-sm max-w-none text-optavia-gray">
+                <p>
+                  You acknowledge that Coaching Amplifier contains proprietary information and 
+                  <strong> trade secrets</strong> of Smith Health and Wellness LLC, including but not 
+                  limited to: software architecture, algorithms, user interface designs, feature 
+                  implementations, business methods, training methodologies, and data structures.
+                </p>
+                <p>
+                  You agree to:
+                </p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>Hold all proprietary information in strict confidence</li>
+                  <li>Not disclose any proprietary information to any third party</li>
+                  <li>Not use proprietary information for any purpose other than as intended</li>
+                  <li>Take reasonable measures to protect the confidentiality of such information</li>
+                </ul>
+                <p className="font-semibold text-violet-800 bg-violet-50 p-3 rounded-lg">
+                  These confidentiality obligations survive the termination of your account and 
+                  continue indefinitely with respect to trade secrets.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Remedies */}
+            <Card className="border-l-4 border-l-orange-400">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-optavia-dark">
+                  <AlertTriangle className="h-5 w-5 text-orange-600" />
+                  Enforcement & Remedies
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="prose prose-sm max-w-none text-optavia-gray">
+                <p>
+                  You acknowledge that any breach of the intellectual property, confidentiality, or 
+                  prohibited use provisions of these Terms would cause irreparable harm to Smith Health 
+                  and Wellness LLC for which monetary damages would be inadequate.
+                </p>
+                <p>
+                  Accordingly, Smith Health and Wellness LLC shall be entitled to seek:
+                </p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li><strong>Injunctive relief</strong> to prevent any actual or threatened breach</li>
+                  <li><strong>Specific performance</strong> of these Terms</li>
+                  <li><strong>Monetary damages</strong> including actual damages and lost profits</li>
+                  <li><strong>Attorney's fees</strong> and costs of enforcement</li>
+                </ul>
+                <p>
+                  These remedies are cumulative and in addition to any other remedies available at 
+                  law or in equity.
+                </p>
+                <p className="font-semibold text-orange-800 bg-orange-50 p-3 rounded-lg">
+                  You agree to indemnify and hold harmless Smith Health and Wellness LLC from any 
+                  claims, damages, or expenses arising from your violation of these Terms.
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Legal Review Note */}
             <Card className="bg-amber-50 border-amber-200">
               <CardContent className="pt-6">
@@ -304,7 +461,7 @@ export default function TermsOfServicePage() {
 
             {/* Last Updated */}
             <p className="text-center text-sm text-optavia-gray">
-              Last updated: January 2025
+              Last updated: June 2026
             </p>
           </div>
         </div>

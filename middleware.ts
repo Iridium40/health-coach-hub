@@ -1,3 +1,13 @@
+/**
+ * PROPRIETARY AND CONFIDENTIAL
+ * 
+ * Copyright (c) 2024-2026 Smith Health and Wellness LLC. All Rights Reserved.
+ * 
+ * This file is part of Coaching Amplifier, proprietary software owned by
+ * Smith Health and Wellness LLC. Unauthorized copying, modification, distribution,
+ * or use of this software is strictly prohibited. See LICENSE file for details.
+ */
+
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
